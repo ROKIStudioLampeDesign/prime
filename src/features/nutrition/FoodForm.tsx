@@ -1,11 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { lazy, Suspense, useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
-import { StarIcon } from '../../components/icons';
+import { BarcodeIcon, StarIcon } from '../../components/icons';
 import { iconButton, Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import type { Food } from '../../db/db';
-import { createFood, deleteFood, updateFood } from '../../db/foods';
+import { createFood, deleteFood, findFoodByBarcode, updateFood } from '../../db/foods';
 import { parseDecimal } from '../../domain/number';
 import {
   estimateKcal,
@@ -15,6 +15,7 @@ import {
   type Per100gInput,
 } from '../../domain/nutrition';
 import { formatMacro, toInputValue } from '../../lib/format';
+import { downloadProductImage, lookupBarcode } from '../../lib/openFoodFacts';
 import { PhotoPicker } from './PhotoPicker';
 
 interface FoodFormProps {
@@ -25,7 +26,26 @@ interface FoodFormProps {
   onCancel?: () => void;
   /** Called after the food was deleted (edit mode only). */
   onDeleted?: () => void;
+  /** A scanned barcode matches an existing product: open it instead of creating a duplicate. */
+  onExistingFood?: (id: number) => void;
 }
+
+// The scanner pulls in zxing (~400 kB): only load it when the user opens it.
+const BarcodeScanner = lazy(() => import('./BarcodeScanner').then((m) => ({ default: m.BarcodeScanner })));
+
+type LookupState =
+  | { status: 'loading' | 'found' | 'notFound' | 'offline' | 'timeout' | 'error'; barcode: string }
+  | { status: 'exists'; barcode: string; name: string };
+
+const LOOKUP_MESSAGES: Record<Exclude<LookupState['status'], 'exists'>, string> = {
+  loading: 'Recherche sur Open Food Facts…',
+  found: 'Valeurs importées d’Open Food Facts : vérifie-les avant d’enregistrer.',
+  notFound: 'Produit introuvable sur Open Food Facts : complète la fiche à la main.',
+  offline:
+    'Hors connexion : impossible d’interroger Open Food Facts. Le code-barres est noté, complète la fiche.',
+  timeout: 'Open Food Facts ne répond pas. Réessaie plus tard ou complète la fiche à la main.',
+  error: 'Erreur en interrogeant Open Food Facts. Complète la fiche à la main.',
+};
 
 const FIELDS: { key: Per100gField; label: string; suffix: string; optional?: boolean }[] = [
   { key: 'kcal', label: 'Calories', suffix: 'kcal' },
@@ -63,7 +83,14 @@ function initialTexts(food?: Food): ValueTexts {
   };
 }
 
-export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted }: FoodFormProps) {
+export function FoodForm({
+  food,
+  initialName = '',
+  onSaved,
+  onCancel,
+  onDeleted,
+  onExistingFood,
+}: FoodFormProps) {
   const [name, setName] = useState(food?.name ?? initialName.trim());
   const [brand, setBrand] = useState(food?.brand ?? '');
   const [barcode, setBarcode] = useState(food?.barcode ?? '');
@@ -74,6 +101,10 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [lookup, setLookup] = useState<LookupState>();
+  /** Nutrients Open Food Facts didn't provide: flagged so the user completes them. */
+  const [missing, setMissing] = useState<Per100gField[]>([]);
 
   const parsed: Per100gInput = {};
   for (const { key } of FIELDS) {
@@ -99,6 +130,41 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  /** Scanned or typed barcode: open the existing product, else prefill from Open Food Facts for review. */
+  async function handleBarcode(code: string) {
+    setScanning(false);
+    const existing = await findFoodByBarcode(code);
+    if (existing) {
+      if (onExistingFood) onExistingFood(existing.id);
+      else setLookup({ status: 'exists', barcode: code, name: existing.name });
+      return;
+    }
+    setBarcode(code);
+    setLookup({ status: 'loading', barcode: code });
+    const result = await lookupBarcode(code);
+    if (result.status !== 'found') {
+      setLookup({ status: result.status, barcode: code });
+      return;
+    }
+    const { draft } = result;
+    if (draft.name) setName(draft.name);
+    if (draft.brand) setBrand(draft.brand);
+    setValues((v) => {
+      const next = { ...v };
+      for (const { key } of FIELDS) next[key] = toInputValue(draft.per100g[key]);
+      return next;
+    });
+    setMissing(draft.missing);
+    setLookup({ status: 'found', barcode: code });
+    if (draft.imageUrl && !photo) {
+      setPhotoBusy(true);
+      const image = await downloadProductImage(draft.imageUrl);
+      // Don't overwrite a photo the user picked meanwhile.
+      if (image) setPhoto((current) => current ?? image);
+      setPhotoBusy(false);
     }
   }
 
@@ -128,6 +194,29 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
       }
     >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+        {!food && (
+          <Button
+            variant="secondary"
+            onClick={() => setScanning(true)}
+            disabled={lookup?.status === 'loading'}
+          >
+            <BarcodeIcon className="size-5" /> Scanner un code-barres
+          </Button>
+        )}
+        {lookup && (
+          <p
+            role="status"
+            className={`-mt-1 rounded-xl px-3 py-2 text-sm ${
+              lookup.status === 'found' || lookup.status === 'loading'
+                ? 'bg-surface text-fg'
+                : 'bg-danger/10 text-danger'
+            }`}
+          >
+            {lookup.status === 'exists'
+              ? `Ce code-barres correspond déjà à « ${lookup.name} ».`
+              : LOOKUP_MESSAGES[lookup.status]}
+          </p>
+        )}
         <PhotoPicker
           photo={photo}
           onChange={setPhoto}
@@ -168,6 +257,11 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
                   value={values[key]}
                   onChange={(e) => setValues((v) => ({ ...v, [key]: e.target.value }))}
                   error={show ? errorMessage(key, error) : undefined}
+                  hint={
+                    missing.includes(key) && values[key].trim() === ''
+                      ? 'Absent d’Open Food Facts : à compléter'
+                      : undefined
+                  }
                 />
               );
             })}
@@ -202,6 +296,15 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
           </Button>
         )}
       </form>
+
+      {scanning && (
+        <Suspense fallback={null}>
+          <BarcodeScanner
+            onDetected={(code) => void handleBarcode(code)}
+            onClose={() => setScanning(false)}
+          />
+        </Suspense>
+      )}
 
       <ConfirmSheet
         open={confirmDelete}

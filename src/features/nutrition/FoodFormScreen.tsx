@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { EmptyState } from '../../components/EmptyState';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
@@ -10,6 +10,7 @@ import { FoodForm } from './FoodForm';
 /** /nutrition/foods/new and /nutrition/foods/:id */
 export function FoodFormScreen() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const goBack = useGoBack('/nutrition/foods');
   const foodId = id === undefined ? undefined : Number(id);
   // `null` = loaded but not found, `undefined` = loading.
@@ -18,7 +19,14 @@ export function FoodFormScreen() {
     [foodId],
   );
 
-  if (foodId === undefined) return <FoodForm onSaved={goBack} />;
+  if (foodId === undefined) {
+    return (
+      <FoodForm
+        onSaved={goBack}
+        onExistingFood={(existingId) => void navigate(`/nutrition/foods/${existingId}`, { replace: true })}
+      />
+    );
+  }
 
   if (food === undefined) {
     return (

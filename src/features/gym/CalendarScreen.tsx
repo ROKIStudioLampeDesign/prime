@@ -171,7 +171,7 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
       aria-label={`${longDay(date)}${attended ? ', séance' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
-        attended ? 'bg-accent text-accent-fg' : isFuture ? 'text-muted/50' : 'text-fg active:bg-surface-2'
+        attended ? 'bg-accent text-accent-fg' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
       } ${isToday ? 'ring-2 ring-fg ring-inset' : ''}`}
     >
       {day}

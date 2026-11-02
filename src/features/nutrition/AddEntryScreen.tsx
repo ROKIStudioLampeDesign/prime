@@ -36,6 +36,10 @@ export function AddEntryScreen() {
     return (
       <FoodForm
         initialName={creatingName}
+        onExistingFood={(id) => {
+          setCreatingName(undefined);
+          setSelectedKey(itemKey('food', id));
+        }}
         onSaved={(id) => {
           setCreatingName(undefined);
           // The sheet opens as soon as the live query has picked up the new product.

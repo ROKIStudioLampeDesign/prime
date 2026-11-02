@@ -64,8 +64,23 @@ Rules:
   timestamps (`createdAt`, `updatedAt`, set start/end) where the instant matters.
 - **Units:** metric only. kg (bodyweight, loads), g (food), kcal (energy), cm (measurements). Store the
   unit in the field name when ambiguous (`weightKg`, `quantityG`).
-- **Offline:** the app must fully work without network. The only allowed network use is optional
-  Open Food Facts lookups (later), which must fail gracefully and cache results locally.
+- **Offline:** the app must fully work without network. The only network use is the optional
+  Open Food Facts lookup (`src/lib/openFoodFacts.ts`: 8 s timeout, offline/notFound/timeout/error
+  statuses, never throws). Its result only **prefills** the product form for review; the product is
+  stored locally once saved. A barcode that already exists opens that product instead. If you add a
+  network origin, also add it to the CSP in `public/_headers`.
+- **Heavy, rarely used code is lazy:** the barcode scanner (zxing) and Stats (Recharts) are loaded
+  on demand. Vendor libraries are split into `vendor-*` chunks (`vite.config.ts`) to stay cached
+  across deploys.
+- **Backups** (`src/db/backup.ts`): one JSON file with every table, Blobs as base64, the envelope
+  version and the Dexie `schemaVersion`. Device settings (`storagePersisted`, `lastExportAt`,
+  `firstLaunchAt`, reminder snooze) are never exported or overwritten. When a schema version
+  changes stored data, add a transform to `BACKUP_MIGRATIONS` (`src/domain/backup.ts`) so older
+  backups stay importable, and keep the round-trip test passing.
+- **Updates:** the service worker uses `registerType: 'prompt'` + `clientsClaim`: first install is
+  offline-ready immediately, later updates wait for "Mettre à jour" (`UpdatePrompt`) so a workout is
+  never reloaded mid-session. Route errors (including stale lazy chunks after a deploy) render
+  `RouteError`; anything else hits the root `ErrorBoundary`.
 - **Storage persistence:** `navigator.storage.persist()` is requested on launch (`src/db/persist.ts`);
   the result is stored in `settings.storagePersisted` and shown in Réglages.
 - **History is immutable:** a log entry snapshots everything it needs (food name, brand, per-100 g

@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { AppLayout } from './AppLayout';
 import { Loading } from '../components/Loading';
+import { RouteError } from '../components/ErrorBoundary';
 import { TodayScreen } from '../features/today/TodayScreen';
 import { DiaryScreen } from '../features/nutrition/DiaryScreen';
 import { AddEntryScreen } from '../features/nutrition/AddEntryScreen';
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     // Shown while a lazy route loads on first render.
     hydrateFallbackElement: <Loading />,
+    errorElement: <RouteError />,
     children: [
       { index: true, element: <TodayScreen /> },
       { path: 'nutrition', element: <DiaryScreen /> },

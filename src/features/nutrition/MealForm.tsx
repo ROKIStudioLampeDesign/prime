@@ -116,6 +116,7 @@ export function MealForm({ meal, onSaved, onDeleted, onDuplicated }: MealFormPro
     return (
       <FoodForm
         initialName={step.name}
+        onExistingFood={(id) => setStep({ kind: 'pick', selectedFoodId: id })}
         onSaved={(id) => setStep({ kind: 'pick', selectedFoodId: id })}
         onCancel={() => setStep({ kind: 'pick' })}
       />

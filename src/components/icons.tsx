@@ -85,6 +85,12 @@ export const ArrowDownIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const BarcodeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 6v12M7 6v12M10.5 6v12M13 6v12M16.5 6v12M20 6v12" />
+  </Icon>
+);
+
 export const CheckIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M5 12.5l4.5 4.5L19 7.5" />

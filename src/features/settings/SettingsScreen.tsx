@@ -5,11 +5,11 @@ import { Button } from '../../components/Button';
 import { ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
-import { db } from '../../db/db';
 import { getGoals } from '../../db/goals';
 import { getRestSeconds, REST_OPTIONS, setRestSeconds } from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
 import { formatClock, formatMacro } from '../../lib/format';
+import { DataSection } from './DataSection';
 
 function goalsSummary(goals: Goals): string {
   const parts = [];
@@ -50,13 +50,11 @@ function RestTimerSetting() {
 }
 
 export function SettingsScreen() {
-  // `undefined` while loading, `null` once loaded if the flag was never recorded.
-  const persisted = useLiveQuery(async () => (await db.settings.get('storagePersisted'))?.value ?? null);
   const goals = useLiveQuery(getGoals);
 
   return (
     <Screen title="Réglages" back>
-      {persisted === undefined || goals === undefined ? (
+      {goals === undefined ? (
         <Loading />
       ) : (
         <>
@@ -73,18 +71,9 @@ export function SettingsScreen() {
 
           <RestTimerSetting />
 
-          <section className="mt-4 rounded-2xl bg-surface">
-            <div className="flex min-h-11 items-center justify-between px-4 py-3">
-              <span>Stockage persistant</span>
-              <span className="text-sm text-muted">{persisted === true ? 'Activé' : 'Non garanti'}</span>
-            </div>
-          </section>
+          <DataSection />
         </>
       )}
-      <p className="mt-3 px-1 text-xs text-muted">
-        Toutes tes données restent sur cet appareil. Ajoute Prime à l'écran d'accueil pour éviter que Safari
-        ne les efface.
-      </p>
 
       {import.meta.env.DEV && <DevTools />}
     </Screen>

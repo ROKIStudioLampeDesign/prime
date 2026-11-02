@@ -1,0 +1,3 @@
+# Personal app: nothing to index (all data stays on the device).
+User-agent: *
+Disallow: /

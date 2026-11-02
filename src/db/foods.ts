@@ -60,3 +60,8 @@ export async function setFavorite(id: number, favorite: boolean, database: Prime
 export async function deleteFood(id: number, database: PrimeDB = db): Promise<void> {
   await database.foods.delete(id);
 }
+
+/** The product with this barcode, if one was already created (to open it instead of duplicating). */
+export function findFoodByBarcode(barcode: string, database: PrimeDB = db): Promise<Food | undefined> {
+  return database.foods.where('barcode').equals(barcode).first();
+}
