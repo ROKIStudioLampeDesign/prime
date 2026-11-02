@@ -1,0 +1,68 @@
+@import 'tailwindcss';
+
+/*
+ * Theme tokens. Dark is the default; light applies only when the system asks for it.
+ * Use the semantic utilities (bg-bg, bg-surface, text-fg, text-muted, border-line, text-accent)
+ * instead of raw palette colours so both themes stay consistent.
+ */
+@theme {
+  --color-bg: #0a0a0a;
+  --color-surface: #171717;
+  --color-surface-2: #262626;
+  --color-line: #2e2e2e;
+  --color-fg: #fafafa;
+  --color-muted: #a3a3a3;
+  --color-accent: #a3e635;
+  --color-accent-fg: #0a0a0a;
+  --color-danger: #f87171;
+
+  --spacing-tabbar: 3.5rem;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-bg: #fafafa;
+    --color-surface: #ffffff;
+    --color-surface-2: #f0f0f0;
+    --color-line: #e5e5e5;
+    --color-fg: #0a0a0a;
+    --color-muted: #525252;
+    --color-accent: #4d7c0f;
+    --color-accent-fg: #ffffff;
+    --color-danger: #dc2626;
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: dark light;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-bg text-fg antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      'SF Pro Text',
+      'Segoe UI',
+      Roboto,
+      sans-serif;
+    overscroll-behavior-y: none;
+  }
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility px-safe {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
