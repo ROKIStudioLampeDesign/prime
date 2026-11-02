@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromLocalDate, isLocalDate, toLocalDate, type LocalDate } from './date';
+import { addDays, fromLocalDate, isLocalDate, toLocalDate, type LocalDate } from './date';
 
 describe('local dates', () => {
   it('formats using local calendar fields, not UTC', () => {
@@ -18,5 +18,14 @@ describe('local dates', () => {
     expect(isLocalDate('2026-02-30')).toBe(false);
     expect(isLocalDate('2026-2-3')).toBe(false);
     expect(isLocalDate('2026-02-28T10:00')).toBe(false);
+  });
+
+  it('adds days across month, year and DST boundaries', () => {
+    expect(addDays('2026-01-31' as LocalDate, 1)).toBe('2026-02-01');
+    expect(addDays('2026-01-01' as LocalDate, -1)).toBe('2025-12-31');
+    expect(addDays('2026-03-28' as LocalDate, 2)).toBe('2026-03-30'); // EU DST starts 2026-03-29
+    expect(addDays('2026-10-24' as LocalDate, 2)).toBe('2026-10-26'); // EU DST ends 2026-10-25
+    expect(addDays('2028-02-28' as LocalDate, 1)).toBe('2028-02-29');
+    expect(addDays('2026-05-10' as LocalDate, 0)).toBe('2026-05-10');
   });
 });

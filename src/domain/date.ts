@@ -1,4 +1,4 @@
-import { format, isValid, parse } from 'date-fns';
+import { addDays as addCalendarDays, format, isValid, parse } from 'date-fns';
 
 /** A calendar day in the user's local time zone, formatted "YYYY-MM-DD". */
 export type LocalDate = string & { readonly __brand: 'LocalDate' };
@@ -21,4 +21,9 @@ export function isLocalDate(value: string): value is LocalDate {
 /** Parses a LocalDate to a Date at local midnight. Never use `new Date("YYYY-MM-DD")`: it parses as UTC. */
 export function fromLocalDate(value: LocalDate): Date {
   return parse(value, LOCAL_DATE_FORMAT, new Date());
+}
+
+/** Shifts a day by `days` calendar days; DST-safe because it works on local calendar fields. */
+export function addDays(value: LocalDate, days: number): LocalDate {
+  return toLocalDate(addCalendarDays(fromLocalDate(value), days));
 }

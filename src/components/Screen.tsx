@@ -1,19 +1,26 @@
 import type { ReactNode } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import { BackIcon, SettingsIcon } from './icons';
+import { useGoBack } from './useGoBack';
 
 interface ScreenProps {
   title: string;
   /** Show a back button instead of the settings gear (for pushed screens). */
   back?: boolean;
+  /** Where the back button goes when there is no in-app history (app opened on this page). */
+  backFallback?: string;
+  /** Overrides the back button behaviour (e.g. closing an in-page step). */
+  onBack?: () => void;
+  /** Extra header buttons, shown before the gear. */
+  actions?: ReactNode;
   children: ReactNode;
 }
 
-const iconButton =
-  'flex size-11 items-center justify-center rounded-full text-muted active:bg-surface-2 active:text-fg';
+export const iconButton =
+  'flex size-11 shrink-0 items-center justify-center rounded-full text-muted active:bg-surface-2 active:text-fg';
 
-export function Screen({ title, back = false, children }: ScreenProps) {
-  const navigate = useNavigate();
+export function Screen({ title, back = false, backFallback = '/', onBack, actions, children }: ScreenProps) {
+  const goBack = useGoBack(backFallback);
 
   return (
     <>
@@ -24,12 +31,13 @@ export function Screen({ title, back = false, children }: ScreenProps) {
               type="button"
               aria-label="Retour"
               className={iconButton + ' -ml-3'}
-              onClick={() => navigate(-1)}
+              onClick={onBack ?? goBack}
             >
               <BackIcon />
             </button>
           )}
           <h1 className="flex-1 truncate text-2xl font-bold tracking-tight">{title}</h1>
+          {actions}
           {!back && (
             <Link to="/settings" aria-label="Réglages" className={iconButton + ' -mr-3'}>
               <SettingsIcon />

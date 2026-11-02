@@ -39,9 +39,10 @@ HTTPS deployment (any static host) or a tunnel.
 ```
 src/
   app/          router and app layout (shell + tab bar)
-  components/   shared, feature-agnostic UI (Screen, TabBar, EmptyState, Loading, icons)
-  db/           Dexie database, schema/migrations, data-access functions
-  domain/       pure business logic: macros, 1RM, muscle recency, weekly stats, dates
+  components/   shared, feature-agnostic UI (Screen, BottomSheet, Button, TextField, BlobImage, Progress…)
+  db/           Dexie database, schema/migrations, data-access functions (foods, logEntries, goals)
+  domain/       pure business logic: nutrition, search, number parsing, dates (later 1RM, weekly stats)
+  lib/          browser helpers that are not UI and not pure (image resize, display formatting)
   features/<feature>/   one folder per section: today, nutrition, gym, body, stats, settings
 ```
 
@@ -67,6 +68,16 @@ Rules:
   Open Food Facts lookups (later), which must fail gracefully and cache results locally.
 - **Storage persistence:** `navigator.storage.persist()` is requested on launch (`src/db/persist.ts`);
   the result is stored in `settings.storagePersisted` and shown in Réglages.
+- **History is immutable:** a log entry snapshots everything it needs (food name, brand, per-100 g
+  values, computed macros). Editing an entry's grams recomputes from the entry's own `per100g`, never
+  from the current food. Editing or deleting a food must never change past entries.
+- **Macros are stored unrounded**; round only for display (`roundMacro`: kcal integer, others 0.1 g)
+  so daily sums stay accurate.
+- **Photos** are resized to max 800 px and re-encoded as JPEG ~0.7 (`src/lib/image.ts`) before being
+  stored as Blobs. Display them with `<BlobImage>`, which reserves its box (no layout shift) and
+  manages object URLs.
+- **Demo data** (`src/db/demo.ts`) is dev-only: import it dynamically behind `import.meta.env.DEV`
+  so it is stripped from production builds. Never seed real users' databases.
 
 ## UI conventions
 
@@ -80,8 +91,12 @@ Rules:
 - Every screen is wrapped in `<Screen title=…>`, which provides the sticky header and the gear/back button.
 - Every data view handles three states: loading (`useLiveQuery` returns `undefined` → `<Loading />`),
   empty (`<EmptyState />` with a hint on what to do), and data.
-- Numbers: format for display with `Intl.NumberFormat('fr-FR')` (decimal comma). Inputs use
-  `inputMode="decimal"` and accept both `,` and `.`.
+- Numbers: format for display with `src/lib/format.ts` (`fr-FR`, decimal comma). Inputs use
+  `inputMode="decimal"` and parse with `parseDecimal` (accepts `,` and `.`).
+- Inputs use 16 px text (`text-base`), otherwise iOS Safari zooms in on focus.
+- Quick edits happen in a `<BottomSheet>` (it lifts itself above the iOS keyboard); destructive
+  actions on durable data ask for confirmation with `<ConfirmSheet>`.
+- Screen state worth keeping on back/reload (e.g. the diary day) lives in the URL search params.
 
 ## Code conventions
 
