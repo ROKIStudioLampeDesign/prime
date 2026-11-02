@@ -30,19 +30,39 @@ export interface GoalsRecord extends Goals {
   updatedAt: number;
 }
 
-/**
- * One food eaten on a day. Everything needed to display and edit it is snapshotted at log time,
- * so later edits to (or deletion of) the food never rewrite history.
- */
-export interface LogEntry {
+export interface MealIngredient {
+  /** The product; it may have been deleted since (shown as "produit supprimé"). */
+  foodId: number;
+  grams: number;
+}
+
+/** A saved recipe. Its macros are always derived from the ingredients, never stored. */
+export interface Meal {
+  id: number;
+  name: string;
+  nameNormalized: string;
+  /** JPEG, max 800 px on the longest side. */
+  photo?: Blob;
+  /** In display order. */
+  ingredients: MealIngredient[];
+  /** Weight of the finished dish in grams; the raw ingredient weight is used when unset. */
+  cookedWeight?: number;
+  /** Number of portions the dish makes; one portion = the whole dish when unset. */
+  portions?: number;
+  favorite: 0 | 1;
+  createdAt: number;
+  updatedAt: number;
+}
+
+interface LogEntryBase {
   id: number;
   date: LocalDate;
   slot: MealSlot;
-  /** Source food, kept for "recents"; it may no longer exist. */
-  foodId: number;
+  /** Grams eaten (of the food, or of the finished dish). */
   grams: number;
-  foodName: string;
-  foodBrand?: string;
+  /** Name of the food or meal at log time. */
+  name: string;
+  /** Per 100 g of the food, or of the finished dish, at log time. */
   per100g: Per100g;
   /** Unrounded `computeMacros(per100g, grams)`; round only for display. */
   macros: Macros;
@@ -50,9 +70,33 @@ export interface LogEntry {
   updatedAt: number;
 }
 
+export interface FoodLogEntry extends LogEntryBase {
+  kind: 'food';
+  /** Source food, kept for "recents"; it may no longer exist. */
+  foodId: number;
+  brand?: string;
+}
+
+export interface MealLogEntry extends LogEntryBase {
+  kind: 'meal';
+  /** Source meal, kept for "recents"; it may no longer exist. */
+  mealId: number;
+  /** Weight of one portion of the dish at log time. */
+  portionGrams: number;
+  /** Set when logged by portions (then grams = portions × portionGrams); unset when logged by grams. */
+  portions?: number;
+}
+
+/**
+ * Something eaten on a day. Everything needed to display and edit it is snapshotted at log time,
+ * so later edits to (or deletion of) the food, meal or ingredients never rewrite history.
+ */
+export type LogEntry = FoodLogEntry | MealLogEntry;
+
 export class PrimeDB extends Dexie {
   settings!: EntityTable<Setting, 'key'>;
   foods!: EntityTable<Food, 'id'>;
+  meals!: EntityTable<Meal, 'id'>;
   goals!: EntityTable<GoalsRecord, 'id'>;
   logEntries!: EntityTable<LogEntry, 'id'>;
 
@@ -72,6 +116,28 @@ export class PrimeDB extends Dexie {
       goals: 'id',
       logEntries: '++id, date, foodId, createdAt',
     });
+
+    // v3: saved meals; log entries gain `kind` and generic `name`/`brand` snapshot fields.
+    this.version(3)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+      })
+      .upgrade((tx) =>
+        tx
+          .table('logEntries')
+          .toCollection()
+          .modify((entry: Record<string, unknown>) => {
+            entry.kind = 'food';
+            entry.name = entry.foodName;
+            if (entry.foodBrand !== undefined) entry.brand = entry.foodBrand;
+            delete entry.foodName;
+            delete entry.foodBrand;
+          }),
+      );
   }
 }
 

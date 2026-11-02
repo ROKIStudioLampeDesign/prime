@@ -1,8 +1,7 @@
-import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
-import { BlobImage } from '../../components/BlobImage';
+import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
-import { CameraIcon, ImageIcon, StarIcon, TrashIcon } from '../../components/icons';
+import { StarIcon } from '../../components/icons';
 import { iconButton, Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import type { Food } from '../../db/db';
@@ -16,7 +15,7 @@ import {
   type Per100gInput,
 } from '../../domain/nutrition';
 import { formatMacro, toInputValue } from '../../lib/format';
-import { resizeImage } from '../../lib/image';
+import { PhotoPicker } from './PhotoPicker';
 
 interface FoodFormProps {
   /** The food to edit; omitted to create a new one. */
@@ -71,13 +70,10 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
   const [values, setValues] = useState<ValueTexts>(() => initialTexts(food));
   const [photo, setPhoto] = useState<Blob | undefined>(food?.photo);
   const [favorite, setFavorite] = useState(food?.favorite === 1);
-  const [photoError, setPhotoError] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const cameraInput = useRef<HTMLInputElement>(null);
-  const galleryInput = useRef<HTMLInputElement>(null);
 
   const parsed: Per100gInput = {};
   for (const { key } of FIELDS) {
@@ -87,21 +83,6 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
   const validation = validatePer100g(parsed);
   const nameError = name.trim() === '' ? 'Obligatoire' : undefined;
   const canSave = !nameError && validation.value !== undefined;
-
-  async function handlePhoto(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow picking the same file again
-    if (!file) return;
-    setPhotoBusy(true);
-    setPhotoError(false);
-    try {
-      setPhoto(await resizeImage(file));
-    } catch {
-      setPhotoError(true);
-    } finally {
-      setPhotoBusy(false);
-    }
-  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -147,37 +128,12 @@ export function FoodForm({ food, initialName = '', onSaved, onCancel, onDeleted 
       }
     >
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-        <div className="flex items-center gap-4">
-          <BlobImage blob={photo} alt={name || 'Photo du produit'} className="size-28 rounded-2xl" />
-          <div className="flex flex-1 flex-col gap-2">
-            <Button variant="secondary" disabled={photoBusy} onClick={() => cameraInput.current?.click()}>
-              <CameraIcon className="size-5" /> Photo
-            </Button>
-            <Button variant="secondary" disabled={photoBusy} onClick={() => galleryInput.current?.click()}>
-              <ImageIcon className="size-5" /> Galerie
-            </Button>
-          </div>
-          <input
-            ref={cameraInput}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            hidden
-            onChange={handlePhoto}
-          />
-          <input ref={galleryInput} type="file" accept="image/*" hidden onChange={handlePhoto} />
-        </div>
-        {photoBusy && <p className="-mt-2 text-xs text-muted">Traitement de la photo…</p>}
-        {photoError && <p className="-mt-2 text-xs text-danger">Impossible de lire cette image.</p>}
-        {photo && !photoBusy && (
-          <button
-            type="button"
-            className="-mt-2 flex min-h-11 items-center gap-1 self-start text-sm text-muted"
-            onClick={() => setPhoto(undefined)}
-          >
-            <TrashIcon className="size-4" /> Retirer la photo
-          </button>
-        )}
+        <PhotoPicker
+          photo={photo}
+          onChange={setPhoto}
+          alt={name || 'Photo du produit'}
+          onBusyChange={setPhotoBusy}
+        />
 
         <TextField
           label="Nom"

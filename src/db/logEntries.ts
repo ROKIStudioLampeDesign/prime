@@ -1,6 +1,15 @@
 import type { LocalDate } from '../domain/date';
+import { servingGrams, type MealSummary, type Serving } from '../domain/meal';
 import { computeMacros, type MealSlot } from '../domain/nutrition';
-import { db, type Food, type LogEntry, type PrimeDB } from './db';
+import {
+  db,
+  type Food,
+  type FoodLogEntry,
+  type LogEntry,
+  type Meal,
+  type MealLogEntry,
+  type PrimeDB,
+} from './db';
 
 export function listEntriesForDate(date: LocalDate, database: PrimeDB = db): Promise<LogEntry[]> {
   return database.logEntries.where('date').equals(date).sortBy('createdAt');
@@ -20,32 +29,80 @@ export interface AddEntryInput {
 export async function addEntry(input: AddEntryInput, database: PrimeDB = db): Promise<number> {
   const now = Date.now();
   const { food } = input;
-  return database.logEntries.add({
+  // Typed per variant first: Dexie's insert type collapses the LogEntry union.
+  const entry: Omit<FoodLogEntry, 'id'> = {
+    kind: 'food',
     date: input.date,
     slot: input.slot,
     foodId: food.id,
     grams: input.grams,
-    foodName: food.name,
-    ...(food.brand !== undefined && { foodBrand: food.brand }),
+    name: food.name,
+    ...(food.brand !== undefined && { brand: food.brand }),
     per100g: { ...food.per100g },
     macros: computeMacros(food.per100g, input.grams),
     createdAt: now,
     updatedAt: now,
-  });
+  };
+  return database.logEntries.add(entry);
 }
 
-/** Changes the quantity or meal of an entry. Macros are recomputed from the entry's own snapshot. */
+export interface AddMealEntryInput {
+  date: LocalDate;
+  slot: MealSlot;
+  meal: Pick<Meal, 'id' | 'name'>;
+  /** Computed from the meal's current ingredients; snapshotted into the entry. */
+  summary: MealSummary;
+  serving: Serving;
+}
+
+export async function addMealEntry(input: AddMealEntryInput, database: PrimeDB = db): Promise<number> {
+  const { summary, serving } = input;
+  if (!summary.per100g) throw new Error('Cannot log a meal that weighs nothing');
+  const grams = servingGrams(serving, summary.portionGrams);
+  const now = Date.now();
+  const entry: Omit<MealLogEntry, 'id'> = {
+    kind: 'meal',
+    date: input.date,
+    slot: input.slot,
+    mealId: input.meal.id,
+    grams,
+    ...('portions' in serving && { portions: serving.portions }),
+    portionGrams: summary.portionGrams,
+    name: input.meal.name,
+    per100g: { ...summary.per100g },
+    macros: computeMacros(summary.per100g, grams),
+    createdAt: now,
+    updatedAt: now,
+  };
+  return database.logEntries.add(entry);
+}
+
+/**
+ * Changes the quantity or meal slot of an entry. Macros are recomputed from the entry's own
+ * snapshot, never from the current food or meal. `portions` only applies to meal entries; setting
+ * `grams` on a meal entry switches it to "logged by grams".
+ */
 export async function updateEntry(
   id: number,
-  changes: { grams?: number; slot?: MealSlot },
+  changes: { grams?: number; portions?: number; slot?: MealSlot },
   database: PrimeDB = db,
 ): Promise<void> {
   await database.transaction('rw', database.logEntries, async () => {
     const entry = await database.logEntries.get(id);
     if (!entry) return;
-    const grams = changes.grams ?? entry.grams;
+    let grams = changes.grams ?? entry.grams;
+    let portions = entry.kind === 'meal' ? entry.portions : undefined;
+    if (entry.kind === 'meal') {
+      if (changes.portions !== undefined) {
+        portions = changes.portions;
+        grams = servingGrams({ portions }, entry.portionGrams);
+      } else if (changes.grams !== undefined) {
+        portions = undefined;
+      }
+    }
     await database.logEntries.update(id, {
       grams,
+      ...(entry.kind === 'meal' && { portions }),
       slot: changes.slot ?? entry.slot,
       macros: computeMacros(entry.per100g, grams),
       updatedAt: Date.now(),
@@ -57,23 +114,30 @@ export async function deleteEntry(id: number, database: PrimeDB = db): Promise<v
   await database.logEntries.delete(id);
 }
 
-export interface RecentFood {
-  foodId: number;
-  lastGrams: number;
-}
+export type RecentItem =
+  | { kind: 'food'; id: number; lastGrams: number }
+  | { kind: 'meal'; id: number; lastGrams: number; lastPortions?: number };
 
-/** Distinct foods from the most recent log entries, most recent first, with the last quantity used. */
-export async function listRecentFoods(limit = 30, database: PrimeDB = db): Promise<RecentFood[]> {
-  const recent: RecentFood[] = [];
-  const seen = new Set<number>();
+export const itemKey = (kind: 'food' | 'meal', id: number) => `${kind}:${id}`;
+
+/** Distinct foods and meals from the most recent entries, most recent first, with the last quantity. */
+export async function listRecentItems(limit = 30, database: PrimeDB = db): Promise<RecentItem[]> {
+  const recent: RecentItem[] = [];
+  const seen = new Set<string>();
   await database.logEntries
     .orderBy('createdAt')
     .reverse()
     .until(() => recent.length >= limit)
     .each((entry) => {
-      if (seen.has(entry.foodId)) return;
-      seen.add(entry.foodId);
-      recent.push({ foodId: entry.foodId, lastGrams: entry.grams });
+      const id = entry.kind === 'meal' ? entry.mealId : entry.foodId;
+      const key = itemKey(entry.kind, id);
+      if (seen.has(key)) return;
+      seen.add(key);
+      recent.push(
+        entry.kind === 'meal'
+          ? { kind: 'meal', id, lastGrams: entry.grams, lastPortions: entry.portions }
+          : { kind: 'food', id, lastGrams: entry.grams },
+      );
     });
   return recent;
 }

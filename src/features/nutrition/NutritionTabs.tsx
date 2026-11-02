@@ -3,12 +3,13 @@ import { NavLink } from 'react-router';
 const TABS = [
   { to: '/nutrition', label: 'Journal', end: true },
   { to: '/nutrition/foods', label: 'Produits', end: false },
+  { to: '/nutrition/meals', label: 'Plats', end: false },
 ];
 
-/** Journal / Produits switch at the top of the Alimentation section. */
+/** Journal / Produits / Plats switch at the top of the Alimentation section. */
 export function NutritionTabs() {
   return (
-    <nav aria-label="Alimentation" className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-surface p-1">
+    <nav aria-label="Alimentation" className="mb-4 grid grid-cols-3 gap-1 rounded-xl bg-surface p-1">
       {TABS.map((tab) => (
         <NavLink
           key={tab.to}

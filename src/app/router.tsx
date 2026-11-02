@@ -6,6 +6,8 @@ import { AddEntryScreen } from '../features/nutrition/AddEntryScreen';
 import { FoodsScreen } from '../features/nutrition/FoodsScreen';
 import { FoodFormScreen } from '../features/nutrition/FoodFormScreen';
 import { GoalsScreen } from '../features/nutrition/GoalsScreen';
+import { MealsScreen } from '../features/nutrition/MealsScreen';
+import { MealFormScreen } from '../features/nutrition/MealFormScreen';
 import { GymScreen } from '../features/gym/GymScreen';
 import { BodyScreen } from '../features/body/BodyScreen';
 import { StatsScreen } from '../features/stats/StatsScreen';
@@ -21,6 +23,9 @@ export const router = createBrowserRouter([
       { path: 'nutrition/foods', element: <FoodsScreen /> },
       { path: 'nutrition/foods/new', element: <FoodFormScreen /> },
       { path: 'nutrition/foods/:id', element: <FoodFormScreen /> },
+      { path: 'nutrition/meals', element: <MealsScreen /> },
+      { path: 'nutrition/meals/new', element: <MealFormScreen /> },
+      { path: 'nutrition/meals/:id', element: <MealFormScreen /> },
       { path: 'gym', element: <GymScreen /> },
       { path: 'body', element: <BodyScreen /> },
       { path: 'stats', element: <StatsScreen /> },

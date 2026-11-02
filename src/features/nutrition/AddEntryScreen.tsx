@@ -1,35 +1,24 @@
-import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'react-router';
-import { BlobImage } from '../../components/BlobImage';
-import { Button } from '../../components/Button';
-import { EmptyState } from '../../components/EmptyState';
-import { PlusIcon, StarIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { useGoBack } from '../../components/useGoBack';
-import type { Food } from '../../db/db';
-import { listFoods, setFavorite } from '../../db/foods';
-import { addEntry, listRecentFoods } from '../../db/logEntries';
+import { setFavorite } from '../../db/foods';
+import { addEntry, addMealEntry, itemKey } from '../../db/logEntries';
+import { setMealFavorite } from '../../db/meals';
 import { todayLocalDate } from '../../domain/date';
 import { defaultSlotForHour } from '../../domain/nutrition';
-import { rankFoods } from '../../domain/search';
-import { formatGrams, formatMacro } from '../../lib/format';
 import { FoodForm } from './FoodForm';
 import { SLOT_LABELS } from './labels';
 import { diaryPath, parseDateParam, parseSlotParam } from './params';
-import { PortionSheet } from './PortionSheet';
-import { SearchField } from './SearchField';
+import { initialServing, mealTarget, usePickerItems, type PickerItem } from './pickerItems';
+import { PortionSheet, type PortionTarget, type PortionValue } from './PortionSheet';
+import { ProductPicker } from './ProductPicker';
 
-const DEFAULT_GRAMS = 100;
-
-interface Candidate {
-  id: number;
-  name: string;
-  brand?: string;
-  favorite: boolean;
-  food: Food;
-  lastGrams?: number;
+function targetFor(item: PickerItem): PortionTarget {
+  return item.kind === 'meal'
+    ? mealTarget(item.meal, item.summary)
+    : { name: item.name, brand: item.brand, per100g: item.food.per100g };
 }
 
 export function AddEntryScreen() {
@@ -38,156 +27,66 @@ export function AddEntryScreen() {
   const slot = parseSlotParam(params.get('slot')) ?? defaultSlotForHour(new Date().getHours());
   const goBack = useGoBack(diaryPath(date));
 
-  const foods = useLiveQuery(listFoods);
-  const recents = useLiveQuery(() => listRecentFoods());
-  const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState<number>();
-  const [creating, setCreating] = useState(false);
-  const closeSheet = () => setSelectedId(undefined);
+  const data = usePickerItems(true);
+  const [selectedKey, setSelectedKey] = useState<string>();
+  /** Initial name of the product being created; undefined when not creating. */
+  const [creatingName, setCreatingName] = useState<string>();
 
-  const ranked = useMemo(() => {
-    if (!foods || !recents) return undefined;
-    const lastGrams = new Map(recents.map((r) => [r.foodId, r.lastGrams]));
-    const candidates: Candidate[] = foods.map((food) => ({
-      id: food.id,
-      name: food.name,
-      brand: food.brand,
-      favorite: food.favorite === 1,
-      food,
-      lastGrams: lastGrams.get(food.id),
-    }));
-    return rankFoods(
-      candidates,
-      query,
-      recents.map((r) => r.foodId),
-    );
-  }, [foods, recents, query]);
-
-  if (creating) {
+  if (creatingName !== undefined) {
     return (
       <FoodForm
-        initialName={query}
+        initialName={creatingName}
         onSaved={(id) => {
-          setCreating(false);
-          setQuery('');
-          setSelectedId(id);
+          setCreatingName(undefined);
+          // The sheet opens as soon as the live query has picked up the new product.
+          setSelectedKey(itemKey('food', id));
         }}
-        onCancel={() => setCreating(false)}
+        onCancel={() => setCreatingName(undefined)}
       />
     );
   }
 
-  const selected = ranked?.find((c) => c.id === selectedId);
-  const searching = query.trim() !== '';
+  const selected = data?.items.find((i) => i.key === selectedKey);
+
+  async function handleSubmit(value: PortionValue) {
+    if (!selected) return;
+    const chosenSlot = value.slot ?? slot;
+    if (selected.kind === 'meal') {
+      await addMealEntry({
+        date,
+        slot: chosenSlot,
+        meal: selected.meal,
+        summary: selected.summary,
+        serving: value.portions !== undefined ? { portions: value.portions } : { grams: value.grams },
+      });
+    } else {
+      await addEntry({ date, slot: chosenSlot, food: selected.food, grams: value.grams });
+    }
+    goBack();
+  }
 
   return (
     <Screen title={`Ajouter · ${SLOT_LABELS[slot]}`} back backFallback={diaryPath(date)}>
-      {ranked === undefined ? (
+      {data === undefined ? (
         <Loading />
-      ) : foods?.length === 0 ? (
-        <EmptyState
-          title="Aucun produit pour l’instant"
-          description="Crée ton premier produit avec ses valeurs pour 100 g, il sera ensuite réutilisable."
-          action={<Button onClick={() => setCreating(true)}>Créer un produit</Button>}
-        />
       ) : (
-        <>
-          <SearchField value={query} onChange={setQuery} placeholder="Rechercher un produit" />
-          {ranked.length === 0 ? (
-            <EmptyState
-              title={`Aucun produit pour « ${query.trim()} »`}
-              action={<Button onClick={() => setCreating(true)}>Créer « {query.trim()} »</Button>}
-            />
-          ) : searching ? (
-            <CandidateList items={ranked} onSelect={setSelectedId} />
-          ) : (
-            <>
-              <CandidateList
-                title="Favoris"
-                items={ranked.filter((c) => c.favorite)}
-                onSelect={setSelectedId}
-              />
-              <CandidateList
-                title="Récents"
-                items={ranked.filter((c) => !c.favorite && c.lastGrams !== undefined)}
-                onSelect={setSelectedId}
-              />
-              <CandidateList
-                title="Tous les produits"
-                items={ranked.filter((c) => !c.favorite && c.lastGrams === undefined)}
-                onSelect={setSelectedId}
-              />
-            </>
-          )}
-          <Button variant="ghost" className="mt-4 w-full" onClick={() => setCreating(true)}>
-            <PlusIcon className="size-5" />
-            Nouveau produit
-          </Button>
-        </>
+        <ProductPicker data={data} onSelect={setSelectedKey} onCreateFood={setCreatingName} />
       )}
 
       <PortionSheet
-        food={selected?.food}
-        formKey={String(selectedId)}
-        initialGrams={selected?.lastGrams ?? DEFAULT_GRAMS}
+        target={selected && targetFor(selected)}
+        formKey={selectedKey ?? ''}
+        initial={selected ? initialServing(selected) : { grams: 100 }}
         initialSlot={slot}
         submitLabel="Ajouter"
         favorite={selected?.favorite}
-        onToggleFavorite={() => selected && void setFavorite(selected.id, !selected.favorite)}
-        onSubmit={async (grams, chosenSlot) => {
+        onToggleFavorite={() => {
           if (!selected) return;
-          await addEntry({ date, slot: chosenSlot, food: selected.food, grams });
-          goBack();
+          void (selected.kind === 'meal' ? setMealFavorite : setFavorite)(selected.id, !selected.favorite);
         }}
-        onClose={closeSheet}
+        onSubmit={handleSubmit}
+        onClose={() => setSelectedKey(undefined)}
       />
     </Screen>
-  );
-}
-
-function CandidateList({
-  title,
-  items,
-  onSelect,
-}: {
-  title?: string;
-  items: Candidate[];
-  onSelect: (id: number) => void;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <section className="mt-4">
-      {title && (
-        <h2 className="mb-1 px-1 text-xs font-semibold tracking-wide text-muted uppercase">{title}</h2>
-      )}
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
-        {items.map((c) => (
-          <li key={c.id}>
-            <button
-              type="button"
-              onClick={() => onSelect(c.id)}
-              className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left active:bg-surface-2"
-            >
-              <BlobImage blob={c.food.photo} alt="" className="size-11 rounded-lg" />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1">
-                  <span className="truncate">{c.name}</span>
-                  {c.favorite && (
-                    <StarIcon filled className="size-3.5 shrink-0 text-accent" aria-label="Favori" />
-                  )}
-                </p>
-                <p className="truncate text-xs text-muted">
-                  {c.brand && `${c.brand} · `}
-                  {formatMacro('kcal', c.food.per100g.kcal)} kcal / 100 g
-                </p>
-              </div>
-              {c.lastGrams !== undefined && (
-                <span className="shrink-0 text-sm text-muted tabular-nums">{formatGrams(c.lastGrams)} g</span>
-              )}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }

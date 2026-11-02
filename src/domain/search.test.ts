@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { matchesQuery, normalizeText, rankFoods, type SearchableFood } from './search';
+import { matchesQuery, normalizeText, rankItems, type SearchableItem } from './search';
 
 describe('normalizeText', () => {
   it('strips accents, lowercases and collapses whitespace', () => {
     expect(normalizeText('  Crème   Fraîche ÉPAISSE ')).toBe('creme fraiche epaisse');
-    expect(normalizeText('Œuf')).toBe('œuf');
+    expect(normalizeText('Œufs brouillés')).toBe('oeufs brouilles');
+    expect(normalizeText('Cæsar')).toBe('caesar');
     expect(normalizeText('')).toBe('');
   });
 });
@@ -19,34 +20,34 @@ describe('matchesQuery', () => {
   });
 });
 
-describe('rankFoods', () => {
-  const foods: SearchableFood[] = [
-    { id: 1, name: 'Riz basmati', favorite: false },
-    { id: 2, name: 'Avoine', favorite: false },
-    { id: 3, name: 'Blanc de poulet', favorite: true },
-    { id: 4, name: 'Écrémé lait', brand: 'Lactel', favorite: false },
-    { id: 5, name: 'Banane', favorite: true },
+describe('rankItems', () => {
+  const foods: SearchableItem[] = [
+    { key: 'f1', name: 'Riz basmati', favorite: false },
+    { key: 'f2', name: 'Avoine', favorite: false },
+    { key: 'f3', name: 'Blanc de poulet', favorite: true },
+    { key: 'f4', name: 'Écrémé lait', brand: 'Lactel', favorite: false },
+    { key: 'f5', name: 'Banane', favorite: true },
   ];
 
   it('orders favorites, then recents, then alphabetically', () => {
-    const ranked = rankFoods(foods, '', [1, 5]).map((f) => f.id);
-    expect(ranked).toEqual([5, 3, 1, 2, 4]);
+    const ranked = rankItems(foods, '', ['f1', 'f5']).map((f) => f.key);
+    expect(ranked).toEqual(['f5', 'f3', 'f1', 'f2', 'f4']);
   });
 
   it('sorts alphabetically ignoring accents', () => {
-    const ranked = rankFoods(foods, '', []).map((f) => f.id);
-    expect(ranked).toEqual([5, 3, 2, 4, 1]);
+    const ranked = rankItems(foods, '', []).map((f) => f.key);
+    expect(ranked).toEqual(['f5', 'f3', 'f2', 'f4', 'f1']);
   });
 
   it('filters by name and brand, accent-insensitive', () => {
-    expect(rankFoods(foods, 'ecreme', []).map((f) => f.id)).toEqual([4]);
-    expect(rankFoods(foods, 'lactel', []).map((f) => f.id)).toEqual([4]);
-    expect(rankFoods(foods, 'zzz', [])).toEqual([]);
+    expect(rankItems(foods, 'ecreme', []).map((f) => f.key)).toEqual(['f4']);
+    expect(rankItems(foods, 'lactel', []).map((f) => f.key)).toEqual(['f4']);
+    expect(rankItems(foods, 'zzz', [])).toEqual([]);
   });
 
   it('does not mutate the input', () => {
     const copy = [...foods];
-    rankFoods(foods, '', [2]);
+    rankItems(foods, '', ['f2']);
     expect(foods).toEqual(copy);
   });
 });

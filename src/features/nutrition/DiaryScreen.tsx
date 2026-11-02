@@ -10,14 +10,16 @@ import type { LogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
 import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
 import { todayLocalDate } from '../../domain/date';
-import { MEAL_SLOTS, sumMacros, type MealSlot } from '../../domain/nutrition';
+import { MEAL_SLOTS, roundTo, sumMacros, type MealSlot } from '../../domain/nutrition';
 import { formatGrams, formatMacro } from '../../lib/format';
 import { DailySummary } from './DailySummary';
 import { DateNavigator } from './DateNavigator';
 import { SLOT_LABELS } from './labels';
 import { NutritionTabs } from './NutritionTabs';
 import { addEntryPath, useDiaryDate } from './params';
-import { PortionSheet } from './PortionSheet';
+import { portionsLabel } from './pickerItems';
+import { PortionSheet, type PortionTarget } from './PortionSheet';
+import { MealBadge } from './ProductPicker';
 
 export function DiaryScreen() {
   const [date, setDate] = useDiaryDate();
@@ -88,14 +90,18 @@ export function DiaryScreen() {
       )}
 
       <PortionSheet
-        food={editing && { name: editing.foodName, brand: editing.foodBrand, per100g: editing.per100g }}
+        target={editing && entryTarget(editing)}
         formKey={String(editingId)}
-        initialGrams={editing?.grams ?? 0}
+        initial={
+          editing?.kind === 'meal' && editing.portions !== undefined
+            ? { portions: editing.portions }
+            : { grams: editing?.grams ?? 0 }
+        }
         initialSlot={editing?.slot ?? 'snack'}
         submitLabel="Enregistrer"
-        onSubmit={async (grams, slot) => {
+        onSubmit={async ({ grams, portions, slot }) => {
           if (editingId === undefined) return;
-          await updateEntry(editingId, { grams, slot });
+          await updateEntry(editingId, portions !== undefined ? { portions, slot } : { grams, slot });
           closeEditor();
         }}
         onDelete={async () => {
@@ -107,6 +113,17 @@ export function DiaryScreen() {
       />
     </Screen>
   );
+}
+
+/** Edit sheet target, built only from the entry's snapshot (the food or meal may be gone). */
+function entryTarget(entry: LogEntry): PortionTarget {
+  if (entry.kind === 'food') return { name: entry.name, brand: entry.brand, per100g: entry.per100g };
+  return {
+    name: entry.name,
+    subtitle: `Plat · 1 portion = ${formatGrams(roundTo(entry.portionGrams, 0))} g`,
+    per100g: entry.per100g,
+    portionGrams: entry.portionGrams,
+  };
 }
 
 interface SlotSectionProps {
@@ -144,10 +161,16 @@ function SlotSection({ slot, entries, addTo, onSelect }: SlotSectionProps) {
               className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-surface-2"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate">{entry.foodName}</p>
+                <p className="flex items-center gap-1.5">
+                  <span className="truncate">{entry.name}</span>
+                  {entry.kind === 'meal' && <MealBadge />}
+                </p>
                 <p className="truncate text-xs text-muted tabular-nums">
-                  {formatGrams(entry.grams)} g · P {formatMacro('protein', entry.macros.protein)} · G{' '}
-                  {formatMacro('carbs', entry.macros.carbs)} · L {formatMacro('fat', entry.macros.fat)}
+                  {entry.kind === 'meal' &&
+                    entry.portions !== undefined &&
+                    `${portionsLabel(entry.portions)} · `}
+                  {formatGrams(roundTo(entry.grams, 0))} g · P {formatMacro('protein', entry.macros.protein)}{' '}
+                  · G {formatMacro('carbs', entry.macros.carbs)} · L {formatMacro('fat', entry.macros.fat)}
                 </p>
               </div>
               <span className="shrink-0 text-sm font-semibold tabular-nums">

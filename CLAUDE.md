@@ -71,6 +71,11 @@ Rules:
 - **History is immutable:** a log entry snapshots everything it needs (food name, brand, per-100 g
   values, computed macros). Editing an entry's grams recomputes from the entry's own `per100g`, never
   from the current food. Editing or deleting a food must never change past entries.
+- **Meals (recipes) never store macros.** They are derived from the ingredients' current products
+  (`summarizeMeal` / `summarizeWithFoods`). An ingredient whose product was deleted is shown as
+  "Produit supprimé" and excluded from totals; code must never assume `foodsById.get(...)` succeeds.
+  Meal log entries (`kind: 'meal'`) snapshot the dish's per-100 g values and `portionGrams`, so
+  portions → grams = portions × portionGrams and history survives meal/product edits.
 - **Macros are stored unrounded**; round only for display (`roundMacro`: kcal integer, others 0.1 g)
   so daily sums stay accurate.
 - **Photos** are resized to max 800 px and re-encoded as JPEG ~0.7 (`src/lib/image.ts`) before being

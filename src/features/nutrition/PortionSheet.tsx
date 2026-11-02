@@ -3,50 +3,70 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { StarIcon } from '../../components/icons';
 import { iconButton } from '../../components/Screen';
+import { servingGrams, type Serving } from '../../domain/meal';
 import { parseDecimal } from '../../domain/number';
-import { computeMacros, MEAL_SLOTS, type MealSlot, type Per100g } from '../../domain/nutrition';
-import { formatMacro, toInputValue } from '../../lib/format';
+import { computeMacros, MEAL_SLOTS, roundTo, type MealSlot, type Per100g } from '../../domain/nutrition';
+import { formatGrams, formatMacro, toInputValue } from '../../lib/format';
 import { SLOT_SHORT_LABELS } from './labels';
 
-export interface PortionFood {
+export interface PortionTarget {
   name: string;
+  /** Header subtitle; defaults to "brand · kcal / 100 g". */
+  subtitle?: string;
   brand?: string;
   per100g: Per100g;
+  /** Weight of one portion. When set (meals), the quantity can be entered in portions. */
+  portionGrams?: number;
+  /** Shown above the form, e.g. when a meal has deleted ingredients. */
+  warning?: string;
+  /** When set, the quantity can't be submitted and this explains why. */
+  disabledReason?: string;
+}
+
+export interface PortionValue {
+  grams: number;
+  /** Set when the quantity was entered in portions. */
+  portions?: number;
+  /** Undefined when the sheet has no meal selector. */
+  slot?: MealSlot;
 }
 
 interface PortionSheetProps {
-  /** The sheet is open while a food is given. */
-  food: PortionFood | undefined;
+  /** The sheet is open while a target is given. */
+  target: PortionTarget | undefined;
   /** Identity of what is being edited; the form resets when it changes. */
   formKey: string;
-  initialGrams: number;
-  initialSlot: MealSlot;
+  initial: Serving;
+  /** Omit to hide the meal selector (e.g. for recipe ingredients). */
+  initialSlot?: MealSlot;
   submitLabel: string;
-  onSubmit: (grams: number, slot: MealSlot) => Promise<void>;
+  onSubmit: (value: PortionValue) => Promise<void>;
   onDelete?: () => Promise<void>;
   favorite?: boolean;
   onToggleFavorite?: () => void;
   onClose: () => void;
 }
 
-const MAX_GRAMS = 5000;
-const QUICK_ADD = [10, 50, 100];
+const MAX_GRAMS = 10000;
+const MAX_PORTIONS = 50;
+const QUICK_GRAMS = [10, 50, 100];
+const QUICK_PORTIONS = [0.5, 1, 1.5, 2];
 
 export function PortionSheet(props: PortionSheetProps) {
-  const { food, favorite, onToggleFavorite, onClose } = props;
+  const { target, favorite, onToggleFavorite, onClose } = props;
   return (
     <BottomSheet
-      open={food !== undefined}
+      open={target !== undefined}
       onClose={onClose}
-      title={food?.name ?? ''}
+      title={target?.name ?? ''}
       header={
-        food && (
+        target && (
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <h2 className="line-clamp-2 text-lg leading-snug font-semibold">{food.name}</h2>
+              <h2 className="line-clamp-2 text-lg leading-snug font-semibold">{target.name}</h2>
               <p className="text-sm text-muted">
-                {food.brand && `${food.brand} · `}
-                {formatMacro('kcal', food.per100g.kcal)} kcal / 100 g
+                {target.subtitle ??
+                  `${target.brand ? `${target.brand} · ` : ''}${formatMacro('kcal', target.per100g.kcal)} kcal / 100 g`}
               </p>
             </div>
             {onToggleFavorite && (
@@ -64,27 +84,54 @@ export function PortionSheet(props: PortionSheetProps) {
         )
       }
     >
-      {food && <PortionForm key={props.formKey} {...props} food={food} />}
+      {target && <PortionForm key={props.formKey} {...props} target={target} />}
     </BottomSheet>
   );
 }
 
+type Mode = 'portions' | 'grams';
+
 function PortionForm({
-  food,
-  initialGrams,
+  target,
+  initial,
   initialSlot,
   submitLabel,
   onSubmit,
   onDelete,
-}: PortionSheetProps & { food: PortionFood }) {
-  const [gramsText, setGramsText] = useState(toInputValue(initialGrams));
+}: PortionSheetProps & { target: PortionTarget }) {
+  const portionGrams = target.portionGrams && target.portionGrams > 0 ? target.portionGrams : undefined;
+  const [mode, setMode] = useState<Mode>(portionGrams && 'portions' in initial ? 'portions' : 'grams');
+  const [text, setText] = useState(() =>
+    toInputValue(
+      'portions' in initial
+        ? portionGrams
+          ? initial.portions
+          : servingGrams(initial, target.portionGrams ?? 0)
+        : initial.grams,
+    ),
+  );
   const [slot, setSlot] = useState(initialSlot);
   const [busy, setBusy] = useState(false);
 
-  const parsed = parseDecimal(gramsText);
-  const grams = parsed !== undefined && Number.isFinite(parsed) ? parsed : 0;
-  const valid = grams > 0 && grams <= MAX_GRAMS;
-  const preview = computeMacros(food.per100g, grams);
+  const parsed = parseDecimal(text);
+  const amount = parsed !== undefined && Number.isFinite(parsed) ? parsed : 0;
+  const grams =
+    mode === 'portions' && portionGrams ? servingGrams({ portions: amount }, portionGrams) : amount;
+  const valid =
+    !target.disabledReason &&
+    amount > 0 &&
+    grams > 0 &&
+    grams <= MAX_GRAMS &&
+    (mode === 'grams' || amount <= MAX_PORTIONS);
+  const preview = computeMacros(target.per100g, grams);
+
+  function switchMode(next: Mode) {
+    if (next === mode || !portionGrams) return;
+    // Keep the same quantity when switching units.
+    if (amount > 0)
+      setText(toInputValue(next === 'grams' ? roundTo(grams, 0) : roundTo(amount / portionGrams, 2)));
+    setMode(next);
+  }
 
   async function run(action: () => Promise<void>) {
     if (busy) return;
@@ -98,80 +145,99 @@ function PortionForm({
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (valid) void run(() => onSubmit(grams, slot));
+    if (!valid) return;
+    void run(() => onSubmit({ grams, ...(mode === 'portions' && { portions: amount }), slot }));
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <fieldset className="grid grid-cols-4 gap-1 rounded-xl bg-surface-2 p-1">
-        <legend className="sr-only">Repas</legend>
-        {MEAL_SLOTS.map((s) => (
-          <label
-            key={s}
-            className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg text-xs font-semibold has-focus-visible:ring-2 has-focus-visible:ring-accent ${
-              slot === s ? 'bg-accent text-accent-fg' : 'text-muted'
-            }`}
-          >
-            <input
-              type="radio"
-              name="slot"
-              value={s}
-              checked={slot === s}
-              onChange={() => setSlot(s)}
-              className="sr-only"
-            />
-            {SLOT_SHORT_LABELS[s]}
-          </label>
-        ))}
-      </fieldset>
+      {target.warning && (
+        <p role="status" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+          {target.warning}
+        </p>
+      )}
+      {slot !== undefined && (
+        <Segmented
+          legend="Repas"
+          options={MEAL_SLOTS.map((s) => ({ value: s, label: SLOT_SHORT_LABELS[s] }))}
+          value={slot}
+          onChange={setSlot}
+        />
+      )}
+
+      {portionGrams && (
+        <div className="mt-3">
+          <Segmented
+            legend="Unité"
+            options={[
+              { value: 'portions', label: 'Portions' },
+              { value: 'grams', label: 'Grammes' },
+            ]}
+            value={mode}
+            onChange={switchMode}
+            compact
+          />
+        </div>
+      )}
 
       <div className="mt-4 flex items-center justify-center gap-2">
         <input
-          aria-label="Quantité en grammes"
+          aria-label={mode === 'portions' ? 'Nombre de portions' : 'Quantité en grammes'}
           inputMode="decimal"
           enterKeyHint="done"
           autoComplete="off"
-          value={gramsText}
-          onChange={(e) => setGramsText(e.target.value)}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           onFocus={(e) => e.currentTarget.select()}
-          aria-invalid={gramsText !== '' && !valid}
+          aria-invalid={text !== '' && !valid}
           className={`w-36 rounded-xl border bg-bg py-2 text-center text-4xl font-bold tabular-nums outline-none focus:border-accent ${
-            gramsText !== '' && !valid ? 'border-danger' : 'border-line'
+            text !== '' && !valid ? 'border-danger' : 'border-line'
           }`}
         />
-        <span className="text-2xl font-semibold text-muted">g</span>
+        <span className="w-20 text-xl font-semibold text-muted">
+          {mode === 'portions' ? (amount >= 2 ? 'portions' : 'portion') : 'g'}
+        </span>
       </div>
-
-      <div className="mt-3 grid grid-cols-3 gap-2">
-        {QUICK_ADD.map((step) => (
-          <Button
-            key={step}
-            variant="secondary"
-            className="min-h-11 text-sm"
-            onClick={() => setGramsText(toInputValue(Math.min(MAX_GRAMS, grams + step)))}
-          >
-            +{step} g
-          </Button>
-        ))}
-      </div>
-
-      <div className="mt-4 rounded-xl bg-bg p-3" aria-live="polite">
-        <p className="text-center">
-          <span className="text-2xl font-bold tabular-nums">{formatMacro('kcal', preview.kcal)}</span>
-          <span className="text-sm text-muted"> kcal</span>
+      {mode === 'portions' && portionGrams && (
+        <p className="mt-1 text-center text-xs text-muted tabular-nums">
+          = {formatGrams(roundTo(grams, 0))} g · 1 portion = {formatGrams(roundTo(portionGrams, 0))} g
         </p>
-        <dl className="mt-2 grid grid-cols-4 text-center text-xs">
-          <MacroCell label="Protéines" value={formatMacro('protein', preview.protein)} />
-          <MacroCell
-            label="Glucides"
-            value={formatMacro('carbs', preview.carbs)}
-            sub={`dont sucres ${formatMacro('sugars', preview.sugars)} g`}
-          />
-          <MacroCell label="Lipides" value={formatMacro('fat', preview.fat)} />
-          <MacroCell label="Fibres" value={formatMacro('fiber', preview.fiber)} />
-        </dl>
+      )}
+
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        {mode === 'portions'
+          ? QUICK_PORTIONS.map((p) => (
+              <Button
+                key={p}
+                variant={amount === p ? 'primary' : 'secondary'}
+                className="min-h-11 text-sm"
+                onClick={() => setText(toInputValue(p))}
+              >
+                {toInputValue(p)}
+              </Button>
+            ))
+          : QUICK_GRAMS.map((step) => (
+              <Button
+                key={step}
+                variant="secondary"
+                className="min-h-11 text-sm"
+                onClick={() => setText(toInputValue(Math.min(MAX_GRAMS, amount + step)))}
+              >
+                +{step} g
+              </Button>
+            ))}
+        {mode === 'grams' && (
+          <Button variant="secondary" className="min-h-11 text-sm" onClick={() => setText('')}>
+            Effacer
+          </Button>
+        )}
       </div>
 
+      <MacroPreview macros={preview} />
+
+      {target.disabledReason && (
+        <p className="mt-3 text-center text-sm text-danger">{target.disabledReason}</p>
+      )}
       <Button type="submit" className="mt-4 w-full" disabled={!valid || busy}>
         {submitLabel}
       </Button>
@@ -184,12 +250,70 @@ function PortionForm({
   );
 }
 
+interface SegmentedProps<T extends string> {
+  legend: string;
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  compact?: boolean;
+}
+
+function Segmented<T extends string>({ legend, options, value, onChange, compact }: SegmentedProps<T>) {
+  return (
+    <fieldset
+      className="grid gap-1 rounded-xl bg-surface-2 p-1"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      <legend className="sr-only">{legend}</legend>
+      {options.map((o) => (
+        <label
+          key={o.value}
+          className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg font-semibold has-focus-visible:ring-2 has-focus-visible:ring-accent ${
+            compact ? 'text-sm' : 'text-xs'
+          } ${value === o.value ? 'bg-accent text-accent-fg' : 'text-muted'}`}
+        >
+          <input
+            type="radio"
+            name={legend}
+            value={o.value}
+            checked={value === o.value}
+            onChange={() => onChange(o.value)}
+            className="sr-only"
+          />
+          {o.label}
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
+export function MacroPreview({ macros }: { macros: ReturnType<typeof computeMacros> }) {
+  return (
+    <div className="mt-4 rounded-xl bg-bg p-3" aria-live="polite">
+      <p className="text-center">
+        <span className="text-2xl font-bold tabular-nums">{formatMacro('kcal', macros.kcal)}</span>
+        <span className="text-sm text-muted"> kcal</span>
+      </p>
+      <dl className="mt-2 grid grid-cols-4 text-center text-xs">
+        <MacroCell label="Protéines" value={formatMacro('protein', macros.protein)} />
+        <MacroCell
+          label="Glucides"
+          value={formatMacro('carbs', macros.carbs)}
+          sub={`sucres ${formatMacro('sugars', macros.sugars)} g`}
+        />
+        <MacroCell label="Lipides" value={formatMacro('fat', macros.fat)} />
+        <MacroCell label="Fibres" value={formatMacro('fiber', macros.fiber)} />
+      </dl>
+    </div>
+  );
+}
+
 function MacroCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
       <dt className="text-muted">{label}</dt>
       <dd className="text-base font-semibold tabular-nums">{value} g</dd>
-      {sub && <dd className="text-[11px] text-muted">{sub}</dd>}
+      {sub && <dd className="text-[11px] whitespace-nowrap text-muted">{sub}</dd>}
     </div>
   );
 }

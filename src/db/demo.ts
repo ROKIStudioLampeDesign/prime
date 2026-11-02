@@ -5,7 +5,8 @@ import type { MealSlot, Per100g } from '../domain/nutrition';
 import { db } from './db';
 import { createFood } from './foods';
 import { saveGoals } from './goals';
-import { addEntry } from './logEntries';
+import { addEntry, addMealEntry } from './logEntries';
+import { createMeal, getMeal, summarizeWithFoods } from './meals';
 
 const FOODS: { name: string; brand?: string; per100g: Per100g; favorite?: boolean }[] = [
   {
@@ -59,11 +60,54 @@ const DAY_PLAN: [MealSlot, number, number][] = [
 
 /** Wipes nutrition data and loads a week of plausible entries. */
 export async function loadDemoData(): Promise<void> {
-  await db.transaction('rw', [db.foods, db.logEntries, db.goals], async () => {
-    await Promise.all([db.foods.clear(), db.logEntries.clear(), db.goals.clear()]);
-    const ids = [];
+  await db.transaction('rw', [db.foods, db.meals, db.logEntries, db.goals], async () => {
+    await Promise.all([db.foods.clear(), db.meals.clear(), db.logEntries.clear(), db.goals.clear()]);
+    const ids: number[] = [];
     for (const food of FOODS) ids.push(await createFood(food));
     const foods = await db.foods.bulkGet(ids);
+    const foodId = (index: number) => ids[index] ?? 0;
+
+    const bowlId = await createMeal({
+      name: 'Bowl poulet riz brocolis',
+      ingredients: [
+        { foodId: foodId(3), grams: 300 },
+        { foodId: foodId(4), grams: 400 },
+        { foodId: foodId(5), grams: 300 },
+        { foodId: foodId(8), grams: 15 },
+      ],
+      cookedWeight: 950,
+      portions: 2,
+      favorite: true,
+    });
+    await createMeal({
+      name: 'Porridge skyr banane',
+      ingredients: [
+        { foodId: foodId(0), grams: 60 },
+        { foodId: foodId(1), grams: 150 },
+        { foodId: foodId(2), grams: 100 },
+        { foodId: foodId(10), grams: 15 },
+      ],
+    });
+    const bowl = await getMeal(bowlId);
+    if (bowl) {
+      const allFoods = new Map((await db.foods.toArray()).map((f) => [f.id, f]));
+      const summary = summarizeWithFoods(bowl, allFoods);
+      const today0 = todayLocalDate();
+      await addMealEntry({
+        date: addDays(today0, -1),
+        slot: 'dinner',
+        meal: bowl,
+        summary,
+        serving: { portions: 1 },
+      });
+      await addMealEntry({
+        date: addDays(today0, -2),
+        slot: 'lunch',
+        meal: bowl,
+        summary,
+        serving: { grams: 350 },
+      });
+    }
 
     const today = todayLocalDate();
     for (let back = 6; back >= 0; back--) {

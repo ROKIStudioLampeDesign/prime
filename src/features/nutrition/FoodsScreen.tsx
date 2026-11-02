@@ -8,7 +8,7 @@ import { StarIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { listFoods } from '../../db/foods';
-import { rankFoods } from '../../domain/search';
+import { rankItems } from '../../domain/search';
 import { formatMacro } from '../../lib/format';
 import { NutritionTabs } from './NutritionTabs';
 import { SearchField } from './SearchField';
@@ -20,9 +20,9 @@ export function FoodsScreen() {
   const ranked = useMemo(
     () =>
       foods &&
-      rankFoods(
+      rankItems(
         foods.map((food) => ({
-          id: food.id,
+          key: String(food.id),
           name: food.name,
           brand: food.brand,
           favorite: food.favorite === 1,
@@ -88,7 +88,7 @@ export function FoodsScreen() {
           <div className="h-16" />
         </>
       )}
-      <Fab to="/nutrition/foods/new" label="Créer un produit" />
+      {foods !== undefined && foods.length > 0 && <Fab to="/nutrition/foods/new" label="Créer un produit" />}
     </Screen>
   );
 }
