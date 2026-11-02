@@ -11,7 +11,7 @@ import { listFoods } from '../../db/foods';
 import { rankItems } from '../../domain/search';
 import { formatMacro } from '../../lib/format';
 import { NutritionTabs } from './NutritionTabs';
-import { SearchField } from './SearchField';
+import { SearchField } from '../../components/SearchField';
 
 export function FoodsScreen() {
   const foods = useLiveQuery(listFoods);

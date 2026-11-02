@@ -1,6 +1,11 @@
-import Dexie, { type EntityTable } from 'dexie';
+import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { LocalDate } from '../domain/date';
+import type { Equipment } from '../domain/exercise';
+import type { MuscleId } from '../domain/muscles';
 import type { Goals, Macros, MealSlot, Per100g } from '../domain/nutrition';
+import type { TemplateExercise } from '../domain/workout';
+import { normalizeText } from '../domain/search';
+import { EXERCISE_SEED } from './exerciseSeed';
 
 /** Key/value store for app-level settings and flags (e.g. persistence requested). */
 export interface Setting {
@@ -93,12 +98,93 @@ export interface MealLogEntry extends LogEntryBase {
  */
 export type LogEntry = FoodLogEntry | MealLogEntry;
 
+export interface Exercise {
+  id: number;
+  name: string;
+  nameNormalized: string;
+  primaryMuscles: MuscleId[];
+  secondaryMuscles: MuscleId[];
+  equipment?: Equipment;
+  /** 0 for the built-in library (read-only), 1 for exercises created by the user. */
+  isCustom: 0 | 1;
+  /** Stable id of a built-in exercise (see exerciseSeed.ts); absent for custom ones. */
+  seedId?: string;
+}
+
+export type WorkoutStatus = 'active' | 'done';
+
+export interface Workout {
+  id: number;
+  /** Day the workout counts for (local). */
+  date: LocalDate;
+  /** 'active' while being logged (at most one), 'done' once finished or back-filled. */
+  status: WorkoutStatus;
+  startedAt: number;
+  endedAt?: number;
+  name?: string;
+  templateId?: number;
+  notes?: string;
+  /** When the current rest period ends (epoch ms); stored so the timer survives reloads. */
+  restEndsAt?: number;
+}
+
+export interface WorkoutSet {
+  id: number;
+  workoutId: number;
+  exerciseId: number;
+  /** Position of the exercise within the workout (all its sets share it). */
+  order: number;
+  /** 1-based, per exercise. */
+  setNumber: number;
+  weightKg: number;
+  reps: number;
+  completed: boolean;
+  rpe?: number;
+  completedAt?: number;
+}
+
+/** Manual attendance. Days with a workout count as attended regardless. */
+export interface GymDay {
+  date: LocalDate;
+  attended: boolean;
+}
+
+export interface Template {
+  id: number;
+  name: string;
+  exercises: TemplateExercise[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** Inserts built-in exercises that are not in the table yet (matched by seedId). */
+export async function seedExercises(table: Table<Omit<Exercise, 'id'>, number>): Promise<void> {
+  const existing = new Set((await table.toArray()).map((e) => e.seedId).filter(Boolean));
+  const missing = EXERCISE_SEED.filter((e) => !existing.has(e.seedId));
+  await table.bulkAdd(
+    missing.map((e) => ({
+      seedId: e.seedId,
+      name: e.name,
+      nameNormalized: normalizeText(e.name),
+      primaryMuscles: e.primaryMuscles,
+      secondaryMuscles: e.secondaryMuscles,
+      equipment: e.equipment,
+      isCustom: 0,
+    })),
+  );
+}
+
 export class PrimeDB extends Dexie {
   settings!: EntityTable<Setting, 'key'>;
   foods!: EntityTable<Food, 'id'>;
   meals!: EntityTable<Meal, 'id'>;
   goals!: EntityTable<GoalsRecord, 'id'>;
   logEntries!: EntityTable<LogEntry, 'id'>;
+  exercises!: EntityTable<Exercise, 'id'>;
+  workouts!: EntityTable<Workout, 'id'>;
+  workoutSets!: EntityTable<WorkoutSet, 'id'>;
+  gymDays!: EntityTable<GymDay, 'date'>;
+  templates!: EntityTable<Template, 'id'>;
 
   constructor(name = 'prime') {
     super(name);
@@ -138,6 +224,24 @@ export class PrimeDB extends Dexie {
             delete entry.foodBrand;
           }),
       );
+
+    // v4: gym. Built-in exercises are inserted on upgrade (existing installs) and on populate (new ones).
+    this.version(4)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+      })
+      .upgrade((tx) => seedExercises(tx.table('exercises')));
+
+    this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }
 }
 

@@ -1,12 +1,13 @@
 // Dev-only demo data. Only imported dynamically behind `import.meta.env.DEV`, so it is not
 // part of production builds.
-import { addDays, todayLocalDate } from '../domain/date';
+import { addDays, fromLocalDate, todayLocalDate } from '../domain/date';
 import type { MealSlot, Per100g } from '../domain/nutrition';
 import { db } from './db';
 import { createFood } from './foods';
 import { saveGoals } from './goals';
 import { addEntry, addMealEntry } from './logEntries';
 import { createMeal, getMeal, summarizeWithFoods } from './meals';
+import { createTemplate } from './templates';
 
 const FOODS: { name: string; brand?: string; per100g: Per100g; favorite?: boolean }[] = [
   {
@@ -121,4 +122,96 @@ export async function loadDemoData(): Promise<void> {
     }
     await saveGoals({ kcal: 2300, protein: 160, carbs: 250, sugars: 50, fat: 75, fiber: 30 });
   });
+}
+
+const GYM_PLAN: Record<string, [seedId: string, startKg: number, reps: number][]> = {
+  Push: [
+    ['bench-press', 60, 8],
+    ['overhead-press', 40, 8],
+    ['db-incline-press', 22, 10],
+    ['lateral-raise', 8, 12],
+    ['triceps-pushdown', 25, 12],
+  ],
+  Pull: [
+    ['pull-up', 0, 8],
+    ['barbell-row', 60, 8],
+    ['lat-pulldown', 50, 10],
+    ['face-pull', 20, 15],
+    ['barbell-curl', 25, 10],
+  ],
+  Jambes: [
+    ['back-squat', 80, 6],
+    ['romanian-deadlift', 70, 8],
+    ['leg-press', 140, 10],
+    ['lying-leg-curl', 35, 12],
+    ['standing-calf-raise', 60, 12],
+  ],
+};
+
+/** Wipes gym data (keeps the built-in library) and loads PPL templates with ~6 weeks of history. */
+export async function loadGymDemoData(): Promise<void> {
+  await db.transaction(
+    'rw',
+    [db.exercises, db.workouts, db.workoutSets, db.templates, db.gymDays],
+    async () => {
+      await Promise.all([
+        db.workouts.clear(),
+        db.workoutSets.clear(),
+        db.templates.clear(),
+        db.gymDays.clear(),
+      ]);
+      await db.exercises.where('isCustom').equals(1).delete();
+      const ids = new Map((await db.exercises.toArray()).map((e) => [e.seedId, e.id]));
+
+      for (const [name, exercises] of Object.entries(GYM_PLAN)) {
+        await createTemplate({
+          name,
+          exercises: exercises.map(([seedId, , reps]) => ({
+            exerciseId: ids.get(seedId) ?? 0,
+            targetSets: 3,
+            targetReps: reps,
+          })),
+        });
+      }
+
+      // Mon/Wed/Fri rotation over the last 6 weeks, with steady progression; skip a few days.
+      const today = todayLocalDate();
+      const names = Object.keys(GYM_PLAN);
+      let session = 0;
+      for (let back = 42; back >= 1; back--) {
+        const date = addDays(today, -back);
+        const weekday = fromLocalDate(date).getDay();
+        if (![1, 3, 5].includes(weekday) || back % 11 === 0) continue;
+        const name = names[session % names.length] ?? 'Push';
+        const progress = Math.floor(session / names.length);
+        const startedAt = fromLocalDate(date).getTime() + 18 * 3_600_000;
+        const workoutId = await db.workouts.add({
+          date,
+          status: 'done',
+          name,
+          startedAt,
+          endedAt: startedAt + (55 + (session % 4) * 5) * 60_000,
+        });
+        const plan = GYM_PLAN[name] ?? [];
+        for (const [order, [seedId, startKg, reps]] of plan.entries()) {
+          const weightKg = startKg === 0 ? 0 : startKg + progress * 2.5;
+          for (let setNumber = 1; setNumber <= 3; setNumber++) {
+            await db.workoutSets.add({
+              workoutId,
+              exerciseId: ids.get(seedId) ?? 0,
+              order,
+              setNumber,
+              weightKg,
+              reps: Math.max(1, reps - (setNumber - 1)),
+              completed: true,
+              completedAt: startedAt + (order * 3 + setNumber) * 180_000,
+            });
+          }
+        }
+        session++;
+      }
+      // A cardio day logged by hand.
+      await db.gymDays.put({ date: addDays(today, -2), attended: true });
+    },
+  );
 }

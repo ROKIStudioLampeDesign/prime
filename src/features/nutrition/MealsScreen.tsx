@@ -10,7 +10,7 @@ import { rankItems } from '../../domain/search';
 import { formatMacro } from '../../lib/format';
 import { NutritionTabs } from './NutritionTabs';
 import { usePickerItems } from './pickerItems';
-import { SearchField } from './SearchField';
+import { SearchField } from '../../components/SearchField';
 
 export function MealsScreen() {
   const data = usePickerItems(true);

@@ -1,4 +1,4 @@
-import { CloseIcon, SearchIcon } from '../../components/icons';
+import { CloseIcon, SearchIcon } from './icons';
 
 interface SearchFieldProps {
   value: string;

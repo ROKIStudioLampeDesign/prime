@@ -1,0 +1,212 @@
+import { describe, expect, it } from 'vitest';
+import {
+  defaultSetCount,
+  lastPerformance,
+  nextSetValues,
+  prefillSets,
+  previousForSet,
+  restRemaining,
+  stepWeight,
+  templateFromSets,
+  workoutStats,
+  workoutVolume,
+  type SetData,
+  type WorkoutHistoryItem,
+} from './workout';
+
+const BENCH = 1;
+const SQUAT = 2;
+
+const set = (
+  exerciseId: number,
+  setNumber: number,
+  weightKg: number,
+  reps: number,
+  completed = true,
+): SetData => ({
+  exerciseId,
+  setNumber,
+  weightKg,
+  reps,
+  completed,
+});
+
+const history: WorkoutHistoryItem[] = [
+  { workoutId: 1, startedAt: 1000, sets: [set(BENCH, 1, 50, 10), set(BENCH, 2, 50, 9)] },
+  {
+    workoutId: 2,
+    startedAt: 3000,
+    sets: [set(BENCH, 1, 60, 8), set(BENCH, 2, 60, 7), set(BENCH, 3, 55, 8), set(SQUAT, 1, 100, 5)],
+  },
+  // Most recent, but bench was never completed here: skipped for bench.
+  { workoutId: 3, startedAt: 5000, sets: [set(BENCH, 1, 70, 5, false), set(SQUAT, 1, 105, 5)] },
+];
+
+describe('lastPerformance', () => {
+  it('returns the completed sets of the most recent workout with the exercise', () => {
+    expect(lastPerformance(history, BENCH)).toEqual([
+      { setNumber: 1, weightKg: 60, reps: 8 },
+      { setNumber: 2, weightKg: 60, reps: 7 },
+      { setNumber: 3, weightKg: 55, reps: 8 },
+    ]);
+    expect(lastPerformance(history, SQUAT)).toEqual([{ setNumber: 1, weightKg: 105, reps: 5 }]);
+  });
+
+  it('respects `before` and `excludeWorkoutId` (editing a past workout, or the current one)', () => {
+    expect(lastPerformance(history, BENCH, { before: 3000 })?.[0]?.weightKg).toBe(50);
+    expect(lastPerformance(history, SQUAT, { excludeWorkoutId: 3 })?.[0]?.weightKg).toBe(100);
+  });
+
+  it('is undefined for a never-performed exercise or empty history', () => {
+    expect(lastPerformance(history, 99)).toBeUndefined();
+    expect(lastPerformance([], BENCH)).toBeUndefined();
+  });
+
+  it('sorts sets by set number whatever the storage order', () => {
+    const shuffled = [{ workoutId: 9, startedAt: 1, sets: [set(BENCH, 2, 20, 2), set(BENCH, 1, 10, 1)] }];
+    expect(lastPerformance(shuffled, BENCH)?.map((s) => s.setNumber)).toEqual([1, 2]);
+  });
+});
+
+describe('prefill', () => {
+  const previous = [
+    { setNumber: 1, weightKg: 60, reps: 8 },
+    { setNumber: 2, weightKg: 57.5, reps: 7 },
+  ];
+
+  it('uses the same set number, falling back to the last set', () => {
+    expect(prefillSets(previous, 3)).toEqual([
+      { setNumber: 1, weightKg: 60, reps: 8 },
+      { setNumber: 2, weightKg: 57.5, reps: 7 },
+      { setNumber: 3, weightKg: 57.5, reps: 7 },
+    ]);
+  });
+
+  it('uses fewer sets than the previous performance when asked', () => {
+    expect(prefillSets(previous, 1)).toEqual([{ setNumber: 1, weightKg: 60, reps: 8 }]);
+    expect(prefillSets(previous, 0)).toEqual([]);
+  });
+
+  it('falls back to 0 kg and the target reps without history', () => {
+    expect(prefillSets(undefined, 2, 10)).toEqual([
+      { setNumber: 1, weightKg: 0, reps: 10 },
+      { setNumber: 2, weightKg: 0, reps: 10 },
+    ]);
+    expect(prefillSets([], 1)).toEqual([{ setNumber: 1, weightKg: 0, reps: 0 }]);
+  });
+
+  it('prefers history over target reps', () => {
+    expect(prefillSets(previous, 1, 12)[0]?.reps).toBe(8);
+  });
+
+  it('previousForSet falls back to the last set', () => {
+    expect(previousForSet(previous, 2)?.weightKg).toBe(57.5);
+    expect(previousForSet(previous, 5)?.weightKg).toBe(57.5);
+    expect(previousForSet(undefined, 1)).toBeUndefined();
+  });
+
+  it('defaults to the previous set count, else 3', () => {
+    expect(defaultSetCount(previous)).toBe(2);
+    expect(defaultSetCount(undefined)).toBe(3);
+    expect(defaultSetCount([])).toBe(3);
+  });
+
+  it('nextSetValues: exact previous set, else copy the current last set', () => {
+    const three = [...previous, { setNumber: 3, weightKg: 55, reps: 9 }];
+    expect(
+      nextSetValues(
+        [
+          { weightKg: 62.5, reps: 8 },
+          { weightKg: 62.5, reps: 7 },
+        ],
+        three,
+      ),
+    ).toEqual({
+      setNumber: 3,
+      weightKg: 55,
+      reps: 9,
+    });
+    expect(
+      nextSetValues(
+        [
+          { weightKg: 62.5, reps: 8 },
+          { weightKg: 62.5, reps: 7 },
+        ],
+        previous,
+      ),
+    ).toEqual({
+      setNumber: 3,
+      weightKg: 62.5,
+      reps: 7,
+    });
+    expect(nextSetValues([], undefined)).toEqual({ setNumber: 1, weightKg: 0, reps: 0 });
+    expect(nextSetValues([], previous)).toEqual({ setNumber: 1, weightKg: 60, reps: 8 });
+  });
+});
+
+describe('volume and stats', () => {
+  const sets = [
+    set(BENCH, 1, 60, 8),
+    set(BENCH, 2, 62.5, 6),
+    set(BENCH, 3, 100, 10, false),
+    set(SQUAT, 1, 0, 15),
+  ];
+
+  it('sums weight × reps over completed sets only', () => {
+    expect(workoutVolume(sets)).toBe(480 + 375);
+    expect(workoutVolume([])).toBe(0);
+  });
+
+  it('ignores negative values', () => {
+    expect(workoutVolume([set(BENCH, 1, -10, 5), set(BENCH, 2, 10, -5)])).toBe(0);
+  });
+
+  it('computes stats with duration', () => {
+    expect(workoutStats({ startedAt: 0, endedAt: 3_600_000 }, sets)).toEqual({
+      volumeKg: 855,
+      completedSets: 3,
+      exercises: 2,
+      durationMs: 3_600_000,
+    });
+    expect(workoutStats({ startedAt: 1000 }, sets).durationMs).toBeUndefined();
+    expect(workoutStats({ startedAt: 1000 }, sets, 61_000).durationMs).toBe(60_000);
+    expect(workoutStats({ startedAt: 5000 }, [], 1000).durationMs).toBe(0);
+  });
+});
+
+describe('stepWeight', () => {
+  it('steps without float drift and never goes below 0', () => {
+    expect(stepWeight(60, 2.5)).toBe(62.5);
+    expect(stepWeight(0.1, 0.2)).toBe(0.3);
+    expect(stepWeight(61.25, 1.25)).toBe(62.5);
+    expect(stepWeight(1, -2.5)).toBe(0);
+    expect(stepWeight(NaN, 0.5)).toBe(0.5);
+  });
+});
+
+describe('restRemaining', () => {
+  it('counts down from timestamps and stops at 0', () => {
+    expect(restRemaining(90_000, 0)).toBe(90);
+    expect(restRemaining(90_000, 89_001)).toBe(1);
+    expect(restRemaining(90_000, 90_000)).toBe(0);
+    // e.g. after the phone was locked well past the end
+    expect(restRemaining(90_000, 500_000)).toBe(0);
+  });
+});
+
+describe('templateFromSets', () => {
+  it('keeps exercise order, set count and last reps', () => {
+    expect(
+      templateFromSets([
+        { exerciseId: SQUAT, order: 1, setNumber: 1, reps: 5 },
+        { exerciseId: BENCH, order: 0, setNumber: 2, reps: 6 },
+        { exerciseId: BENCH, order: 0, setNumber: 1, reps: 8 },
+        { exerciseId: SQUAT, order: 1, setNumber: 2, reps: 0 },
+      ]),
+    ).toEqual([
+      { exerciseId: BENCH, targetSets: 2, targetReps: 6 },
+      { exerciseId: SQUAT, targetSets: 2 },
+    ]);
+    expect(templateFromSets([])).toEqual([]);
+  });
+});

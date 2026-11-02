@@ -76,6 +76,20 @@ Rules:
   "Produit supprimé" and excluded from totals; code must never assume `foodsById.get(...)` succeeds.
   Meal log entries (`kind: 'meal'`) snapshot the dish's per-100 g values and `portionGrams`, so
   portions → grams = portions × portionGrams and history survives meal/product edits.
+- **Muscles:** `src/domain/muscles.ts` is the single source of truth (ids, French labels, body-map
+  views, groups). Never hard-code muscle lists or labels elsewhere.
+- **Exercise library:** built-in exercises come from `src/db/exerciseSeed.ts`, inserted by `seedId`
+  on populate and on upgrade. Never change an existing `seedId`; to add exercises, append to the seed
+  and add a schema version whose upgrade calls `seedExercises`. Built-ins are read-only; custom
+  exercises can't be deleted while a workout or template uses them.
+- **Workouts:** at most one `status: 'active'` workout. Every set edit is written to Dexie
+  immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
+  unvalidated sets. Durations and the rest timer are computed from stored timestamps
+  (`startedAt`, `restEndsAt`), never by counting interval ticks (timers stop while the phone is locked).
+- **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
+  lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
+  saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly
+  returns the previous result when its dependencies change.
 - **Macros are stored unrounded**; round only for display (`roundMacro`: kcal integer, others 0.1 g)
   so daily sums stay accurate.
 - **Photos** are resized to max 800 px and re-encoded as JPEG ~0.7 (`src/lib/image.ts`) before being

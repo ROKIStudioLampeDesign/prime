@@ -6,7 +6,7 @@ import { PlusIcon, StarIcon } from '../../components/icons';
 import { rankItems } from '../../domain/search';
 import { formatGrams, formatMacro } from '../../lib/format';
 import type { PickerData, PickerItem } from './pickerItems';
-import { SearchField } from './SearchField';
+import { SearchField } from '../../components/SearchField';
 
 interface ProductPickerProps {
   data: PickerData;

@@ -8,7 +8,14 @@ import { FoodFormScreen } from '../features/nutrition/FoodFormScreen';
 import { GoalsScreen } from '../features/nutrition/GoalsScreen';
 import { MealsScreen } from '../features/nutrition/MealsScreen';
 import { MealFormScreen } from '../features/nutrition/MealFormScreen';
-import { GymScreen } from '../features/gym/GymScreen';
+import { CalendarScreen } from '../features/gym/CalendarScreen';
+import { HistoryScreen } from '../features/gym/HistoryScreen';
+import { TemplatesScreen } from '../features/gym/TemplatesScreen';
+import { TemplateFormScreen } from '../features/gym/TemplateFormScreen';
+import { ExercisesScreen } from '../features/gym/ExercisesScreen';
+import { ExerciseFormScreen } from '../features/gym/ExerciseFormScreen';
+import { WorkoutScreen } from '../features/gym/WorkoutScreen';
+import { WorkoutSummaryScreen } from '../features/gym/WorkoutSummaryScreen';
 import { BodyScreen } from '../features/body/BodyScreen';
 import { StatsScreen } from '../features/stats/StatsScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
@@ -26,7 +33,16 @@ export const router = createBrowserRouter([
       { path: 'nutrition/meals', element: <MealsScreen /> },
       { path: 'nutrition/meals/new', element: <MealFormScreen /> },
       { path: 'nutrition/meals/:id', element: <MealFormScreen /> },
-      { path: 'gym', element: <GymScreen /> },
+      { path: 'gym', element: <CalendarScreen /> },
+      { path: 'gym/history', element: <HistoryScreen /> },
+      { path: 'gym/templates', element: <TemplatesScreen /> },
+      { path: 'gym/templates/new', element: <TemplateFormScreen /> },
+      { path: 'gym/templates/:id', element: <TemplateFormScreen /> },
+      { path: 'gym/exercises', element: <ExercisesScreen /> },
+      { path: 'gym/exercises/new', element: <ExerciseFormScreen /> },
+      { path: 'gym/exercises/:id', element: <ExerciseFormScreen /> },
+      { path: 'gym/workout/:id', element: <WorkoutScreen /> },
+      { path: 'gym/workout/:id/summary', element: <WorkoutSummaryScreen /> },
       { path: 'body', element: <BodyScreen /> },
       { path: 'stats', element: <StatsScreen /> },
       { path: 'settings', element: <SettingsScreen /> },

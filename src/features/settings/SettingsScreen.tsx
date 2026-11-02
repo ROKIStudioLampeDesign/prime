@@ -7,14 +7,46 @@ import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { db } from '../../db/db';
 import { getGoals } from '../../db/goals';
+import { getRestSeconds, REST_OPTIONS, setRestSeconds } from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
-import { formatMacro } from '../../lib/format';
+import { formatClock, formatMacro } from '../../lib/format';
 
 function goalsSummary(goals: Goals): string {
   const parts = [];
   if (goals.kcal !== undefined) parts.push(`${formatMacro('kcal', goals.kcal)} kcal`);
   if (goals.protein !== undefined) parts.push(`${formatMacro('protein', goals.protein)} g prot.`);
   return parts.length > 0 ? parts.join(' · ') : 'Non définis';
+}
+
+/** Rest timer started after each validated set during a workout. */
+function RestTimerSetting() {
+  const seconds = useLiveQuery(getRestSeconds);
+  return (
+    <section className="mt-4 rounded-2xl bg-surface p-4" aria-labelledby="rest-timer">
+      <h2 id="rest-timer">Minuteur de repos</h2>
+      <p className="text-xs text-muted">Démarre automatiquement quand tu valides une série.</p>
+      <div
+        className="mt-3 grid grid-cols-5 gap-1 rounded-xl bg-surface-2 p-1"
+        role="radiogroup"
+        aria-labelledby="rest-timer"
+      >
+        {REST_OPTIONS.map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="radio"
+            aria-checked={seconds === option}
+            onClick={() => void setRestSeconds(option)}
+            className={`min-h-11 rounded-lg text-sm font-semibold tabular-nums ${
+              seconds === option ? 'bg-accent text-accent-fg' : 'text-muted'
+            }`}
+          >
+            {option === 0 ? 'Non' : formatClock(option)}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export function SettingsScreen() {
@@ -38,6 +70,8 @@ export function SettingsScreen() {
               <ForwardIcon className="size-5 text-muted" />
             </Link>
           </section>
+
+          <RestTimerSetting />
 
           <section className="mt-4 rounded-2xl bg-surface">
             <div className="flex min-h-11 items-center justify-between px-4 py-3">
@@ -68,9 +102,10 @@ function DevTools() {
         className="mt-3 w-full"
         onClick={async () => {
           setStatus('Chargement…');
-          const { loadDemoData } = await import('../../db/demo');
+          const { loadDemoData, loadGymDemoData } = await import('../../db/demo');
           await loadDemoData();
-          setStatus('Données de démo chargées (alimentation remplacée).');
+          await loadGymDemoData();
+          setStatus('Données de démo chargées (alimentation et salle remplacées).');
         }}
       >
         Charger des données de démo
