@@ -215,3 +215,25 @@ export async function loadGymDemoData(): Promise<void> {
     },
   );
 }
+
+/** ~4 months of weigh-ins: a slow cut with daily noise and skipped days, plus a target. */
+export async function loadBodyWeightDemoData(): Promise<void> {
+  await db.transaction('rw', [db.bodyWeights, db.settings], async () => {
+    await db.bodyWeights.clear();
+    const today = todayLocalDate();
+    const now = Date.now();
+    for (let back = 120; back >= 0; back--) {
+      // Skip roughly 1 day in 4, plus a 9-day holiday gap.
+      if ((back * 7) % 4 === 1 || (back > 40 && back < 50)) continue;
+      const trend = 84 - (120 - back) * 0.04;
+      const noise = Math.sin(back * 1.7) * 0.5 + Math.cos(back * 0.6) * 0.3;
+      await db.bodyWeights.add({
+        date: addDays(today, -back),
+        kg: Math.round((trend + noise) * 10) / 10,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    await db.settings.put({ key: 'targetWeightKg', value: 78, updatedAt: now });
+  });
+}

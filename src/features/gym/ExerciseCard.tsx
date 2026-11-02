@@ -23,6 +23,8 @@ import {
   setCompleted,
   updateSet,
 } from '../../db/workouts';
+import { getRecordsBefore } from '../../db/stats';
+import { RECORD_LABELS, recordsBeaten, type PersonalRecords, type RecordKind } from '../../domain/strength';
 import { previousForSet, stepWeight, type PerformedSet } from '../../domain/workout';
 import { formatWeight } from '../../lib/format';
 import { musclesLabel } from './exerciseData';
@@ -53,6 +55,11 @@ export function ExerciseCard({
   const previous = useLiveQuery(
     () => getLastPerformance(exerciseId, { before: workout.startedAt, excludeWorkoutId: workout.id }),
     [exerciseId, workout.startedAt, workout.id],
+  );
+  // Records from before this workout only, so the badge means "better than ever before".
+  const records = useLiveQuery(
+    () => getRecordsBefore(exerciseId, workout),
+    [exerciseId, workout.id, workout.startedAt],
   );
   const [step, setStep] = useState(STEPS[0] ?? 2.5);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -123,6 +130,7 @@ export function ExerciseCard({
             set={set}
             step={step}
             previous={previousForSet(previous, set.setNumber)}
+            records={set.completed ? recordsFor(set, records) : []}
             onToggle={() => void setCompleted(set.id, !set.completed, restSeconds)}
             onMenu={() => setMenuSetId(set.id)}
           />
@@ -153,15 +161,21 @@ export function ExerciseCard({
   );
 }
 
+function recordsFor(set: WorkoutSet, records: PersonalRecords | undefined): RecordKind[] {
+  return records ? recordsBeaten(set, records) : [];
+}
+
 interface SetRowProps {
   set: WorkoutSet;
   step: number;
   previous: PerformedSet | undefined;
+  /** Records this completed set beats (empty: no badge). */
+  records: RecordKind[];
   onToggle: () => void;
   onMenu: () => void;
 }
 
-function SetRow({ set, step, previous, onToggle, onMenu }: SetRowProps) {
+function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
   return (
     <li className={`rounded-xl px-0.5 py-1 ${set.completed ? 'bg-accent/10' : ''}`}>
@@ -216,8 +230,17 @@ function SetRow({ set, step, previous, onToggle, onMenu }: SetRowProps) {
           <CheckIcon className="size-5" strokeWidth={2.6} />
         </button>
       </div>
-      {(previous || set.rpe !== undefined) && (
-        <p className="pl-[50px] text-[11px] text-muted tabular-nums">
+      {(previous || set.rpe !== undefined || records.length > 0) && (
+        <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-[11px] text-muted tabular-nums">
+          {records.length > 0 && (
+            <span
+              className="rounded bg-accent px-1.5 py-px text-[10px] font-bold text-accent-fg"
+              title={records.map((k) => RECORD_LABELS[k]).join(', ')}
+              aria-label={`Record battu : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
+            >
+              PR
+            </span>
+          )}
           {previous && `Dernière fois : ${formatWeight(previous.weightKg)} kg × ${previous.reps}`}
           {previous && set.rpe !== undefined && ' · '}
           {set.rpe !== undefined && `RPE ${set.rpe}`}

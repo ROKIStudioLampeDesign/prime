@@ -30,7 +30,7 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
   });
 
   it('migrates v1 → latest keeping settings', async () => {

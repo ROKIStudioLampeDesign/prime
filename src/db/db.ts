@@ -157,6 +157,16 @@ export interface Template {
   updatedAt: number;
 }
 
+/** One weigh-in per day (the date is unique; saving again replaces it). */
+export interface BodyWeightEntry {
+  id: number;
+  date: LocalDate;
+  /** 0.1 kg precision. */
+  kg: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 /** Inserts built-in exercises that are not in the table yet (matched by seedId). */
 export async function seedExercises(table: Table<Omit<Exercise, 'id'>, number>): Promise<void> {
   const existing = new Set((await table.toArray()).map((e) => e.seedId).filter(Boolean));
@@ -185,6 +195,7 @@ export class PrimeDB extends Dexie {
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   gymDays!: EntityTable<GymDay, 'date'>;
   templates!: EntityTable<Template, 'id'>;
+  bodyWeights!: EntityTable<BodyWeightEntry, 'id'>;
 
   constructor(name = 'prime') {
     super(name);
@@ -240,6 +251,21 @@ export class PrimeDB extends Dexie {
         templates: '++id, name',
       })
       .upgrade((tx) => seedExercises(tx.table('exercises')));
+
+    // v5: body weight (additive).
+    this.version(5).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+    });
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

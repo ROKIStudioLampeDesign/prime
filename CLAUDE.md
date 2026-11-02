@@ -90,6 +90,12 @@ Rules:
   only, mirrored at render). Each view must draw exactly `musclesForView(view)` (tested). Fills come
   from props, never inline in the path data. Hit areas are ranked by `approxArea` so thin muscles stay
   tappable; after editing shapes, re-render both views and re-run a hit test on every muscle.
+- **Stats & charts:** Stats screens are lazy routes (`lazy` in `router.tsx`) so Recharts stays out of
+  the main bundle; keep any new Recharts usage behind a lazy route. Charts use a numeric time X axis
+  (`toTime`) so gaps are to scale, `niceTicks` for Y ticks, theme colours via `var(--color-…)`,
+  `isAnimationActive={false}`, and a `ChartEmpty` placeholder ("Pas encore de données") of the same
+  height. Records only count finished workouts; live PR badges compare against records from
+  _before_ the current workout (`getRecordsBefore`). Body weight: one entry per day (upsert).
 - **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
   lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
   saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly

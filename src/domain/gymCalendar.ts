@@ -1,10 +1,7 @@
 import { addDays, fromLocalDate, toLocalDate, type LocalDate } from './date';
+import { weekStart } from './week';
 
-/** Monday of the week containing `date`. */
-export function weekStart(date: LocalDate): LocalDate {
-  const day = fromLocalDate(date).getDay(); // 0 = Sunday
-  return addDays(date, -((day + 6) % 7));
-}
+export { weekStart };
 
 /**
  * Calendar grid for a month (month is 1-12): weeks starting on Monday, with `null` for the

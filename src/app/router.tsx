@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router';
 import { AppLayout } from './AppLayout';
+import { Loading } from '../components/Loading';
 import { TodayScreen } from '../features/today/TodayScreen';
 import { DiaryScreen } from '../features/nutrition/DiaryScreen';
 import { AddEntryScreen } from '../features/nutrition/AddEntryScreen';
@@ -17,12 +18,13 @@ import { ExerciseFormScreen } from '../features/gym/ExerciseFormScreen';
 import { WorkoutScreen } from '../features/gym/WorkoutScreen';
 import { WorkoutSummaryScreen } from '../features/gym/WorkoutSummaryScreen';
 import { BodyScreen } from '../features/body/BodyScreen';
-import { StatsScreen } from '../features/stats/StatsScreen';
 import { SettingsScreen } from '../features/settings/SettingsScreen';
 
 export const router = createBrowserRouter([
   {
     element: <AppLayout />,
+    // Shown while a lazy route loads on first render.
+    hydrateFallbackElement: <Loading />,
     children: [
       { index: true, element: <TodayScreen /> },
       { path: 'nutrition', element: <DiaryScreen /> },
@@ -44,7 +46,25 @@ export const router = createBrowserRouter([
       { path: 'gym/workout/:id', element: <WorkoutScreen /> },
       { path: 'gym/workout/:id/summary', element: <WorkoutSummaryScreen /> },
       { path: 'body', element: <BodyScreen /> },
-      { path: 'stats', element: <StatsScreen /> },
+      // Stats screens are lazy-loaded: they carry Recharts, which the rest of the app doesn't need.
+      {
+        path: 'stats',
+        lazy: async () => ({ Component: (await import('../features/stats/WeightScreen')).WeightScreen }),
+      },
+      {
+        path: 'stats/progress',
+        lazy: async () => ({
+          Component: (await import('../features/stats/ProgressionScreen')).ProgressionScreen,
+        }),
+      },
+      {
+        path: 'stats/records',
+        lazy: async () => ({ Component: (await import('../features/stats/RecordsScreen')).RecordsScreen }),
+      },
+      {
+        path: 'stats/week',
+        lazy: async () => ({ Component: (await import('../features/stats/WeekScreen')).WeekScreen }),
+      },
       { path: 'settings', element: <SettingsScreen /> },
       // Goals are nutrition data, edited from Réglages.
       { path: 'settings/goals', element: <GoalsScreen /> },

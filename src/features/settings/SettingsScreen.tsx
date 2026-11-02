@@ -102,10 +102,11 @@ function DevTools() {
         className="mt-3 w-full"
         onClick={async () => {
           setStatus('Chargement…');
-          const { loadDemoData, loadGymDemoData } = await import('../../db/demo');
+          const { loadDemoData, loadGymDemoData, loadBodyWeightDemoData } = await import('../../db/demo');
           await loadDemoData();
           await loadGymDemoData();
-          setStatus('Données de démo chargées (alimentation et salle remplacées).');
+          await loadBodyWeightDemoData();
+          setStatus('Données de démo chargées (alimentation, salle et poids remplacés).');
         }}
       >
         Charger des données de démo
