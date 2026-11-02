@@ -15,6 +15,8 @@
   --color-accent: #a3e635;
   --color-accent-fg: #0a0a0a;
   --color-danger: #f87171;
+  /* Body map silhouette, behind the colored muscles. */
+  --color-body: #333333;
 
   --spacing-tabbar: 3.5rem;
 
@@ -44,6 +46,7 @@
     --color-accent: #4d7c0f;
     --color-accent-fg: #ffffff;
     --color-danger: #dc2626;
+    --color-body: #d9d9d9;
   }
 }
 

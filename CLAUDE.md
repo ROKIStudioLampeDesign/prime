@@ -86,6 +86,10 @@ Rules:
   immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
   unvalidated sets. Durations and the rest timer are computed from stored timestamps
   (`startedAt`, `restEndsAt`), never by counting interval ticks (timers stop while the phone is locked).
+- **Body map:** geometry lives in `src/features/body/bodyGeometry.ts` (200 × 400 canvas, left half
+  only, mirrored at render). Each view must draw exactly `musclesForView(view)` (tested). Fills come
+  from props, never inline in the path data. Hit areas are ranked by `approxArea` so thin muscles stay
+  tappable; after editing shapes, re-render both views and re-run a hit test on every muscle.
 - **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
   lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
   saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly
