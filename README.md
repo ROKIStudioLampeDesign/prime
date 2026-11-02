@@ -30,6 +30,11 @@ ses données (stockage persistant) qu’un simple onglet.
 2. Touche **⋮** (menu) puis **Installer l’application** (ou **Ajouter à l’écran d’accueil**).
 3. Confirme : Prime apparaît dans le lanceur d’applications.
 
+## Déploiement
+
+Prime est un site statique à servir en HTTPS (Cloudflare Pages recommandé). Toutes les étapes sont
+dans [DEPLOY.md](DEPLOY.md).
+
 ## Sauvegarde
 
 Réglages → **Données** → **Exporter** crée un fichier `prime-sauvegarde-AAAA-MM-JJ.json` (photos
