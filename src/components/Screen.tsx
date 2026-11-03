@@ -24,8 +24,8 @@ export function Screen({ title, back = false, backFallback = '/', onBack, action
 
   return (
     <>
-      <header className="sticky top-0 z-10 bg-bg/90 pt-safe px-safe backdrop-blur-md">
-        <div className="mx-auto flex h-14 max-w-lg items-center gap-1">
+      <header className="sticky top-0 z-10 bg-bg/85 pt-safe px-safe backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-lg items-center gap-1">
           {back && (
             <button
               type="button"
@@ -36,7 +36,7 @@ export function Screen({ title, back = false, backFallback = '/', onBack, action
               <BackIcon />
             </button>
           )}
-          <h1 className="flex-1 truncate font-display text-3xl font-bold">{title}</h1>
+          <h1 className="flex-1 truncate text-[2rem] leading-tight font-extrabold tracking-tight">{title}</h1>
           {actions}
           {!back && (
             <Link to="/settings" aria-label="Réglages" className={iconButton + ' -mr-3'}>

@@ -30,7 +30,7 @@ export function UpdatePrompt() {
   // so drawing it on top would let a tap fall through to the backdrop and close the sheet.
   return (
     <div role="alert" className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.5rem)] z-40 px-safe">
-      <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl bg-surface-2 py-2 pr-2 pl-4 shadow-lg shadow-black/40">
+      <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl bg-surface-2 py-2 pr-2 pl-4 float-shadow">
         <p className="flex-1 text-sm font-semibold">Nouvelle version disponible</p>
         <button
           type="button"

@@ -1,53 +1,66 @@
 @import 'tailwindcss';
 
 /*
- * Display face: Barlow Condensed (SIL OFL 1.1, see src/assets/fonts/OFL.txt), Latin subset,
- * self-hosted so it works offline. Used for screen titles and the big numbers only; body text
- * stays on the system face (SF Pro on iPhone).
+ * Plus Jakarta Sans (SIL OFL 1.1, see src/assets/fonts/OFL.txt): one variable file (weights
+ * 500–800, Latin subset), self-hosted and precached so the app looks the same offline.
  */
 @font-face {
-  font-family: 'Barlow Condensed';
+  font-family: 'Plus Jakarta Sans';
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500 800;
   font-display: swap;
-  src: url('./assets/fonts/barlow-condensed-600.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Barlow Condensed';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('./assets/fonts/barlow-condensed-700.woff2') format('woff2');
+  src: url('./assets/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
 }
 
 /*
- * Theme tokens ("fonte et craie": cast-iron ink, chalk white, calibrated-plate yellow).
+ * Theme tokens ("Bento": neutral chrome, one pastel tile colour per domain).
  * Dark is the default; light applies only when the system asks for it.
  * Use the semantic utilities (bg-bg, bg-surface, text-fg, text-muted, border-line, text-accent)
  * instead of raw palette colours so both themes stay consistent.
  */
 @theme {
-  --color-bg: #10151f;
-  --color-surface: #182030;
-  --color-surface-2: #222c3f;
-  --color-line: #2c3850;
-  --color-fg: #eef0f4;
-  --color-muted: #95a0b4;
-  --color-accent: #ffc42e;
-  /*
-   * Solid accent surfaces (buttons, selected days and segments); text on them is accent-fg.
-   * Thin indicators (bars, rings, chart lines) use `accent`, which stays visible on light
-   * backgrounds; state cues on a fill add an `accent` ring (invisible in dark, ochre in light).
-   */
-  --color-accent-fill: #ffc42e;
-  --color-accent-fg: #10151f;
+  --color-bg: #17171c;
+  --color-surface: #232329;
+  --color-surface-2: #2e2e36;
+  --color-line: #3a3a43;
+  --color-fg: #f5f5f7;
+  --color-muted: #a1a1aa;
+  /* Interactive text (links), focus rings and default strokes. */
+  --color-accent: #d7c6ff;
+  /* Primary actions: an inverted pill (light on dark, ink on light); text on it is accent-fg. */
+  --color-accent-fill: #f5f5f7;
+  --color-accent-fg: #17171c;
   --color-danger: #ff8577;
   /* Body map silhouette, behind the colored muscles. */
-  --color-body: #2a3447;
+  --color-body: #2e2e36;
 
-  --font-display: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  /*
+   * Domain tiles: Alimentation peach, protéines lilac, poids and Corps mint, Salle sky. Text on a
+   * tile is always `ink` (secondary `ink/75`, warnings `danger-ink`), in both themes.
+   */
+  --color-peach: #ffc4a3;
+  --color-lilac: #d7c6ff;
+  --color-mint: #b8ebd3;
+  --color-sky: #bfddff;
+  --color-ink: #17171c;
+  /* Text on an ink pill (buttons inside tiles). */
+  --color-on-ink: #ffffff;
+  --color-danger-ink: #8a1510;
+  /* Domain colours for strokes and text on neutral surfaces (chart lines): pastel on dark, deep on light. */
+  --color-peach-strong: #ffc4a3;
+  --color-lilac-strong: #d7c6ff;
+  --color-mint-strong: #b8ebd3;
+  --color-sky-strong: #bfddff;
 
-  --spacing-tabbar: 3.5rem;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Rounder than Tailwind's defaults: cards 24 px, tiles and sheets 32 px. */
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
+
+  /* Height reserved above the floating tab bar (64 px pill + its gap). */
+  --spacing-tabbar: 5rem;
 
   --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 150ms ease-out;
@@ -64,20 +77,32 @@
   }
 }
 
+:root {
+  --float-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+}
+
 @media (prefers-color-scheme: light) {
   :root {
-    --color-bg: #f2f4f8;
+    --color-bg: #f6f5f1;
     --color-surface: #ffffff;
-    --color-surface-2: #e6eaf1;
-    --color-line: #d5dbe5;
-    --color-fg: #10151f;
-    --color-muted: #4e596d;
-    /* Text-safe ochre for accent text and strokes; fills keep the plate yellow. */
-    --color-accent: #8a5c00;
-    --color-accent-fill: #ffc42e;
-    --color-accent-fg: #10151f;
+    --color-surface-2: #ececf0;
+    --color-line: #dedde3;
+    --color-fg: #17171c;
+    --color-muted: #5f5f66;
+    --color-accent: #5b3fd9;
+    --color-accent-fill: #17171c;
+    --color-accent-fg: #ffffff;
     --color-danger: #a8201a;
-    --color-body: #d2d8e2;
+    --color-body: #dcdce0;
+    --color-peach: #ffb48c;
+    --color-lilac: #ccb8ff;
+    --color-mint: #a6e4c7;
+    --color-sky: #acd3ff;
+    --color-peach-strong: #b4501f;
+    --color-lilac-strong: #6a4fe0;
+    --color-mint-strong: #1f7a55;
+    --color-sky-strong: #2a68c9;
+    --float-shadow: 0 10px 30px rgb(23 23 28 / 0.1);
   }
 }
 
@@ -88,14 +113,7 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-bg text-fg antialiased;
-    font-family:
-      system-ui,
-      -apple-system,
-      'SF Pro Text',
-      'Segoe UI',
-      Roboto,
-      sans-serif;
+    @apply bg-bg font-sans text-fg antialiased;
     overscroll-behavior-y: none;
   }
   button,
@@ -112,12 +130,16 @@
   }
 }
 
-/* Big numbers: condensed display face, tabular figures so values don't jitter as they change. */
+/* Big numbers: extra-bold, tight, tabular figures so values don't jitter as they change. */
 @utility numeral {
-  font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0;
+  letter-spacing: -0.04em;
+}
+
+/* Floating elements (tab bar, FAB, toasts): a soft shadow that suits each theme. */
+@utility float-shadow {
+  box-shadow: var(--float-shadow);
 }
 
 @utility pt-safe {

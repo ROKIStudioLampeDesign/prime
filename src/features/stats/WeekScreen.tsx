@@ -146,6 +146,7 @@ export function WeekScreen() {
 
               <DailyChart
                 title="Calories par jour"
+                color="var(--color-peach-strong)"
                 unit="kcal"
                 days={week.days}
                 value={(d) => roundMacro('kcal', d.kcal)}
@@ -154,6 +155,7 @@ export function WeekScreen() {
               />
               <DailyChart
                 title="Protéines par jour"
+                color="var(--color-lilac-strong)"
                 unit="g"
                 days={week.days}
                 value={(d) => roundMacro('protein', d.protein)}
@@ -173,6 +175,8 @@ export function WeekScreen() {
 
 interface DailyChartProps {
   title: string;
+  /** Domain colour of the bars (a `--color-*-strong` token). */
+  color: string;
   unit: string;
   days: DayNutrition[];
   value: (day: DayNutrition) => number;
@@ -181,7 +185,7 @@ interface DailyChartProps {
 }
 
 /** Mini bar chart of a week: bright bars when the goal is met, dimmed otherwise, dashed goal line. */
-function DailyChart({ title, unit, days, value, goal, met }: DailyChartProps) {
+function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartProps) {
   const data = days.map((d, i) => ({ label: DAY_LETTERS[i] ?? '', value: d.logged ? value(d) : 0, day: d }));
   const max = Math.max(goal ?? 0, ...data.map((d) => d.value));
   const yTicks = niceTicks(0, max * 1.05, 3);
@@ -209,7 +213,7 @@ function DailyChart({ title, unit, days, value, goal, met }: DailyChartProps) {
               {data.map((d) => (
                 <Cell
                   key={d.day.date}
-                  fill="var(--color-accent)"
+                  fill={color}
                   fillOpacity={goal === undefined || met(d.day) ? 1 : 0.4}
                 />
               ))}

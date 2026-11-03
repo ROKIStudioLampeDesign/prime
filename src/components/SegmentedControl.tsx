@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
   const name = useId();
   const selected =
     tone === 'accent'
-      ? 'bg-accent-fill text-accent-fg ring-1 ring-accent ring-inset'
+      ? 'bg-accent-fill text-accent-fg'
       : onSurface
         ? 'bg-surface text-fg'
         : 'bg-surface-2 text-fg';
@@ -38,13 +38,13 @@ export function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
-      className={`grid gap-1 rounded-xl p-1 ${onSurface ? 'bg-surface-2' : 'bg-surface'}`}
+      className={`grid gap-1 rounded-full p-1 ${onSurface ? 'bg-surface-2' : 'bg-surface'}`}
       style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
     >
       {options.map((o) => (
         <label
           key={o.value}
-          className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-1 text-center font-semibold tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-accent ${
+          className={`flex min-h-11 cursor-pointer items-center justify-center rounded-full px-1 text-center font-bold tabular-nums has-focus-visible:outline-2 has-focus-visible:outline-accent ${
             dense ? 'text-xs' : 'text-sm'
           } ${value === o.value ? selected : 'text-muted'}`}
         >

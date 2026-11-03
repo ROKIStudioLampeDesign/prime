@@ -22,9 +22,9 @@ function progressFor(key: MacroKey, totals: Macros, goals: Goals): GoalProgress 
   return goal === undefined ? undefined : goalProgress(totals[key], goal, GOAL_KINDS[key]);
 }
 
+/** The summary is an Alimentation tile: ink on peach, warnings in danger-ink. */
 function toneFor(progress: GoalProgress | undefined): ProgressTone {
-  if (!progress) return 'muted';
-  return progress.bad ? 'danger' : 'accent';
+  return progress?.bad ? 'danger-ink' : 'ink';
 }
 
 function ringCaption(macro: MacroKey, progress: GoalProgress | undefined): string {
@@ -44,14 +44,16 @@ function RingStat({ macro, totals, goals }: { macro: 'kcal' | 'protein'; totals:
   return (
     <div className="flex flex-1 flex-col items-center gap-2">
       <ProgressRing ratio={progress?.ratio ?? 0} tone={toneFor(progress)} size={120}>
-        <span className="numeral text-4xl leading-none">{formatMacro(macro, totals[macro])}</span>
-        <span className="text-xs text-muted tabular-nums">
+        <span className="text-3xl leading-none numeral">{formatMacro(macro, totals[macro])}</span>
+        <span className="text-xs font-semibold text-ink/75 tabular-nums">
           {goal === undefined ? unit : `/ ${formatMacro(macro, goal)} ${unit}`}
         </span>
       </ProgressRing>
       <div className="text-center">
-        <p className="text-sm font-semibold">{MACRO_LABELS[macro]}</p>
-        <p className={`text-xs ${progress?.bad ? 'text-danger' : 'text-muted'}`}>{caption}</p>
+        <p className="text-sm font-bold">{MACRO_LABELS[macro]}</p>
+        <p className={`text-xs font-semibold ${progress?.bad ? 'text-danger-ink' : 'text-ink/75'}`}>
+          {caption}
+        </p>
       </div>
     </div>
   );
@@ -63,13 +65,16 @@ function BarStat({ macro, totals, goals }: { macro: MacroKey; totals: Macros; go
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
-        <span className="text-muted">
+        <span className="font-semibold text-ink/75">
           {MACRO_LABELS[macro]}
           {GOAL_KINDS[macro] === 'max' && goal !== undefined && ' (max)'}
         </span>
-        <span className={`tabular-nums ${progress?.bad ? 'text-danger' : ''}`}>
+        <span className={`font-bold tabular-nums ${progress?.bad ? 'text-danger-ink' : ''}`}>
           {formatMacro(macro, totals[macro])}
-          {goal !== undefined && <span className="text-muted"> / {formatMacro(macro, goal)}</span>} g
+          {goal !== undefined && (
+            <span className="font-semibold text-ink/75"> / {formatMacro(macro, goal)}</span>
+          )}{' '}
+          g
         </span>
       </div>
       <ProgressBar ratio={progress?.ratio ?? 0} tone={toneFor(progress)} />
@@ -80,7 +85,7 @@ function BarStat({ macro, totals, goals }: { macro: MacroKey; totals: Macros; go
 export function DailySummary({ totals, goals }: DailySummaryProps) {
   const hasGoals = MACRO_KEYS.some((key) => goals[key] !== undefined);
   return (
-    <section aria-label="Totaux du jour" className="rounded-2xl bg-surface p-4">
+    <section aria-label="Totaux du jour" className="rounded-3xl bg-peach p-5 text-ink">
       <div className="flex gap-2">
         <RingStat macro="kcal" totals={totals} goals={goals} />
         <RingStat macro="protein" totals={totals} goals={goals} />
@@ -93,7 +98,7 @@ export function DailySummary({ totals, goals }: DailySummaryProps) {
       {!hasGoals && (
         <Link
           to="/settings/goals"
-          className="mt-4 flex min-h-11 items-center justify-center rounded-xl text-sm font-semibold text-accent active:bg-surface-2"
+          className="mt-4 flex min-h-11 items-center justify-center rounded-full bg-ink text-sm font-bold text-on-ink active:opacity-80"
         >
           Définir mes objectifs
         </Link>

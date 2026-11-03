@@ -12,7 +12,7 @@ export function SubTabs({ label, tabs }: { label: string; tabs: readonly SubTab[
   return (
     <nav
       aria-label={label}
-      className="mb-4 grid gap-1 rounded-xl bg-surface p-1"
+      className="mb-4 grid gap-1 rounded-full bg-surface p-1"
       style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
     >
       {tabs.map((tab) => (
@@ -22,8 +22,8 @@ export function SubTabs({ label, tabs }: { label: string; tabs: readonly SubTab[
           end={tab.end}
           replace
           className={({ isActive }) =>
-            `flex min-h-11 items-center justify-center truncate rounded-lg px-1 text-sm font-semibold ${
-              isActive ? 'bg-surface-2 text-fg' : 'text-muted'
+            `flex min-h-11 items-center justify-center truncate rounded-full px-1 text-sm font-semibold ${
+              isActive ? 'bg-accent-fill text-accent-fg' : 'text-muted'
             }`
           }
         >

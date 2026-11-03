@@ -114,7 +114,7 @@ function Tile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-surface p-4">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-1 numeral text-3xl leading-none">{value}</dd>
+      <dd className="mt-1 text-3xl leading-none numeral">{value}</dd>
     </div>
   );
 }

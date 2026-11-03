@@ -31,7 +31,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
   return (
     <div className="min-w-0 rounded-2xl bg-surface p-3">
       <dt className="truncate text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5 truncate numeral text-2xl leading-tight">{value}</dd>
+      <dd className="mt-0.5 truncate text-2xl leading-tight numeral">{value}</dd>
       {hint && <dd className="truncate text-xs text-muted">{hint}</dd>}
     </div>
   );

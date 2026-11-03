@@ -1,17 +1,24 @@
 import type { ReactNode } from 'react';
 
-export type ProgressTone = 'accent' | 'danger' | 'muted';
+/** `ink` and `danger-ink` are for a domain tile (ink track); the others sit on a neutral surface. */
+export type ProgressTone = 'accent' | 'danger' | 'muted' | 'ink' | 'danger-ink';
 
 const STROKE: Record<ProgressTone, string> = {
   accent: 'stroke-accent',
   danger: 'stroke-danger',
   muted: 'stroke-muted',
+  ink: 'stroke-ink',
+  'danger-ink': 'stroke-danger-ink',
 };
 const FILL: Record<ProgressTone, string> = {
   accent: 'bg-accent',
   danger: 'bg-danger',
   muted: 'bg-muted',
+  ink: 'bg-ink',
+  'danger-ink': 'bg-danger-ink',
 };
+
+const onTile = (tone: ProgressTone) => tone === 'ink' || tone === 'danger-ink';
 
 const clamp01 = (ratio: number) => Math.min(1, Math.max(0, ratio));
 
@@ -41,7 +48,7 @@ export function ProgressRing({
           r={r}
           fill="none"
           strokeWidth={strokeWidth}
-          className="stroke-surface-2"
+          className={onTile(tone) ? 'stroke-ink/15' : 'stroke-surface-2'}
         />
         <circle
           cx={size / 2}
@@ -62,7 +69,10 @@ export function ProgressRing({
 
 export function ProgressBar({ ratio, tone = 'accent' }: { ratio: number; tone?: ProgressTone }) {
   return (
-    <div className="h-1.5 overflow-hidden rounded-full bg-surface-2" aria-hidden="true">
+    <div
+      className={`h-2 overflow-hidden rounded-full ${onTile(tone) ? 'bg-ink/15' : 'bg-surface-2'}`}
+      aria-hidden="true"
+    >
       <div
         className={`h-full rounded-full ${FILL[tone]} transition-[width] duration-500`}
         style={{ width: `${clamp01(ratio) * 100}%` }}

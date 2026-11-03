@@ -37,13 +37,13 @@ export function RestTimerBar({ workoutId, endsAt }: { workoutId: number; endsAt:
       className="fixed inset-x-0 bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom)+0.5rem)] z-20 px-safe"
     >
       <div
-        className={`mx-auto flex max-w-lg items-center gap-1 rounded-2xl py-1.5 pr-1.5 pl-4 shadow-lg shadow-black/40 ${
+        className={`mx-auto flex max-w-lg items-center gap-1 rounded-2xl py-1.5 pr-1.5 pl-4 float-shadow ${
           done ? 'bg-accent-fill text-accent-fg' : 'bg-surface-2'
         }`}
       >
         <div className="flex-1">
           <p className={`text-xs ${done ? '' : 'text-muted'}`}>{done ? 'Repos terminé' : 'Repos'}</p>
-          <p className="numeral text-3xl leading-tight">{formatClock(remaining)}</p>
+          <p className="text-3xl leading-tight numeral">{formatClock(remaining)}</p>
         </div>
         {!done && (
           <>

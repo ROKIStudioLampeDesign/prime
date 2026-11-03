@@ -195,7 +195,7 @@ function PortionForm({
           onChange={(e) => setText(e.target.value)}
           onFocus={(e) => e.currentTarget.select()}
           aria-invalid={text !== '' && !valid}
-          className={`w-36 rounded-xl border bg-bg py-2 text-center numeral text-5xl outline-none focus:border-accent ${
+          className={`w-36 rounded-xl border bg-bg py-2 text-center text-5xl numeral outline-none focus:border-accent ${
             text !== '' && !valid ? 'border-danger' : 'border-line'
           }`}
         />
@@ -259,7 +259,7 @@ export function MacroPreview({ macros }: { macros: ReturnType<typeof computeMacr
   return (
     <div className="mt-4 rounded-xl bg-bg p-3" aria-live="polite">
       <p className="text-center">
-        <span className="numeral text-3xl leading-none">{formatMacro('kcal', macros.kcal)}</span>
+        <span className="text-3xl leading-none numeral">{formatMacro('kcal', macros.kcal)}</span>
         <span className="text-sm text-muted"> kcal</span>
       </p>
       <dl className="mt-2 grid grid-cols-4 text-center text-xs">

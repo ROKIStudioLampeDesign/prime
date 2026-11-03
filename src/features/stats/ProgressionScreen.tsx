@@ -167,9 +167,9 @@ function ProgressionContent({
               />
               <Line
                 dataKey="value"
-                stroke="var(--color-accent)"
+                stroke="var(--color-sky-strong)"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--color-accent)', stroke: 'none' }}
+                dot={{ r: 3, fill: 'var(--color-sky-strong)', stroke: 'none' }}
                 activeDot={{ r: 5, fill: 'var(--color-fg)', stroke: 'none' }}
                 isAnimationActive={false}
               />

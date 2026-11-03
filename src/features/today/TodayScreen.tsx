@@ -16,7 +16,8 @@ export function TodayScreen() {
         {format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })}
       </p>
       <BackupReminder />
-      <div className="flex flex-col gap-3">
+      {/* Bento grid: energy and gym tiles span both columns, protein and weight share a row. */}
+      <div className="grid grid-cols-2 gap-3">
         <NutritionCard today={today} />
         <WeightCard today={today} />
         {/* Last: its "Commencer une séance" button stays within thumb reach. */}

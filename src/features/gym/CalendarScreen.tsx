@@ -140,10 +140,10 @@ export function CalendarScreen() {
 
 function Counter({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-2xl bg-surface p-3">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="numeral text-3xl leading-none">{value}</dd>
-      {hint && <dd className="text-[11px] leading-tight text-muted">{hint}</dd>}
+    <div className="rounded-3xl bg-sky p-4 text-ink">
+      <dt className="text-xs font-bold">{label}</dt>
+      <dd className="mt-1 text-3xl leading-none numeral">{value}</dd>
+      {hint && <dd className="mt-1 text-[11px] leading-tight font-semibold text-ink/75">{hint}</dd>}
     </div>
   );
 }
@@ -165,8 +165,8 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
       aria-label={`${longDay(date)}${attended ? ', séance' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
-        attended ? 'bg-accent-fill text-accent-fg' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
-      } ${isToday ? 'ring-2 ring-fg ring-inset' : attended ? 'ring-1 ring-accent ring-inset' : ''}`}
+        attended ? 'bg-sky text-ink' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
+      } ${isToday ? 'ring-2 ring-fg ring-inset' : attended ? 'ring-1 ring-sky-strong ring-inset' : ''}`}
     >
       {day}
     </button>

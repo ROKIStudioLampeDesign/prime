@@ -160,7 +160,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
               />
               <Line
                 dataKey="avg"
-                stroke="var(--color-accent)"
+                stroke="var(--color-mint-strong)"
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={false}
@@ -175,7 +175,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
             <span className="size-2 rounded-full bg-muted" /> Pesées
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-accent" /> Moyenne 7 jours
+            <span className="h-0.5 w-4 rounded bg-mint-strong" /> Moyenne 7 jours
           </span>
         </p>
       </section>

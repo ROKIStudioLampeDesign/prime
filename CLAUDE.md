@@ -133,9 +133,13 @@ Rules:
 - **Safe areas:** use the `pt-safe`, `pb-safe`, `px-safe` utilities; the viewport uses `viewport-fit=cover`.
 - **Theme:** dark by default, light when the system asks. Use only the semantic colour tokens defined in
   `src/index.css` (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-fg`, `text-muted`, `border-line`,
-  `text-accent`, `bg-accent-fill text-accent-fg` for solid accent surfaces, `text-danger`), never raw
-  palette colours like `bg-zinc-900`. Screen titles use `font-display`; big numbers use the `numeral`
-  utility (Barlow Condensed, tabular figures). Labels are sentence case, never all caps.
+  `text-accent` for links and focus, `bg-accent-fill text-accent-fg` for primary pills, `text-danger`),
+  never raw palette colours like `bg-zinc-900`. Each domain has a pastel tile colour ("bento"):
+  Alimentation `bg-peach`, protéines `bg-lilac`, poids and Corps `bg-mint`, Salle `bg-sky`. Text on a
+  tile is `text-ink` (secondary `text-ink/75`, warnings `text-danger-ink`), buttons on a tile are
+  `bg-ink text-on-ink`; strokes and chart lines use the `*-strong` variants. Type is Plus Jakarta Sans
+  (self-hosted); big numbers use the `numeral` utility (extra-bold, tabular figures). Labels are
+  sentence case, never all caps.
 - Every screen is wrapped in `<Screen title=…>`, which provides the sticky header and the gear/back button.
 - Every data view handles three states: loading (`useLiveQuery` returns `undefined` → `<Loading />`),
   empty (`<EmptyState />` with a hint on what to do), and data.

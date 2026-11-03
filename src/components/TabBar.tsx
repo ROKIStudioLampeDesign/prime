@@ -18,24 +18,30 @@ const TABS: Tab[] = [
 
 export function TabBar() {
   return (
+    // A floating pill above the home indicator; --spacing-tabbar reserves its height for the page.
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/90 pb-safe backdrop-blur-md"
+      className="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),0.75rem)] z-20 px-safe"
     >
-      <ul className="mx-auto grid h-tabbar max-w-lg grid-cols-5">
+      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5 rounded-full bg-surface/90 px-1 float-shadow backdrop-blur-xl">
         {TABS.map(({ to, label, icon: TabIcon }) => (
           <li key={to}>
             <NavLink
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                [
-                  'flex h-full min-h-11 flex-col items-center justify-center gap-0.5 text-[10px] font-medium',
-                  isActive ? 'text-accent' : 'text-muted',
-                ].join(' ')
+                `group flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[10px] font-semibold ${
+                  isActive ? 'text-fg' : 'text-muted'
+                }`
               }
             >
-              <TabIcon />
+              {/* The active section gets a pill behind its icon; labels stay readable at 390 px. */}
+              <span
+                className="flex h-8 w-12 items-center justify-center rounded-full group-active:bg-surface-2 group-aria-[current=page]:bg-accent-fill group-aria-[current=page]:text-accent-fg"
+                aria-hidden="true"
+              >
+                <TabIcon />
+              </span>
               <span className="max-w-full truncate px-0.5">{label}</span>
             </NavLink>
           </li>

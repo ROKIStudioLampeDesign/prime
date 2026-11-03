@@ -17,7 +17,7 @@ describe('TodayScreen', () => {
   it('guides a new user from each card', async () => {
     renderWithRouter(<TodayScreen />);
     expect(await screen.findByText('Rien de noté pour l’instant : ajoute ton premier repas.')).toBeTruthy();
-    expect(await screen.findByText('Aucune pesée : note ton poids pour suivre ta courbe.')).toBeTruthy();
+    expect(await screen.findByText('Aucune pesée pour l’instant.')).toBeTruthy();
     expect(await screen.findByText('Ta première séance apparaîtra ici.')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Commencer une séance' }).getAttribute('href')).toBe(
       '/gym?start=1',
@@ -43,7 +43,8 @@ describe('TodayScreen', () => {
     renderWithRouter(<TodayScreen />);
     expect(await screen.findByText('700')).toBeTruthy();
     expect(screen.getByText('/ 2 000 kcal')).toBeTruthy();
-    expect(screen.getByText('Reste 1 300 kcal · Protéines 14 / 150 g')).toBeTruthy();
+    expect(screen.getByText('Reste 1 300 kcal')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /Protéines/ }).textContent).toContain('14/ 150 g');
     expect(await screen.findByText('79,4')).toBeTruthy();
     expect(screen.getByText('Pesée du jour enregistrée.')).toBeTruthy();
   });

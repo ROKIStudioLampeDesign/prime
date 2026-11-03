@@ -17,7 +17,7 @@ export function Button({ variant = 'primary', className = '', type = 'button', .
   return (
     <button
       type={type}
-      className={`flex min-h-12 items-center justify-center gap-2 rounded-xl px-4 font-semibold disabled:opacity-40 motion-safe:transition-transform motion-safe:duration-100 motion-safe:active:scale-[0.98] ${VARIANTS[variant]} ${className}`}
+      className={`flex min-h-12 items-center justify-center gap-2 rounded-full px-5 font-bold disabled:opacity-40 motion-safe:transition-transform motion-safe:duration-100 motion-safe:active:scale-[0.98] ${VARIANTS[variant]} ${className}`}
       {...props}
     />
   );

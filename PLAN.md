@@ -49,19 +49,20 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
 
 ## Identité visuelle (étape 2)
 
-Deux pistes étudiées ; la piste A est retenue (choix délégué, cf. « n'attends plus mes OK ») :
+Première version (« Fonte et craie » : bleu-nuit, jaune des disques, Barlow Condensed) choisie
+sans toi, puis refusée (« pas assez moderne »). Trois pistes dessinées sur l'écran « Aujourd'hui »,
+en sombre et en clair (<https://claude.ai/artifact/RTkyfy1UfApp5u91CQaA2t>) : A. Natif (noir façon
+Apple), B. Bento, C. Halo (verre et halo violet). **Tu as choisi B. Bento** :
 
-- **A. Fonte et craie (retenue)** : encre bleu-nuit `#10151F`, surfaces `#182030` / `#222C3F`,
-  craie `#EEF0F4`, jaune des disques étalonnés `#FFC42E` (ocre `#8A5C00` pour le texte en thème
-  clair). Titres et grands chiffres en Barlow Condensed (affichage de salle), texte courant en
-  police système. Un seul élément fort : les chiffres condensés ; le reste reste sobre.
-  Libellés en casse normale, jamais en capitales.
-- **B. Carnet d'entraînement** : papier clair par défaut, encre graphite, rouge pointé pour les
-  records, chiffres manuscrits. Écartée : l'app est surtout utilisée le soir et en salle, où un
-  thème sombre par défaut est plus confortable (et c'est la règle du projet).
+- Fond graphite `#17171C` (clair : `#F6F5F1`), surfaces neutres, texte `#F5F5F7` / `#17171C`.
+- Une tuile pastel par domaine : Alimentation pêche `#FFC4A3`, protéines lilas `#D7C6FF`, poids et
+  Corps menthe `#B8EBD3`, Salle ciel `#BFDDFF` ; texte encre `#17171C` dessus, dans les deux thèmes.
+- Boutons principaux en pilule inversée (clair sur sombre, encre sur clair), barre d'onglets
+  flottante, coins arrondis (24 px pour les cartes, 32 px pour les tuiles).
+- Police Plus Jakarta Sans (variable, 27 kB, hors connexion), grands chiffres extra-gras.
 
-Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1 sur tous les fonds et fonds teintés, dans les deux
-thèmes ; repères d'état non textuels ≥ 3:1 (liseré ocre sur les remplissages jaunes en thème clair).
+Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1 sur tous les fonds, tuiles comprises (texte
+secondaire `ink/75` ≥ 5,6:1) ; en thème clair, traits et courbes en variantes foncées ≥ 4,3:1.
 
 ## Risques et changements
 
