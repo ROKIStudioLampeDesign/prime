@@ -34,7 +34,7 @@ export function HistoryScreen() {
       ) : (
         <ul className="flex flex-col gap-2">
           {summaries.map(({ workout, stats, exerciseIds }) => (
-            <li key={workout.id}>
+            <li className="list-row" key={workout.id}>
               <Link
                 to={`/gym/workout/${workout.id}`}
                 className="block rounded-2xl bg-surface px-4 py-3 active:bg-surface-2"

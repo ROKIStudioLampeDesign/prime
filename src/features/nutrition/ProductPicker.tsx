@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { BlobImage } from '../../components/BlobImage';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
@@ -18,7 +18,9 @@ interface ProductPickerProps {
 /** Searchable list of products (and meals when present): favorites and recents first. */
 export function ProductPicker({ data, onSelect, onCreateFood }: ProductPickerProps) {
   const [query, setQuery] = useState('');
-  const ranked = useMemo(() => rankItems(data.items, query, data.recentKeys), [data, query]);
+  // Typing stays responsive with a long product list: ranking follows on a deferred value.
+  const deferredQuery = useDeferredValue(query);
+  const ranked = useMemo(() => rankItems(data.items, deferredQuery, data.recentKeys), [data, deferredQuery]);
   const hasMeals = data.items.some((i) => i.kind === 'meal');
   const searching = query.trim() !== '';
 
@@ -89,7 +91,7 @@ function ItemList({
       {title && <h2 className="mb-1 px-1 text-sm font-semibold text-muted">{title}</h2>}
       <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
         {items.map((item) => (
-          <li key={item.key}>
+          <li className="list-row" key={item.key}>
             <button
               type="button"
               onClick={() => onSelect(item.key)}

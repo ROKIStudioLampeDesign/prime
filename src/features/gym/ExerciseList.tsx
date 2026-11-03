@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import type { Exercise } from '../../db/db';
 import { EQUIPMENT_LABELS } from '../../domain/exercise';
 import { MUSCLE_IDS, MUSCLES, type MuscleId } from '../../domain/muscles';
@@ -20,12 +20,13 @@ const collator = new Intl.Collator('fr', { sensitivity: 'base' });
 /** Searchable exercise list with a muscle filter; muscles trained as primary rank first. */
 export function ExerciseList({ exercises, onSelect, disabledIds, disabledHint }: ExerciseListProps) {
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [muscle, setMuscle] = useState<MuscleId>();
 
   const filtered = useMemo(() => {
     const list = exercises.filter(
       (e) =>
-        (!query.trim() || matchesQuery(e.nameNormalized, query)) &&
+        (!deferredQuery.trim() || matchesQuery(e.nameNormalized, deferredQuery)) &&
         (!muscle || e.primaryMuscles.includes(muscle) || e.secondaryMuscles.includes(muscle)),
     );
     return list.sort((a, b) => {
@@ -36,7 +37,7 @@ export function ExerciseList({ exercises, onSelect, disabledIds, disabledHint }:
       }
       return collator.compare(a.name, b.name);
     });
-  }, [exercises, query, muscle]);
+  }, [exercises, deferredQuery, muscle]);
 
   return (
     <>
@@ -61,7 +62,7 @@ export function ExerciseList({ exercises, onSelect, disabledIds, disabledHint }:
           {filtered.map((e) => {
             const disabled = disabledIds?.has(e.id) ?? false;
             return (
-              <li key={e.id}>
+              <li className="list-row" key={e.id}>
                 <button
                   type="button"
                   disabled={disabled}

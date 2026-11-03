@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { BlobImage } from '../../components/BlobImage';
 import { EmptyState } from '../../components/EmptyState';
@@ -17,6 +17,7 @@ export function FoodsScreen() {
   const foods = useLiveQuery(listFoods);
   const [query, setQuery] = useState('');
 
+  const deferredQuery = useDeferredValue(query);
   const ranked = useMemo(
     () =>
       foods &&
@@ -28,10 +29,10 @@ export function FoodsScreen() {
           favorite: food.favorite === 1,
           food,
         })),
-        query,
+        deferredQuery,
         [],
       ),
-    [foods, query],
+    [foods, deferredQuery],
   );
 
   return (
@@ -60,7 +61,7 @@ export function FoodsScreen() {
           ) : (
             <ul className="mt-4 grid grid-cols-2 gap-3">
               {ranked.map(({ food }) => (
-                <li key={food.id}>
+                <li className="list-row" key={food.id}>
                   <Link
                     to={`/nutrition/foods/${food.id}`}
                     className="block overflow-hidden rounded-2xl bg-surface active:opacity-80"

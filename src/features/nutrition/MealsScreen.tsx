@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useDeferredValue, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { BlobImage } from '../../components/BlobImage';
 import { EmptyState } from '../../components/EmptyState';
@@ -15,15 +15,16 @@ import { SearchField } from '../../components/SearchField';
 export function MealsScreen() {
   const data = usePickerItems(true);
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const meals = useMemo(
     () =>
       data &&
       rankItems(
         data.items.filter((i) => i.kind === 'meal'),
-        query,
+        deferredQuery,
         [],
       ),
-    [data, query],
+    [data, deferredQuery],
   );
   const hasAnyMeal = data?.items.some((i) => i.kind === 'meal');
 
@@ -53,7 +54,7 @@ export function MealsScreen() {
           ) : (
             <ul className="mt-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
               {meals.map(({ meal, summary }) => (
-                <li key={meal.id}>
+                <li className="list-row" key={meal.id}>
                   <Link
                     to={`/nutrition/meals/${meal.id}`}
                     className="flex min-h-20 items-center gap-3 px-3 py-2 active:bg-surface-2"

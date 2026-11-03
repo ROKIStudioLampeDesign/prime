@@ -22,8 +22,13 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
 - [x] **3. Qualité du code** — découpage des gros composants, contrôle segmenté unique, logique
       pure déplacée dans le domaine, tests de composants.
       _Skills : react-best-practices, typescript-patterns, react-testing._
-- [ ] **4. Performance** — mesure, chargement à la demande, listes longues, requêtes ciblées.
+- [x] **4. Performance** — mesure, chargement à la demande, listes longues, requêtes ciblées.
       _Skills : react-best-practices._
+      Mesures : bundle principal 162 → 119 kB (écrans rares en chargement différé) ; lignes de
+      listes longues en `content-visibility: auto` ; recherche différée (`useDeferredValue`).
+      Requêtes : 5 ans simulés (750 séances, 15 000 séries) = ~120–140 ms sur fake-indexeddb
+      (borne haute) pour la carte du corps et les records : gardées telles quelles, à revoir si
+      les données grossissent vraiment.
 - [ ] **5. Écran « Aujourd'hui »** — vrai résumé du jour (repas, séance, poids).
       _Skills : test-driven-development, frontend-design._
 - [ ] **Déploiement Cloudflare Pages** — mise en ligne pour tester CSP et Lighthouse en

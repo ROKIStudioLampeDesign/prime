@@ -126,3 +126,12 @@
   padding-left: max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));
 }
+
+/*
+ * Long list rows (products, history, exercises): the browser skips layout and paint of rows
+ * outside the viewport. The intrinsic size is a placeholder until a row is first rendered.
+ */
+@utility list-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.5rem;
+}
