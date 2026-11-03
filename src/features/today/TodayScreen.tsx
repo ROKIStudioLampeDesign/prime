@@ -1,22 +1,27 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useToday } from '../../components/useToday';
-import { EmptyState } from '../../components/EmptyState';
 import { Screen } from '../../components/Screen';
+import { useToday } from '../../components/useToday';
 import { fromLocalDate } from '../../domain/date';
 import { BackupReminder } from './BackupReminder';
+import { GymCard, NutritionCard, WeightCard } from './TodayCards';
 
+/** / — the day at a glance: what was eaten, the workout, the weigh-in. Each card opens its section. */
 export function TodayScreen() {
-  const today = format(fromLocalDate(useToday()), 'EEEE d MMMM', { locale: fr });
+  const today = useToday();
 
   return (
     <Screen title="Aujourd'hui">
+      <p className="mb-3 text-sm text-muted first-letter:uppercase">
+        {format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })}
+      </p>
       <BackupReminder />
-      <p className="text-sm text-muted first-letter:uppercase">{today}</p>
-      <EmptyState
-        title="Rien pour l'instant"
-        description="Ton résumé du jour (repas, séance, poids) apparaîtra ici."
-      />
+      <div className="flex flex-col gap-3">
+        <NutritionCard today={today} />
+        <WeightCard today={today} />
+        {/* Last: its "Commencer une séance" button stays within thumb reach. */}
+        <GymCard today={today} />
+      </div>
     </Screen>
   );
 }

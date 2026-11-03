@@ -29,7 +29,7 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
       Requêtes : 5 ans simulés (750 séances, 15 000 séries) = ~120–140 ms sur fake-indexeddb
       (borne haute) pour la carte du corps et les records : gardées telles quelles, à revoir si
       les données grossissent vraiment.
-- [ ] **5. Écran « Aujourd'hui »** — vrai résumé du jour (repas, séance, poids).
+- [x] **5. Écran « Aujourd'hui »** — vrai résumé du jour (repas, séance, poids).
       _Skills : test-driven-development, frontend-design._
 - [ ] **Déploiement Cloudflare Pages** — mise en ligne pour tester CSP et Lighthouse en
       conditions réelles (nécessite la connexion Wrangler).

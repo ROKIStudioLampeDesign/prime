@@ -20,6 +20,15 @@ test('create a product, log it in the diary and see the totals', async ({ page }
   await expect(page).toHaveURL(/\/nutrition$/);
   await expect(page.getByRole('button', { name: /Avoine test/ })).toBeVisible();
   await expect(page.getByLabel('Totaux du jour').getByText('186', { exact: true })).toBeVisible();
+
+  // The home screen sums the same day.
+  await page
+    .getByRole('navigation', { name: 'Navigation principale' })
+    .getByRole('link', { name: "Aujourd'hui" })
+    .click();
+  await expect(
+    page.getByRole('link', { name: /Alimentation/ }).getByText('186', { exact: true }),
+  ).toBeVisible();
 });
 
 test('log a workout set, see the rest timer and finish with a summary', async ({ page }) => {
@@ -47,4 +56,8 @@ test('log a workout set, see the rest timer and finish with a summary', async ({
   await page.getByRole('dialog').getByRole('button', { name: 'Terminer' }).click();
   await expect(page).toHaveURL(/\/summary$/);
   await expect(page.getByText('480 kg')).toBeVisible(); // 60 kg × 8
+
+  // …and the home screen lists today's finished workout.
+  await page.goto('/');
+  await expect(page.getByRole('region', { name: 'Salle' }).getByText(/1 série · 480 kg/)).toBeVisible();
 });
