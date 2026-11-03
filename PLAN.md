@@ -1,0 +1,38 @@
+# Plan de refonte de Prime
+
+Refonte **en place** (pas de réécriture). Stack conservée : Vite, React 19, TypeScript strict,
+Tailwind CSS 4, Dexie, React Router 7, Recharts, vite-plugin-pwa. Aucun changement de schéma de
+données : les données existantes sont conservées sans migration.
+
+Règles : une étape = un commit, tests lancés et verts à chaque étape, résumé puis validation
+avant l'étape suivante. Skills utilisés indiqués pour chaque étape (`.claude/skills/`).
+
+## Étapes
+
+- [ ] **0. Socle de tests** — tests de composants (Testing Library + jsdom + vitest-axe) et tests
+      end-to-end Playwright versionnés dans le dépôt (navigation, hors connexion, journal, séance).
+      _Skills : react-testing, test-driven-development._
+- [ ] **1. Robustesse et sécurité** — validation de chaque ligne à l'import d'une sauvegarde,
+      _focus trap_ des bottom sheets, « Aujourd'hui » qui suit le changement de jour, arrêt du
+      minuteur de mise à jour, état de chargement de « Dernière sauvegarde ».
+      _Skills : typescript-patterns, frontend-a11y, test-driven-development._
+- [ ] **2. Nouvelle identité visuelle** — 2 pistes proposées (palette, typographie, principes,
+      mini aperçu) ; après choix : jetons de design, composants de base, finitions.
+      _Skills : frontend-design, tailwind-design-system, make-interfaces-feel-better._
+- [ ] **3. Qualité du code** — découpage des gros composants, contrôle segmenté unique, logique
+      pure déplacée dans le domaine, tests de composants.
+      _Skills : react-best-practices, typescript-patterns, react-testing._
+- [ ] **4. Performance** — mesure, chargement à la demande, listes longues, requêtes ciblées.
+      _Skills : react-best-practices._
+- [ ] **5. Écran « Aujourd'hui »** — vrai résumé du jour (repas, séance, poids).
+      _Skills : test-driven-development, frontend-design._
+- [ ] **Déploiement Cloudflare Pages** — mise en ligne pour tester CSP et Lighthouse en
+      conditions réelles (nécessite la connexion Wrangler).
+- [ ] **6. Vérification finale** — e2e, Lighthouse sur l'URL réelle, revue de code par sous-agent.
+      _Skills : verification-before-completion, requesting-code-review._
+
+## Risques et changements
+
+- L'apparence change entièrement (couleurs, police ; ~40 kB de police mis en cache hors ligne).
+- Régressions possibles pendant le découpage : couvertes par l'étape 0.
+- Dépendances ajoutées : uniquement des outils de test.

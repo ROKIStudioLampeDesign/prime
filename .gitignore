@@ -37,3 +37,10 @@ desktop.ini
 .idea
 *.swp
 *~
+
+# Local skills library (only the selected ones are copied into .claude/skills)
+/Skills/
+
+# Playwright
+playwright-report/
+test-results/
