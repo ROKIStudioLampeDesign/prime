@@ -3,12 +3,22 @@ import type { LocalDate } from '../domain/date';
 import { backupFileName, exportBackup, importBackup, readBackup } from './backup';
 import { upsertBodyWeight } from './bodyWeights';
 import { PrimeDB } from './db';
+import { createExercise } from './exercises';
 import { createFood } from './foods';
 import { saveGoals } from './goals';
-import { addEntry } from './logEntries';
-import { createMeal } from './meals';
+import { addEntry, addMealEntry } from './logEntries';
+import { createMeal, summarizeWithFoods } from './meals';
 import { createTemplate } from './templates';
-import { addExerciseToWorkout, finishWorkout, setCompleted, startWorkout } from './workouts';
+import {
+  addExerciseToWorkout,
+  createPastWorkout,
+  finishWorkout,
+  setCompleted,
+  setRestEndsAt,
+  startWorkout,
+  updateSet,
+  updateWorkoutMeta,
+} from './workouts';
 
 const d = (s: string) => s as LocalDate;
 let n = 0;
@@ -25,6 +35,10 @@ afterEach(async () => {
   await target.delete();
 });
 
+/**
+ * Writes data through every app writer path (not hand-built rows), so the round-trip also proves
+ * that the import validator (domain/backupRows.ts) accepts everything the app can store.
+ */
 async function fill(db: PrimeDB) {
   const photo = new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0x00, 0x10, 0x80, 0xfe])], {
     type: 'image/jpeg',
@@ -47,7 +61,7 @@ async function fill(db: PrimeDB) {
   await upsertBodyWeight(d('2026-11-01'), 80.4, db);
   await db.gymDays.put({ date: d('2026-11-01'), attended: true });
   const bench = (await db.exercises.where('seedId').equals('bench-press').first())?.id ?? 0;
-  await createTemplate(
+  const pushId = await createTemplate(
     { name: 'Push', exercises: [{ exerciseId: bench, targetSets: 3, targetReps: 8 }] },
     db,
   );
@@ -56,6 +70,45 @@ async function fill(db: PrimeDB) {
   const firstSet = await db.workoutSets.where('workoutId').equals(workoutId).first();
   if (firstSet) await setCompleted(firstSet.id, true, 0, db);
   await finishWorkout(workoutId, db);
+
+  // A dish with photo and cooked weight, logged by portions and by grams.
+  const stewId = await createMeal(
+    {
+      name: 'Ragoût',
+      photo,
+      ingredients: [{ foodId, grams: 200 }],
+      cookedWeight: 450,
+      portions: 3,
+      favorite: true,
+    },
+    db,
+  );
+  const stew = await db.meals.get(stewId);
+  if (!stew) throw new Error('meal');
+  const summary = summarizeWithFoods(stew, new Map([[food.id, food]]));
+  const meal = { id: stew.id, name: stew.name };
+  await addMealEntry(
+    { date: d('2026-11-02'), slot: 'dinner', meal, summary, serving: { portions: 1.5 } },
+    db,
+  );
+  await addMealEntry({ date: d('2026-11-02'), slot: 'snack', meal, summary, serving: { grams: 120 } }, db);
+
+  // A custom exercise in a template without target reps.
+  const customId = await createExercise(
+    { name: 'Tirage perso', primaryMuscles: ['biceps'], secondaryMuscles: ['forearms'], equipment: 'cable' },
+    db,
+  );
+  await createTemplate({ name: 'Libre', exercises: [{ exerciseId: customId, targetSets: 2 }] }, db);
+
+  // A back-filled workout, and an active one from a template with name, notes, RPE and rest timer.
+  await createPastWorkout(d('2026-10-30'), db);
+  const activeId = await startWorkout(pushId, db);
+  await updateWorkoutMeta(activeId, { notes: 'Épaule un peu raide' }, db);
+  const activeSet = await db.workoutSets.where('workoutId').equals(activeId).first();
+  if (!activeSet) throw new Error('set');
+  await updateSet(activeSet.id, { weightKg: 62.5, reps: 8, rpe: 8.5 }, db);
+  await setCompleted(activeSet.id, true, 90, db);
+  await setRestEndsAt(activeId, Date.now() + 90_000, db);
   await db.settings.put({
     key: 'bodyMap',
     value: { greenDays: 3, redDays: 12, countSecondary: false },
@@ -124,9 +177,9 @@ describe('backup', () => {
     const result = await importBackup(backup.backup, 'merge', target);
     expect((await target.foods.get(1))?.name).toBe('Local'); // kept
     expect((await target.bodyWeights.toArray()).map((w) => w.kg)).toEqual([70]); // unique date conflict skipped
-    expect(await target.logEntries.count()).toBe(1);
-    expect(await target.meals.count()).toBe(1);
-    expect(await target.workouts.count()).toBe(1);
+    expect(await target.logEntries.count()).toBe(3);
+    expect(await target.meals.count()).toBe(2);
+    expect(await target.workouts.count()).toBe(3);
     expect(result.added).toBeGreaterThan(0);
     // Built-in exercises exist on both sides with the same ids: all skipped, none duplicated.
     expect(await target.exercises.count()).toBe(await source.exercises.count());

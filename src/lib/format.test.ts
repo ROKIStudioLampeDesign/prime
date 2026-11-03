@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { formatClock, formatDuration, formatVolume, formatWeight } from './format';
+import {
+  formatBodyWeight,
+  formatClock,
+  formatDuration,
+  formatSignedBodyWeight,
+  formatVolume,
+  formatWeight,
+} from './format';
 
 // fr-FR uses a (narrow) no-break space as thousands separator.
 const NO_BREAK_SPACES = new RegExp(`[${String.fromCharCode(0x202f, 0xa0)}]`, 'g');
@@ -25,5 +32,20 @@ describe('gym formatting', () => {
     expect(formatClock(65)).toBe('1:05');
     expect(formatClock(0)).toBe('0:00');
     expect(formatClock(-3)).toBe('0:00');
+  });
+});
+
+describe('body weight formatting', () => {
+  it('rounds to 0.1 kg', () => {
+    expect(formatBodyWeight(72.44)).toBe('72,4 kg');
+    expect(formatBodyWeight(80)).toBe('80 kg');
+  });
+
+  it('signs the rounded value, so tiny changes read as no change', () => {
+    expect(formatSignedBodyWeight(0.44)).toBe('+0,4 kg');
+    expect(formatSignedBodyWeight(-1.25)).toBe('−1,3 kg');
+    expect(formatSignedBodyWeight(0.04)).toBe('±0 kg');
+    expect(formatSignedBodyWeight(-0.04)).toBe('±0 kg');
+    expect(formatSignedBodyWeight(0)).toBe('±0 kg');
   });
 });

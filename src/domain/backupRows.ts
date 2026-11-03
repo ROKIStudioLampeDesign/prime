@@ -8,6 +8,11 @@ import { MEAL_SLOTS } from './nutrition';
  * forged or corrupted file with the right envelope must not put rows into IndexedDB that would
  * crash the UI later. Each table gets a schema of the fields the app relies on; extra fields
  * are allowed (forward compatibility), unknown tables are ignored by the importer.
+ *
+ * Keep SCHEMAS in step with the row types in db/db.ts: when a field is added, renamed or becomes
+ * required, update its schema here (and add a BACKUP_MIGRATIONS transform if stored data
+ * changes), otherwise new exports become unrestorable. The round-trip test in db/backup.test.ts
+ * writes through every app writer to catch such drift.
  */
 
 type Check = (value: unknown) => boolean;
@@ -22,7 +27,10 @@ const text: Check = (v) => typeof v === 'string';
 const bool: Check = (v) => typeof v === 'boolean';
 const localDate: Check = (v) => typeof v === 'string' && isLocalDate(v);
 const zeroOrOne: Check = (v) => v === 0 || v === 1;
-const any: Check = () => true;
+const anything: Check = () => true;
+/** Epoch ms within the range `Date` accepts, so formatting the value can never throw. */
+export const MAX_TIMESTAMP_MS = 8.64e15;
+const timestamp: Check = (v) => finite(v) && Math.abs(v as number) <= MAX_TIMESTAMP_MS;
 
 const oneOf =
   (values: readonly unknown[]): Check =>
@@ -69,7 +77,7 @@ const macros = shape({
   fiber: finite,
 });
 
-const timestamps = { createdAt: finite, updatedAt: finite };
+const timestamps = { createdAt: timestamp, updatedAt: timestamp };
 
 const logEntryBase = {
   id,
@@ -83,7 +91,7 @@ const logEntryBase = {
 };
 
 const SCHEMAS: Readonly<Record<string, Check>> = {
-  settings: shape({ key: text, value: any }),
+  settings: shape({ key: text, value: anything }),
   foods: shape({
     id,
     name: text,
@@ -138,12 +146,12 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     id,
     date: localDate,
     status: oneOf(['active', 'done']),
-    startedAt: finite,
-    endedAt: optional(finite),
+    startedAt: timestamp,
+    endedAt: optional(timestamp),
     name: optional(text),
     notes: optional(text),
     templateId: optional(id),
-    restEndsAt: optional(finite),
+    restEndsAt: optional(timestamp),
   }),
   workoutSets: shape({
     id,
@@ -155,7 +163,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     reps: (v) => Number.isInteger(v) && (v as number) >= 0,
     completed: bool,
     rpe: optional(finite),
-    completedAt: optional(finite),
+    completedAt: optional(timestamp),
   }),
   gymDays: shape({ date: localDate, attended: bool }),
   templates: shape({

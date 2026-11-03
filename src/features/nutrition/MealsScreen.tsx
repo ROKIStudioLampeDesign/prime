@@ -54,7 +54,7 @@ export function MealsScreen() {
           ) : (
             <ul className="mt-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
               {meals.map(({ meal, summary }) => (
-                <li className="list-row" key={meal.id}>
+                <li className="list-row [--row-h:5rem]" key={meal.id}>
                   <Link
                     to={`/nutrition/meals/${meal.id}`}
                     className="flex min-h-20 items-center gap-3 px-3 py-2 active:bg-surface-2"

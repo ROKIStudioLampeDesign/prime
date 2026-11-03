@@ -27,7 +27,19 @@ export function CalendarScreen() {
   const workouts = useLiveQuery(listAllWorkouts);
   const gymDays = useLiveQuery(listGymDays);
   const [selectedDay, setSelectedDay] = useState<LocalDate>();
-  const [starting, setStarting] = useState(false);
+  // In the URL so "Commencer une séance" on the home screen can open the sheet directly.
+  const starting = params.get('start') === '1';
+  function setStarting(open: boolean) {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (open) next.set('start', '1');
+        else next.delete('start');
+        return next;
+      },
+      { replace: true },
+    );
+  }
 
   const attended = useMemo(
     () =>
@@ -154,7 +166,7 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
         attended ? 'bg-accent-fill text-accent-fg' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
-      } ${isToday ? 'ring-2 ring-fg ring-inset' : ''}`}
+      } ${isToday ? 'ring-2 ring-fg ring-inset' : attended ? 'ring-1 ring-accent ring-inset' : ''}`}
     >
       {day}
     </button>

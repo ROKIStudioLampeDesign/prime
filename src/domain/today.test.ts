@@ -1,21 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import { daysBetween, todayWeight, todayWorkouts } from './today';
+import { todayWeight, todayWorkouts } from './today';
 
 const d = (s: string) => s as LocalDate;
 const today = d('2026-11-03');
-
-describe('daysBetween', () => {
-  it('counts calendar days, across months, years and DST changes', () => {
-    expect(daysBetween(d('2026-11-03'), d('2026-11-03'))).toBe(0);
-    expect(daysBetween(d('2026-10-31'), d('2026-11-01'))).toBe(1);
-    expect(daysBetween(d('2025-12-31'), d('2026-01-02'))).toBe(2);
-    // 2026-03-29 and 2026-10-25 are DST changes in Europe/Paris (23 h and 25 h days).
-    expect(daysBetween(d('2026-03-28'), d('2026-03-30'))).toBe(2);
-    expect(daysBetween(d('2026-10-24'), d('2026-10-26'))).toBe(2);
-    expect(daysBetween(d('2026-11-05'), d('2026-11-03'))).toBe(-2);
-  });
-});
 
 describe('todayWorkouts', () => {
   const w = (id: number, date: string, status: 'active' | 'done' = 'done', startedAt = id) => ({
@@ -69,17 +57,23 @@ describe('todayWeight', () => {
     });
   });
 
-  it('compares with the closest weigh-in about a week earlier', () => {
-    // Reference: latest weigh-in on or before latest − 7 days.
+  it('compares with the most recent weigh-in at least a week older, and says over how many days', () => {
     const r = todayWeight(
       [p('2026-10-25', 81), p('2026-10-27', 80.6), p('2026-11-02', 80), p('2026-11-03', 79.9)],
       today,
     );
-    expect(r.weekChange).toBeCloseTo(-0.7);
+    expect(r.change?.kg).toBeCloseTo(-0.7);
+    expect(r.change?.days).toBe(7);
+    const sparse = todayWeight([p('2026-10-24', 81), p('2026-11-03', 80.2)], today);
+    expect(sparse.change?.kg).toBeCloseTo(-0.8);
+    expect(sparse.change?.days).toBe(10);
   });
 
-  it('has no weekly change without a weigh-in at least 7 days older', () => {
-    expect(todayWeight([p('2026-10-30', 80), p('2026-11-03', 79.9)], today).weekChange).toBeUndefined();
+  it('has no change without a weigh-in 7 to 30 days older', () => {
+    expect(todayWeight([p('2026-10-30', 80), p('2026-11-03', 79.9)], today).change).toBeUndefined();
+    // Months-old reference: "−5 kg" would read as a weekly change.
+    expect(todayWeight([p('2026-05-01', 85), p('2026-11-03', 80)], today).change).toBeUndefined();
+    expect(todayWeight([p('2026-10-04', 82), p('2026-11-03', 80)], today).change?.days).toBe(30);
   });
 
   it('ignores weigh-ins dated after today', () => {

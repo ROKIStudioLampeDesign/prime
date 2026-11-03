@@ -189,4 +189,20 @@ describe('validateBackupRows', () => {
       ok: false,
     });
   });
+
+  it('rejects timestamps outside the range of a Date', () => {
+    expect(validateBackupRows(withRow('workouts', { ...valid.workouts[0], startedAt: 1e300 }))).toMatchObject(
+      {
+        ok: false,
+        table: 'workouts',
+      },
+    );
+    expect(validateBackupRows(withRow('foods', { ...valid.foods[0], updatedAt: -9e15 }))).toMatchObject({
+      ok: false,
+      table: 'foods',
+    });
+    expect(validateBackupRows(withRow('workouts', { ...valid.workouts[0], startedAt: 8.64e15 }))).toEqual({
+      ok: true,
+    });
+  });
 });

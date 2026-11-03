@@ -132,3 +132,51 @@ describe('BottomSheet focus containment', () => {
     expect(behind?.hasAttribute('inert')).toBe(false);
   });
 });
+
+describe('nested sheets (a confirmation over a sheet)', () => {
+  function Nested() {
+    const [outer, setOuter] = useState(true);
+    const [confirm, setConfirm] = useState(false);
+    return (
+      <>
+        <main>
+          <button type="button">Derrière</button>
+        </main>
+        <BottomSheet open={outer} title="Produit" onClose={() => setOuter(false)}>
+          <button type="button" onClick={() => setConfirm(true)}>
+            Supprimer
+          </button>
+        </BottomSheet>
+        <ConfirmSheet
+          open={confirm}
+          title="Supprimer ?"
+          message="Action définitive."
+          confirmLabel="Supprimer définitivement"
+          onConfirm={() => setConfirm(false)}
+          onCancel={() => setConfirm(false)}
+        />
+      </>
+    );
+  }
+
+  it('only the top sheet reacts, and the page stays locked until the last one closes', async () => {
+    const user = userEvent.setup();
+    render(<Nested />);
+    const outer = screen.getByRole('dialog', { name: 'Produit' });
+    const outerRoot = outer.parentElement;
+    await user.click(screen.getByRole('button', { name: 'Supprimer' }));
+    expect(outerRoot?.hasAttribute('inert')).toBe(true);
+
+    // Escape closes the confirmation only; the sheet below becomes usable again.
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog', { name: 'Supprimer ?' })).toBeNull();
+    expect(screen.getByRole('dialog', { name: 'Produit' })).toBeTruthy();
+    expect(outerRoot?.hasAttribute('inert')).toBe(false);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.body.style.overflow).toBe('');
+    expect(screen.getByRole('main').closest('div')?.hasAttribute('inert')).toBe(false);
+  });
+});

@@ -1,4 +1,4 @@
-import { validateBackupRows } from './backupRows';
+import { MAX_TIMESTAMP_MS, validateBackupRows } from './backupRows';
 
 /** Identifies Prime backup files. */
 export const BACKUP_APP = 'prime';
@@ -28,7 +28,8 @@ export type ParseBackupResult =
 /**
  * Migrations from an older schema version to the next one, applied in order on import.
  * When a Dexie version changes stored data, add the matching transform here (keyed by the version
- * it upgrades FROM) so older backups stay importable.
+ * it upgrades FROM) so older backups stay importable, and update the row schemas in
+ * backupRows.ts (rows are validated after these transforms, against the current schema).
  */
 export const BACKUP_MIGRATIONS: Readonly<
   Record<number, (tables: Record<string, unknown[]>) => Record<string, unknown[]>>
@@ -49,7 +50,12 @@ export function parseBackup(text: string, currentSchema: number): ParseBackupRes
   }
   const b = data as Partial<BackupFile>;
   if (b.formatVersion !== BACKUP_FORMAT_VERSION) return { ok: false, error: 'unsupportedFormat' };
-  if (typeof b.schemaVersion !== 'number' || typeof b.exportedAt !== 'number')
+  if (
+    typeof b.schemaVersion !== 'number' ||
+    typeof b.exportedAt !== 'number' ||
+    !Number.isFinite(b.exportedAt) ||
+    Math.abs(b.exportedAt) > MAX_TIMESTAMP_MS // formatting it for the preview would throw
+  )
     return { ok: false, error: 'malformed' };
   if (b.schemaVersion > currentSchema) return { ok: false, error: 'newerSchema' };
   if (b.schemaVersion < MIN_BACKUP_SCHEMA) return { ok: false, error: 'olderSchema' };

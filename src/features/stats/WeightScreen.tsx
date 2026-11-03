@@ -78,7 +78,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
       <QuickAdd
         key={formSeed ? `${formSeed.date}-${formSeed.kg}` : 'default'}
         entries={entries}
-        initialDate={formSeed?.date ?? today}
+        initialDate={formSeed?.date}
         initialKg={formSeed?.kg ?? last?.kg}
       />
 
@@ -175,7 +175,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
             <span className="size-2 rounded-full bg-muted" /> Pesées
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-accent-fill" /> Moyenne 7 jours
+            <span className="h-0.5 w-4 rounded bg-accent" /> Moyenne 7 jours
           </span>
         </p>
       </section>

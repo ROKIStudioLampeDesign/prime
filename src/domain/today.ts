@@ -1,10 +1,4 @@
-import { differenceInCalendarDays } from 'date-fns';
-import { addDays, fromLocalDate, type LocalDate } from './date';
-
-/** Calendar days from `from` to `to` (negative when `to` is earlier); DST-safe. */
-export function daysBetween(from: LocalDate, to: LocalDate): number {
-  return differenceInCalendarDays(fromLocalDate(to), fromLocalDate(from));
-}
+import { addDays, daysBetween, type LocalDate } from './date';
 
 interface WorkoutLike {
   date: LocalDate;
@@ -46,20 +40,26 @@ export interface TodayWeight<P extends WeightLike> {
   latest?: P;
   isToday?: boolean;
   daysAgo?: number;
-  /** Latest minus the closest weigh-in at least 7 days older; undefined without one. */
-  weekChange?: number;
+  /**
+   * Change since the most recent weigh-in 7 to 30 days before the latest one, and over how many
+   * days. Undefined without one: an older reference would read as a weekly change.
+   */
+  change?: { kg: number; days: number };
 }
 
 export function todayWeight<P extends WeightLike>(points: readonly P[], today: LocalDate): TodayWeight<P> {
   const past = points.filter((p) => p.date <= today).sort((a, b) => a.date.localeCompare(b.date));
   const latest = past.at(-1);
   if (!latest) return {};
-  const weekBefore = addDays(latest.date, -7);
-  const reference = past.findLast((p) => p.date <= weekBefore);
+  const newest = addDays(latest.date, -7);
+  const oldest = addDays(latest.date, -30);
+  const reference = past.findLast((p) => p.date <= newest && p.date >= oldest);
   return {
     latest,
     isToday: latest.date === today,
     daysAgo: daysBetween(latest.date, today),
-    ...(reference && { weekChange: latest.kg - reference.kg }),
+    ...(reference && {
+      change: { kg: latest.kg - reference.kg, days: daysBetween(reference.date, latest.date) },
+    }),
   };
 }

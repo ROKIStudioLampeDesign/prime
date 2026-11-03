@@ -16,6 +16,18 @@ function inertSiblings(root: HTMLElement): () => void {
   };
 }
 
+/** Open sheets: page scroll stays locked until the last one closes (sheets can stack). */
+let openSheets = 0;
+
+function lockScroll(): () => void {
+  openSheets++;
+  document.body.style.overflow = 'hidden';
+  return () => {
+    openSheets--;
+    if (openSheets === 0) document.body.style.overflow = '';
+  };
+}
+
 /** Wraps Tab / Shift+Tab around the sheet's focusable elements. */
 function trapFocus(e: KeyboardEvent, panel: HTMLElement) {
   const focusable = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
@@ -63,11 +75,11 @@ export function BottomSheet({ open, onClose, title, header, children }: BottomSh
     panelRef.current?.focus({ preventScroll: true });
     const restoreSiblings = rootRef.current ? inertSiblings(rootRef.current) : () => {};
     document.addEventListener('keydown', onKeyDown);
-    document.body.style.overflow = 'hidden';
+    const unlockScroll = lockScroll();
     return () => {
       restoreSiblings();
       document.removeEventListener('keydown', onKeyDown);
-      document.body.style.overflow = '';
+      unlockScroll();
       previouslyFocused?.focus({ preventScroll: true });
     };
   }, [open]);

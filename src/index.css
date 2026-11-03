@@ -34,10 +34,14 @@
   --color-fg: #eef0f4;
   --color-muted: #95a0b4;
   --color-accent: #ffc42e;
-  /* Solid accent surfaces (primary buttons, selected days, bars); text on them is accent-fg. */
+  /*
+   * Solid accent surfaces (buttons, selected days and segments); text on them is accent-fg.
+   * Thin indicators (bars, rings, chart lines) use `accent`, which stays visible on light
+   * backgrounds; state cues on a fill add an `accent` ring (invisible in dark, ochre in light).
+   */
   --color-accent-fill: #ffc42e;
   --color-accent-fg: #10151f;
-  --color-danger: #ff7a6b;
+  --color-danger: #ff8577;
   /* Body map silhouette, behind the colored muscles. */
   --color-body: #2a3447;
 
@@ -72,7 +76,7 @@
     --color-accent: #8a5c00;
     --color-accent-fill: #ffc42e;
     --color-accent-fg: #10151f;
-    --color-danger: #c0291f;
+    --color-danger: #a8201a;
     --color-body: #d2d8e2;
   }
 }
@@ -129,9 +133,15 @@
 
 /*
  * Long list rows (products, history, exercises): the browser skips layout and paint of rows
- * outside the viewport. The intrinsic size is a placeholder until a row is first rendered.
+ * outside the viewport. `--row-h` is the expected row height until a row is first rendered
+ * (set it per list, e.g. `[--row-h:15rem]`, so the page doesn't jump while scrolling).
+ * Paint containment clips anything outside the row, so focus rings are drawn inside.
  */
 @utility list-row {
   content-visibility: auto;
-  contain-intrinsic-size: auto 3.5rem;
+  contain-intrinsic-size: auto var(--row-h, 3.5rem);
+
+  & :focus-visible {
+    outline-offset: -2px;
+  }
 }

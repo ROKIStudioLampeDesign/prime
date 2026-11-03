@@ -31,10 +31,21 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
       les données grossissent vraiment.
 - [x] **5. Écran « Aujourd'hui »** — vrai résumé du jour (repas, séance, poids).
       _Skills : test-driven-development, frontend-design._
-- [ ] **Déploiement Cloudflare Pages** — mise en ligne pour tester CSP et Lighthouse en
-      conditions réelles (nécessite la connexion Wrangler).
-- [ ] **6. Vérification finale** — e2e, Lighthouse sur l'URL réelle, revue de code par sous-agent.
+- [x] **Déploiement Cloudflare Workers** — Workers Builds redéploie à chaque push sur `main`
+      (`wrangler.jsonc`) : <https://prime.thomasrocchi1111.workers.dev>.
+- [x] **6. Vérification finale** — e2e, Lighthouse sur l'URL réelle, revue de code par sous-agent.
       _Skills : verification-before-completion, requesting-code-review._
+      Sur l'URL réelle : en-têtes de sécurité et CSP servis, aucune violation CSP ni erreur
+      console, service worker actif, lien profond rechargé sans service worker = 200, écrans
+      (y compris chargés à la demande) disponibles hors connexion. Lighthouse (mobile, 1er
+      chargement à froid) : accessibilité 100, bonnes pratiques 100, performance 68 (démarrage
+      de React et création de la base au premier lancement ; ensuite l'app vient du cache).
+      Revue de code : rien de critique ; corrigés : date de la pesée figée après minuit,
+      variation « en 7 jours » comparée à une pesée trop ancienne, test aller-retour des
+      sauvegardes passant par tous les écrivains, horodatages hors limites, verrou de défilement
+      et test des feuilles imbriquées, bandeau de mise à jour sous les feuilles, contrastes
+      (danger sur fond teinté, repères d'état en thème clair), chargement annoncé, listes
+      longues, « Commencer une séance » depuis l'accueil, horloge `useToday` partagée.
 
 ## Identité visuelle (étape 2)
 
@@ -49,7 +60,8 @@ Deux pistes étudiées ; la piste A est retenue (choix délégué, cf. « n'atte
   records, chiffres manuscrits. Écartée : l'app est surtout utilisée le soir et en salle, où un
   thème sombre par défaut est plus confortable (et c'est la règle du projet).
 
-Contrastes vérifiés (WCAG AA, ≥ 4,8:1 pour tous les couples texte/fond, dans les deux thèmes).
+Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1 sur tous les fonds et fonds teintés, dans les deux
+thèmes ; repères d'état non textuels ≥ 3:1 (liseré ocre sur les remplissages jaunes en thème clair).
 
 ## Risques et changements
 

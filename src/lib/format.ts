@@ -24,6 +24,18 @@ export function formatWeight(kg: number): string {
   return weight.format(kg);
 }
 
+/** Body weight to 0.1 kg, a scale's precision: "72,4 kg". */
+export function formatBodyWeight(kg: number): string {
+  return `${formatWeight(Math.round(kg * 10) / 10)} kg`;
+}
+
+/** A change in body weight: "+0,4 kg", "−1,3 kg", "±0 kg" (signed after rounding). */
+export function formatSignedBodyWeight(kg: number): string {
+  const tenths = Math.round(Math.abs(kg) * 10);
+  const sign = tenths === 0 ? '±' : kg > 0 ? '+' : '−';
+  return `${sign}${formatWeight(tenths / 10)} kg`;
+}
+
 /** "12 450 kg" */
 export function formatVolume(kg: number): string {
   return `${integer.format(kg)} kg`;

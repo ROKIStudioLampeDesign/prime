@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
   const name = useId();
   const selected =
     tone === 'accent'
-      ? 'bg-accent-fill text-accent-fg'
+      ? 'bg-accent-fill text-accent-fg ring-1 ring-accent ring-inset'
       : onSurface
         ? 'bg-surface text-fg'
         : 'bg-surface-2 text-fg';

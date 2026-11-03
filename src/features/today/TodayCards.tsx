@@ -13,11 +13,21 @@ import type { LocalDate } from '../../domain/date';
 import { GOAL_KINDS, goalProgress, sumMacros } from '../../domain/nutrition';
 import { todayWeight, todayWorkouts } from '../../domain/today';
 import { workoutStats } from '../../domain/workout';
-import { formatDuration, formatMacro, formatVolume, formatWeight } from '../../lib/format';
+import {
+  formatDuration,
+  formatMacro,
+  formatSignedBodyWeight,
+  formatVolume,
+  formatWeight,
+} from '../../lib/format';
 
 /** Reserves a card's height while its data loads, so the page doesn't jump. */
 function CardPlaceholder({ label }: { label: string }) {
-  return <div className="h-32 rounded-2xl bg-surface" aria-busy="true" aria-label={label} />;
+  return (
+    <div role="status" className="h-32 rounded-2xl bg-surface">
+      <span className="sr-only">{label} : chargement…</span>
+    </div>
+  );
 }
 
 function CardLink({ to, title, children }: { to: string; title: string; children: ReactNode }) {
@@ -154,7 +164,7 @@ export function GymCard({ today }: { today: LocalDate }) {
           : 'Ta première séance apparaîtra ici.'}
       </p>
       <Link
-        to="/gym"
+        to="/gym?start=1"
         className="mt-3 flex min-h-12 items-center justify-center rounded-xl bg-accent-fill px-4 font-semibold text-accent-fg active:opacity-80"
       >
         Commencer une séance
@@ -166,7 +176,7 @@ export function GymCard({ today }: { today: LocalDate }) {
 export function WeightCard({ today }: { today: LocalDate }) {
   const entries = useLiveQuery(listBodyWeights);
   if (!entries) return <CardPlaceholder label="Poids" />;
-  const { latest, isToday, daysAgo, weekChange } = todayWeight(entries, today);
+  const { latest, isToday, daysAgo, change } = todayWeight(entries, today);
 
   return (
     <CardLink to="/stats" title="Poids">
@@ -175,10 +185,9 @@ export function WeightCard({ today }: { today: LocalDate }) {
           <p className="mt-2 flex items-baseline gap-2">
             <span className="numeral text-5xl leading-none">{formatWeight(latest.kg)}</span>
             <span className="text-sm text-muted">kg</span>
-            {weekChange !== undefined && (
+            {change && (
               <span className="ml-auto text-sm text-muted tabular-nums">
-                {weekChange > 0 ? '+' : weekChange < 0 ? '−' : '±'}
-                {formatWeight(Math.abs(Math.round(weekChange * 10) / 10))} kg en 7 jours
+                {formatSignedBodyWeight(change.kg)} en {change.days} jours
               </span>
             )}
           </p>

@@ -1,4 +1,4 @@
-import { addDays as addCalendarDays, format, isValid, parse } from 'date-fns';
+import { addDays as addCalendarDays, differenceInCalendarDays, format, isValid, parse } from 'date-fns';
 
 /** A calendar day in the user's local time zone, formatted "YYYY-MM-DD". */
 export type LocalDate = string & { readonly __brand: 'LocalDate' };
@@ -12,6 +12,11 @@ export function toLocalDate(date: Date): LocalDate {
 
 export function todayLocalDate(now: Date = new Date()): LocalDate {
   return toLocalDate(now);
+}
+
+/** Calendar days from `from` to `to` (negative when `to` is earlier); DST-safe. */
+export function daysBetween(from: LocalDate, to: LocalDate): number {
+  return differenceInCalendarDays(fromLocalDate(to), fromLocalDate(from));
 }
 
 /** Milliseconds from `now` to the next local midnight (23 h or 25 h away on DST days). */

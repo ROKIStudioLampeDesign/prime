@@ -1,5 +1,5 @@
 import type { PersonalRecord } from '../../domain/strength';
-import { formatWeight } from '../../lib/format';
+import { formatBodyWeight, formatSignedBodyWeight, formatWeight } from '../../lib/format';
 
 /** The set behind a record: "72,5 kg × 6" (or a note for single-rep 1RMs). */
 export function recordDetail(record: PersonalRecord): string {
@@ -8,7 +8,7 @@ export function recordDetail(record: PersonalRecord): string {
 }
 
 /** "72,4 kg" with 0.1 precision. */
-export const kg = (value: number) => `${formatWeight(Math.round(value * 10) / 10)} kg`;
+export const kg = formatBodyWeight;
 
 /** "+0,4 kg", "−1,2 kg", "±0 kg". */
-export const signedKg = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : '±'}${kg(Math.abs(value))}`;
+export const signedKg = formatSignedBodyWeight;

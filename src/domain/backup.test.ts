@@ -53,6 +53,11 @@ describe('parseBackup', () => {
       ok: false,
       error: 'malformed',
     });
+    // Out of Date's range: the import preview would crash formatting it.
+    expect(parseBackup(JSON.stringify({ ...valid, exportedAt: 1e300 }), 5)).toEqual({
+      ok: false,
+      error: 'malformed',
+    });
   });
 });
 

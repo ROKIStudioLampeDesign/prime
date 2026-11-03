@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  daysBetween,
   formatMonthParam,
   fromLocalDate,
   isLocalDate,
@@ -80,5 +81,19 @@ describe('month params', () => {
     expect(shiftMonth({ year: 2026, month: 12 }, 1)).toEqual({ year: 2027, month: 1 });
     expect(shiftMonth({ year: 2026, month: 1 }, -1)).toEqual({ year: 2025, month: 12 });
     expect(shiftMonth({ year: 2026, month: 5 }, -17)).toEqual({ year: 2024, month: 12 });
+  });
+});
+
+describe('daysBetween', () => {
+  const ld = (s: string) => s as LocalDate;
+
+  it('counts calendar days, across months, years and DST changes', () => {
+    expect(daysBetween(ld('2026-11-03'), ld('2026-11-03'))).toBe(0);
+    expect(daysBetween(ld('2026-10-31'), ld('2026-11-01'))).toBe(1);
+    expect(daysBetween(ld('2025-12-31'), ld('2026-01-02'))).toBe(2);
+    // 2026-03-29 and 2026-10-25 are DST changes in Europe/Paris (23 h and 25 h days).
+    expect(daysBetween(ld('2026-03-28'), ld('2026-03-30'))).toBe(2);
+    expect(daysBetween(ld('2026-10-24'), ld('2026-10-26'))).toBe(2);
+    expect(daysBetween(ld('2026-11-05'), ld('2026-11-03'))).toBe(-2);
   });
 });

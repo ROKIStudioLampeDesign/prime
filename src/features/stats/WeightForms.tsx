@@ -12,16 +12,21 @@ import { kg } from './labels';
 
 interface QuickAddProps {
   entries: BodyWeightEntry[];
-  initialDate: LocalDate;
+  /** A specific day to edit; without it the form follows today. */
+  initialDate?: LocalDate;
   initialKg?: number;
 }
 
 /** Date (today by default) + weight prefilled with the last value; saving replaces that day's value. */
 export function QuickAdd({ entries, initialDate, initialKg }: QuickAddProps) {
   const today = useToday();
-  const [date, setDate] = useState<LocalDate>(initialDate);
+  // Undefined follows today, also across midnight while the app stays open: a stale date would
+  // offer to replace yesterday's weigh-in.
+  const [pickedDate, setPickedDate] = useState<LocalDate | undefined>(initialDate);
+  const date = pickedDate ?? today;
   const [text, setText] = useState(initialKg !== undefined ? formatWeight(initialKg) : '');
-  const [saved, setSaved] = useState(false);
+  const [savedFor, setSavedFor] = useState<LocalDate>();
+  const saved = savedFor === date;
   const value = parseBodyWeight(text);
   const existing = entries.find((e) => e.date === date);
 
@@ -29,7 +34,7 @@ export function QuickAdd({ entries, initialDate, initialKg }: QuickAddProps) {
     e.preventDefault();
     if (value === undefined) return;
     await upsertBodyWeight(date, value);
-    setSaved(true);
+    setSavedFor(date);
   }
 
   return (
@@ -41,8 +46,9 @@ export function QuickAdd({ entries, initialDate, initialKg }: QuickAddProps) {
           max={today}
           value={date}
           onChange={(e) => {
-            if (isLocalDate(e.target.value)) setDate(e.target.value);
-            setSaved(false);
+            const picked = e.target.value;
+            if (isLocalDate(picked)) setPickedDate(picked === today ? undefined : picked);
+            setSavedFor(undefined);
           }}
         />
         <TextField
@@ -54,7 +60,7 @@ export function QuickAdd({ entries, initialDate, initialKg }: QuickAddProps) {
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-            setSaved(false);
+            setSavedFor(undefined);
           }}
           onFocus={(e) => e.currentTarget.select()}
           error={text.trim() !== '' && value === undefined ? 'Entre 20 et 400 kg' : undefined}

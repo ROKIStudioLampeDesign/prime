@@ -19,7 +19,9 @@ describe('TodayScreen', () => {
     expect(await screen.findByText('Rien de noté pour l’instant : ajoute ton premier repas.')).toBeTruthy();
     expect(await screen.findByText('Aucune pesée : note ton poids pour suivre ta courbe.')).toBeTruthy();
     expect(await screen.findByText('Ta première séance apparaîtra ici.')).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'Commencer une séance' }).getAttribute('href')).toBe('/gym');
+    expect(screen.getByRole('link', { name: 'Commencer une séance' }).getAttribute('href')).toBe(
+      '/gym?start=1',
+    );
     expect(await axeViolations()).toEqual([]);
   });
 

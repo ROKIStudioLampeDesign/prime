@@ -31,6 +31,17 @@ test('create a product, log it in the diary and see the totals', async ({ page }
   ).toBeVisible();
 });
 
+test('the home screen opens the workout start sheet in one tap', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Commencer une séance' }).click();
+  await expect(page).toHaveURL(/\/gym\?start=1$/);
+  const sheet = page.getByRole('dialog', { name: 'Commencer une séance' });
+  await expect(sheet.getByRole('button', { name: 'Séance libre' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(sheet).toBeHidden();
+  await expect(page).toHaveURL(/\/gym$/);
+});
+
 test('log a workout set, see the rest timer and finish with a summary', async ({ page }) => {
   await page.goto('/gym');
   await page.getByRole('button', { name: 'Commencer une séance' }).click();

@@ -61,7 +61,7 @@ export function FoodsScreen() {
           ) : (
             <ul className="mt-4 grid grid-cols-2 gap-3">
               {ranked.map(({ food }) => (
-                <li className="list-row" key={food.id}>
+                <li className="list-row [--row-h:15rem]" key={food.id}>
                   <Link
                     to={`/nutrition/foods/${food.id}`}
                     className="block overflow-hidden rounded-2xl bg-surface active:opacity-80"

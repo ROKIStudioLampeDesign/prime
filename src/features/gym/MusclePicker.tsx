@@ -37,7 +37,7 @@ export function MusclePicker({ primary, secondary, onChange, disabled }: MuscleP
     <div className="flex flex-col gap-3">
       <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="size-3 rounded-full bg-accent-fill" /> Principal
+          <span className="size-3 rounded-full border border-accent bg-accent-fill" /> Principal
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-3 rounded-full border border-accent bg-accent/15" /> Secondaire

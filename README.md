@@ -32,7 +32,7 @@ ses données (stockage persistant) qu’un simple onglet.
 
 ## Déploiement
 
-Prime est un site statique à servir en HTTPS (Cloudflare Pages recommandé). Toutes les étapes sont
+Prime est un site statique à servir en HTTPS (déployé sur Cloudflare Workers). Toutes les étapes sont
 dans [DEPLOY.md](DEPLOY.md).
 
 ## Sauvegarde

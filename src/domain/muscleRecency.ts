@@ -1,5 +1,4 @@
-import { differenceInCalendarDays } from 'date-fns';
-import { addDays, fromLocalDate, type LocalDate } from './date';
+import { addDays, daysBetween, type LocalDate } from './date';
 import { MUSCLE_IDS, type MuscleId } from './muscles';
 
 /** One completed set, with the date of its workout and the muscles of its exercise. */
@@ -50,7 +49,7 @@ export function lastTrainedDate(
 /** Whole calendar days between `date` and `today` (0 = today; future dates count as 0). */
 export function daysSince(date: LocalDate | undefined, today: LocalDate): number | undefined {
   if (date === undefined) return undefined;
-  return Math.max(0, differenceInCalendarDays(fromLocalDate(today), fromLocalDate(date)));
+  return Math.max(0, daysBetween(date, today));
 }
 
 export function validateThresholds(t: RecencyThresholds): boolean {

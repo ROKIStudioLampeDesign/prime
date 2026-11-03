@@ -91,7 +91,7 @@ function ItemList({
       {title && <h2 className="mb-1 px-1 text-sm font-semibold text-muted">{title}</h2>}
       <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
         {items.map((item) => (
-          <li className="list-row" key={item.key}>
+          <li className="list-row [--row-h:4rem]" key={item.key}>
             <button
               type="button"
               onClick={() => onSelect(item.key)}
