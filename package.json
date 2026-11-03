@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
-    "deploy": "npm run build && wrangler pages deploy dist --project-name prime --branch main",
+    "deploy": "npm run build && wrangler deploy",
     "test:e2e": "playwright test"
   },
   "dependencies": {

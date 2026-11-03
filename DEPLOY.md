@@ -28,11 +28,10 @@ et l’installation sur l’écran d’accueil. Cloudflare Pages fournit HTTPS a
 
 ```sh
 npm ci
-npm run build
-npx wrangler pages deploy dist --project-name prime
+npm run deploy   # build + wrangler deploy (Workers, config dans wrangler.jsonc)
 ```
 
-La première fois, `wrangler` ouvre le navigateur pour se connecter et crée le projet.
+La première fois, lance `npx wrangler login` (le navigateur s’ouvre pour se connecter).
 
 ## Ce qui est déjà configuré
 
