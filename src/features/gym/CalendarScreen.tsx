@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useToday } from '../../components/useToday';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
@@ -19,7 +20,7 @@ import {
   listAllWorkouts,
   startWorkout,
 } from '../../db/workouts';
-import { todayLocalDate, type LocalDate } from '../../domain/date';
+import { type LocalDate } from '../../domain/date';
 import { attendedDates, monthGrid, sessionsInMonth, weeklyStreak } from '../../domain/gymCalendar';
 import { formatDuration } from '../../lib/format';
 import { GymTabs } from './shared';
@@ -38,7 +39,7 @@ const monthParam = (year: number, month: number) => `${year}-${String(month).pad
 
 /** /gym — start/resume a workout, attendance calendar and counters. */
 export function CalendarScreen() {
-  const today = todayLocalDate();
+  const today = useToday();
   const [params, setParams] = useSearchParams();
   const { year, month } = parseMonth(params.get('month'), today);
   const workouts = useLiveQuery(listAllWorkouts);
@@ -266,9 +267,10 @@ interface DaySheetProps {
 
 function DaySheet({ date, workouts, manual, onClose }: DaySheetProps) {
   const navigate = useNavigate();
+  const today = useToday();
   const hasWorkout = workouts.length > 0;
   const attended = hasWorkout || manual;
-  const isPastOrToday = date !== undefined && date <= todayLocalDate();
+  const isPastOrToday = date !== undefined && date <= today;
 
   return (
     <BottomSheet open={date !== undefined} onClose={onClose} title={date ? longDay(date) : ''}>

@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useToday } from '../../components/useToday';
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Link } from 'react-router';
 import { Loading } from '../../components/Loading';
@@ -12,7 +13,6 @@ import {
 } from '../../db/bodyMap';
 import type { Exercise } from '../../db/db';
 import { listExercises } from '../../db/exercises';
-import { todayLocalDate } from '../../domain/date';
 import { colorFor, muscleRecency, type TrainingRecord } from '../../domain/muscleRecency';
 import { MUSCLE_IDS, MUSCLES, type BodyView, type MuscleId } from '../../domain/muscles';
 import { BodyMap } from './BodyMap';
@@ -55,7 +55,7 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
   const [view, setView] = useState<BodyView>('front');
   const [selected, setSelected] = useState<MuscleId>();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
-  const today = todayLocalDate();
+  const today = useToday();
 
   const exercisesById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
   const records = useMemo<TrainingRecord[]>(

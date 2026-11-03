@@ -1,3 +1,5 @@
+import { validateBackupRows } from './backupRows';
+
 /** Identifies Prime backup files. */
 export const BACKUP_APP = 'prime';
 /** Version of the file envelope (not of the database schema). */
@@ -15,7 +17,13 @@ export interface BackupFile {
 }
 
 export type BackupError =
-  'notJson' | 'notPrime' | 'unsupportedFormat' | 'newerSchema' | 'olderSchema' | 'malformed';
+  'notJson' | 'notPrime' | 'unsupportedFormat' | 'newerSchema' | 'olderSchema' | 'malformed' | 'invalidRows';
+
+export type ParseBackupResult =
+  | { ok: true; backup: BackupFile }
+  | { ok: false; error: Exclude<BackupError, 'invalidRows'> }
+  /** A row that doesn't match its table's shape: `index` is 0-based within `table`. */
+  | { ok: false; error: 'invalidRows'; table: string; index: number };
 
 /**
  * Migrations from an older schema version to the next one, applied in order on import.
@@ -29,10 +37,7 @@ export const BACKUP_MIGRATIONS: Readonly<
 /** Oldest schema version a backup can come from (backups exist since schema v5). */
 export const MIN_BACKUP_SCHEMA = 5;
 
-export function parseBackup(
-  text: string,
-  currentSchema: number,
-): { ok: true; backup: BackupFile } | { ok: false; error: BackupError } {
+export function parseBackup(text: string, currentSchema: number): ParseBackupResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -63,6 +68,9 @@ export function parseBackup(
     const migrate = BACKUP_MIGRATIONS[v];
     if (migrate) tables = migrate(tables);
   }
+  // Validated after migrations, against the current schema.
+  const rows = validateBackupRows(tables);
+  if (!rows.ok) return { ok: false, error: 'invalidRows', table: rows.table, index: rows.index };
   return { ok: true, backup: { ...(b as BackupFile), tables, schemaVersion: currentSchema } };
 }
 

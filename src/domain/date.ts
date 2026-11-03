@@ -14,6 +14,12 @@ export function todayLocalDate(now: Date = new Date()): LocalDate {
   return toLocalDate(now);
 }
 
+/** Milliseconds from `now` to the next local midnight (23 h or 25 h away on DST days). */
+export function msUntilNextLocalMidnight(now: Date): number {
+  const next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  return next.getTime() - now.getTime();
+}
+
 export function isLocalDate(value: string): value is LocalDate {
   return LOCAL_DATE_RE.test(value) && isValid(parse(value, LOCAL_DATE_FORMAT, new Date()));
 }

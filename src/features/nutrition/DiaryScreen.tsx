@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useToday } from '../../components/useToday';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '../../components/EmptyState';
@@ -9,7 +10,6 @@ import { iconButton, Screen } from '../../components/Screen';
 import type { LogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
 import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
-import { todayLocalDate } from '../../domain/date';
 import { MEAL_SLOTS, roundTo, sumMacros, type MealSlot } from '../../domain/nutrition';
 import { formatGrams, formatMacro } from '../../lib/format';
 import { DailySummary } from './DailySummary';
@@ -30,7 +30,8 @@ export function DiaryScreen() {
 
   const editing = entries?.find((e) => e.id === editingId);
   const totals = useMemo(() => sumMacros((entries ?? []).map((e) => e.macros)), [entries]);
-  const isToday = date === todayLocalDate();
+  const today = useToday();
+  const isToday = date === today;
 
   return (
     <Screen
@@ -40,7 +41,7 @@ export function DiaryScreen() {
           <button
             type="button"
             className="min-h-11 rounded-full px-3 text-sm font-semibold text-accent active:bg-surface-2"
-            onClick={() => setDate(todayLocalDate())}
+            onClick={() => setDate(today)}
           >
             Aujourd’hui
           </button>

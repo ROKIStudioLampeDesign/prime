@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useSearchParams } from 'react-router';
+import { useToday } from '../../components/useToday';
 import { isLocalDate, todayLocalDate, type LocalDate } from '../../domain/date';
 import { MEAL_SLOTS, type MealSlot } from '../../domain/nutrition';
 
@@ -22,7 +23,8 @@ export function addEntryPath(date: LocalDate, slot?: MealSlot): string {
 /** The diary day, kept in the URL (`?date=`) so back navigation and reloads keep it. Defaults to today. */
 export function useDiaryDate(): [LocalDate, (date: LocalDate) => void] {
   const [params, setParams] = useSearchParams();
-  const date = parseDateParam(params.get('date')) ?? todayLocalDate();
+  const today = useToday();
+  const date = parseDateParam(params.get('date')) ?? today;
   const setDate = useCallback(
     (next: LocalDate) => setParams(next === todayLocalDate() ? {} : { date: next }, { replace: true }),
     [setParams],

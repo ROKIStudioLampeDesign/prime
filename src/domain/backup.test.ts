@@ -6,14 +6,14 @@ const valid = {
   formatVersion: 1,
   schemaVersion: 5,
   exportedAt: 1_700_000_000_000,
-  tables: { foods: [{ id: 1 }], goals: [] },
+  tables: { settings: [{ key: 'theme', value: 'dark', updatedAt: 1 }], goals: [] },
 };
 
 describe('parseBackup', () => {
   it('accepts a valid backup and counts rows', () => {
     const r = parseBackup(JSON.stringify(valid), 5);
     expect(r.ok).toBe(true);
-    if (r.ok) expect(backupCounts(r.backup)).toEqual({ foods: 1, goals: 0 });
+    if (r.ok) expect(backupCounts(r.backup)).toEqual({ settings: 1, goals: 0 });
   });
 
   it('rejects non-JSON, foreign files and unknown formats', () => {
@@ -79,5 +79,17 @@ describe('backup reminder', () => {
       backupReminderDue({ lastExportAt: now - 30 * DAY, snoozedUntil: now + DAY, hasData: true, now }),
     ).toBe(false);
     expect(backupReminderDue({ hasData: true, now })).toBe(false);
+  });
+});
+
+describe('parseBackup row validation', () => {
+  it('rejects a well-formed envelope whose rows are invalid, saying where', () => {
+    const forged = { ...valid, tables: { foods: [{ id: 1, name: 42 }] } };
+    expect(parseBackup(JSON.stringify(forged), 5)).toEqual({
+      ok: false,
+      error: 'invalidRows',
+      table: 'foods',
+      index: 0,
+    });
   });
 });

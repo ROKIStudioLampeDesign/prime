@@ -4,15 +4,15 @@ Refonte **en place** (pas de réécriture). Stack conservée : Vite, React 19, T
 Tailwind CSS 4, Dexie, React Router 7, Recharts, vite-plugin-pwa. Aucun changement de schéma de
 données : les données existantes sont conservées sans migration.
 
-Règles : une étape = un commit, tests lancés et verts à chaque étape, résumé puis validation
-avant l'étape suivante. Skills utilisés indiqués pour chaque étape (`.claude/skills/`).
+Règles : une étape = un commit, tests lancés et verts à chaque étape. Depuis l'étape 1, les
+étapes s'enchaînent sans validation intermédiaire (à ta demande). Skills utilisés indiqués pour chaque étape (`.claude/skills/`).
 
 ## Étapes
 
-- [x] **0. Socle de tests** — tests de composants (Testing Library + jsdom + vitest-axe) et tests
+- [x] **0. Socle de tests** — tests de composants (Testing Library + jsdom + axe-core) et tests
       end-to-end Playwright versionnés dans le dépôt (navigation, hors connexion, journal, séance).
       _Skills : react-testing, test-driven-development._
-- [ ] **1. Robustesse et sécurité** — validation de chaque ligne à l'import d'une sauvegarde,
+- [x] **1. Robustesse et sécurité** — validation de chaque ligne à l'import d'une sauvegarde,
       _focus trap_ des bottom sheets, « Aujourd'hui » qui suit le changement de jour, arrêt du
       minuteur de mise à jour, état de chargement de « Dernière sauvegarde ».
       _Skills : typescript-patterns, frontend-a11y, test-driven-development._

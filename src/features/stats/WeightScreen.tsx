@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useToday } from '../../components/useToday';
 import { useMemo, useState, type FormEvent } from 'react';
 import {
   CartesianGrid,
@@ -33,7 +34,7 @@ import {
   validateBodyWeight,
   type WeightRange,
 } from '../../domain/bodyWeight';
-import { isLocalDate, todayLocalDate, type LocalDate } from '../../domain/date';
+import { isLocalDate, type LocalDate } from '../../domain/date';
 import { parseDecimal } from '../../domain/number';
 import { formatWeight } from '../../lib/format';
 import { axisProps, niceTicks, shortDateLabel, timeTicks, toTime } from './chartUtils';
@@ -72,7 +73,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
   const [toDelete, setToDelete] = useState<BodyWeightEntry>();
   /** Bumped to re-initialise the quick-add form with another day's value. */
   const [formSeed, setFormSeed] = useState<{ date: LocalDate; kg?: number }>();
-  const today = todayLocalDate();
+  const today = useToday();
 
   const visible = useMemo(() => pointsInRange(entries, range, today), [entries, range, today]);
   const summary = summarizeWeights(visible);
@@ -268,7 +269,7 @@ interface QuickAddProps {
 
 /** Date (today by default) + weight prefilled with the last value; saving replaces that day's value. */
 function QuickAdd({ entries, initialDate, initialKg }: QuickAddProps) {
-  const today = todayLocalDate();
+  const today = useToday();
   const [date, setDate] = useState<LocalDate>(initialDate);
   const [text, setText] = useState(initialKg !== undefined ? formatWeight(initialKg) : '');
   const [saved, setSaved] = useState(false);

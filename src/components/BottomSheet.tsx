@@ -2,6 +2,39 @@ import { useEffect, useEffectEvent, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useKeyboardInset } from './useKeyboardInset';
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Marks every other child of <body> inert (unreachable by Tab, taps and screen readers); returns the undo. */
+function inertSiblings(root: HTMLElement): () => void {
+  const marked = [...document.body.children].filter(
+    (el): el is HTMLElement => el instanceof HTMLElement && el !== root && !el.hasAttribute('inert'),
+  );
+  for (const el of marked) el.setAttribute('inert', '');
+  return () => {
+    for (const el of marked) el.removeAttribute('inert');
+  };
+}
+
+/** Wraps Tab / Shift+Tab around the sheet's focusable elements. */
+function trapFocus(e: KeyboardEvent, panel: HTMLElement) {
+  const focusable = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)];
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (!first || !last) {
+    e.preventDefault();
+    return;
+  }
+  const active = document.activeElement;
+  if (e.shiftKey && (active === first || active === panel)) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && active === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
 interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
@@ -12,22 +45,28 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, header, children }: BottomSheetProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const keyboardInset = useKeyboardInset();
   // An effect event, so callers can pass inline closures without re-running the open effect
   // (which would steal focus from inputs inside the sheet on every render).
-  const onEscape = useEffectEvent((e: KeyboardEvent) => {
+  const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+    // A sheet opened above this one made it inert: only the topmost sheet reacts.
+    if (rootRef.current?.hasAttribute('inert')) return;
     if (e.key === 'Escape') onClose();
+    else if (e.key === 'Tab' && panelRef.current) trapFocus(e, panelRef.current);
   });
 
   useEffect(() => {
     if (!open) return;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     panelRef.current?.focus({ preventScroll: true });
-    document.addEventListener('keydown', onEscape);
+    const restoreSiblings = rootRef.current ? inertSiblings(rootRef.current) : () => {};
+    document.addEventListener('keydown', onKeyDown);
     document.body.style.overflow = 'hidden';
     return () => {
-      document.removeEventListener('keydown', onEscape);
+      restoreSiblings();
+      document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = '';
       previouslyFocused?.focus({ preventScroll: true });
     };
@@ -36,7 +75,7 @@ export function BottomSheet({ open, onClose, title, header, children }: BottomSh
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50">
+    <div ref={rootRef} className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/60 motion-safe:animate-fade-in" onClick={onClose} />
       <div
         ref={panelRef}

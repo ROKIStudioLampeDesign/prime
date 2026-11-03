@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useToday } from '../../components/useToday';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useSearchParams } from 'react-router';
@@ -9,7 +10,7 @@ import { iconButton, Screen } from '../../components/Screen';
 import { listBodyWeights } from '../../db/bodyWeights';
 import { getGoals } from '../../db/goals';
 import { listEntriesBetween, listWorkoutVolumesBetween } from '../../db/stats';
-import { addDays, fromLocalDate, isLocalDate, todayLocalDate, type LocalDate } from '../../domain/date';
+import { addDays, fromLocalDate, isLocalDate, type LocalDate } from '../../domain/date';
 import { roundMacro } from '../../domain/nutrition';
 import { weekEnd, weekStart } from '../../domain/week';
 import {
@@ -38,7 +39,7 @@ function weekLabel(start: LocalDate): string {
 /** /stats/week?week=YYYY-MM-DD — Monday-based weekly summary. */
 export function WeekScreen() {
   const [params, setParams] = useSearchParams();
-  const today = todayLocalDate();
+  const today = useToday();
   const raw = params.get('week');
   const start = weekStart(raw && isLocalDate(raw) ? raw : today);
   const prevStart = addDays(start, -7);

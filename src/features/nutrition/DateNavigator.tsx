@@ -1,6 +1,7 @@
 import { BackIcon, ForwardIcon } from '../../components/icons';
+import { useToday } from '../../components/useToday';
 import { iconButton } from '../../components/Screen';
-import { addDays, isLocalDate, todayLocalDate, type LocalDate } from '../../domain/date';
+import { addDays, isLocalDate, type LocalDate } from '../../domain/date';
 import { formatDayLabel } from './labels';
 
 interface DateNavigatorProps {
@@ -9,7 +10,7 @@ interface DateNavigatorProps {
 }
 
 export function DateNavigator({ date, onChange }: DateNavigatorProps) {
-  const label = formatDayLabel(date, todayLocalDate());
+  const label = formatDayLabel(date, useToday());
 
   return (
     <div className="mb-4 flex items-center gap-1">

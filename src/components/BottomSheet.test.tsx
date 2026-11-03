@@ -94,3 +94,41 @@ describe('ConfirmSheet', () => {
     expect(onConfirm).toHaveBeenCalledOnce();
   });
 });
+
+describe('BottomSheet focus containment', () => {
+  function Form() {
+    const [open, setOpen] = useState(true);
+    return (
+      <>
+        <main>
+          <button type="button">Derrière</button>
+        </main>
+        <BottomSheet open={open} title="Portion" onClose={() => setOpen(false)}>
+          <input aria-label="Grammes" />
+          <button type="button">Ajouter</button>
+        </BottomSheet>
+      </>
+    );
+  }
+
+  it('keeps Tab and Shift+Tab inside the sheet', async () => {
+    const user = userEvent.setup();
+    render(<Form />);
+    const first = screen.getByLabelText('Grammes');
+    const last = screen.getByRole('button', { name: 'Ajouter' });
+    last.focus();
+    await user.tab();
+    expect(document.activeElement).toBe(first);
+    await user.tab({ shift: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('makes the page behind inert while open, and restores it on close', async () => {
+    const user = userEvent.setup();
+    render(<Form />);
+    const behind = screen.getByRole('main', { hidden: true }).closest('div');
+    expect(behind?.hasAttribute('inert')).toBe(true);
+    await user.keyboard('{Escape}');
+    expect(behind?.hasAttribute('inert')).toBe(false);
+  });
+});

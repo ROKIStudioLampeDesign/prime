@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useToday } from '../../components/useToday';
 import { useSearchParams } from 'react-router';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
@@ -6,7 +7,6 @@ import { useGoBack } from '../../components/useGoBack';
 import { setFavorite } from '../../db/foods';
 import { addEntry, addMealEntry, itemKey } from '../../db/logEntries';
 import { setMealFavorite } from '../../db/meals';
-import { todayLocalDate } from '../../domain/date';
 import { defaultSlotForHour } from '../../domain/nutrition';
 import { FoodForm } from './FoodForm';
 import { SLOT_LABELS } from './labels';
@@ -23,7 +23,8 @@ function targetFor(item: PickerItem): PortionTarget {
 
 export function AddEntryScreen() {
   const [params] = useSearchParams();
-  const date = parseDateParam(params.get('date')) ?? todayLocalDate();
+  const today = useToday();
+  const date = parseDateParam(params.get('date')) ?? today;
   const slot = parseSlotParam(params.get('slot')) ?? defaultSlotForHour(new Date().getHours());
   const goBack = useGoBack(diaryPath(date));
 

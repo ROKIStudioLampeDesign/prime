@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
+import { startUpdateChecks } from '../lib/updateChecks';
 
 /** Checks for a new version every hour while the app stays open (installed PWAs rarely reload). */
 const UPDATE_CHECK_MS = 60 * 60 * 1000;
@@ -8,14 +10,20 @@ const UPDATE_CHECK_MS = 60 * 60 * 1000;
  * update never reloads the app in the middle of a workout.
  */
 export function UpdatePrompt() {
+  const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
-      if (registration) setInterval(() => void registration.update(), UPDATE_CHECK_MS);
+      setRegistration(registration);
     },
   });
+
+  useEffect(
+    () => (registration ? startUpdateChecks(registration, UPDATE_CHECK_MS) : undefined),
+    [registration],
+  );
 
   if (!needRefresh) return null;
   return (

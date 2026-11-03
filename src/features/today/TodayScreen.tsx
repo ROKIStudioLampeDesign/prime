@@ -1,11 +1,13 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useToday } from '../../components/useToday';
 import { EmptyState } from '../../components/EmptyState';
 import { Screen } from '../../components/Screen';
+import { fromLocalDate } from '../../domain/date';
 import { BackupReminder } from './BackupReminder';
 
 export function TodayScreen() {
-  const today = format(new Date(), 'EEEE d MMMM', { locale: fr });
+  const today = format(fromLocalDate(useToday()), 'EEEE d MMMM', { locale: fr });
 
   return (
     <Screen title="Aujourd'hui">

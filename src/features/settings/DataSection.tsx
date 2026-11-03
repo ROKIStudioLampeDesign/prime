@@ -33,7 +33,7 @@ const TABLE_LABELS: Record<string, string> = {
   settings: 'Réglages',
 };
 
-const IMPORT_ERRORS: Record<BackupError, string> = {
+const IMPORT_ERRORS: Record<Exclude<BackupError, 'invalidRows'>, string> = {
   notJson: 'Ce fichier n’est pas un fichier JSON valide.',
   notPrime: 'Ce fichier n’est pas une sauvegarde Prime.',
   unsupportedFormat: 'Format de sauvegarde inconnu.',
@@ -41,6 +41,12 @@ const IMPORT_ERRORS: Record<BackupError, string> = {
   olderSchema: 'Cette sauvegarde est trop ancienne pour cette version de Prime.',
   malformed: 'Sauvegarde incomplète ou corrompue.',
 };
+
+function importErrorText(result: Extract<ReturnType<typeof readBackup>, { ok: false }>): string {
+  if (result.error !== 'invalidRows') return IMPORT_ERRORS[result.error];
+  const table = TABLE_LABELS[result.table] ?? result.table;
+  return `Sauvegarde corrompue : élément n° ${result.index + 1} invalide dans « ${table} ». Rien n’a été importé.`;
+}
 
 function lastBackupLabel(days: number | undefined): string {
   if (days === undefined) return 'Jamais';
@@ -60,7 +66,8 @@ export function DataSection() {
   const [confirmReplace, setConfirmReplace] = useState(false);
 
   const days = lastExport && daysSinceBackup(lastExport.at, lastExport.now);
-  const overdue = days === undefined || days >= BACKUP_REMINDER_DAYS;
+  // Not flagged while loading: '…' must not flash in red before the real value arrives.
+  const overdue = lastExport !== undefined && (days === undefined || days >= BACKUP_REMINDER_DAYS);
 
   async function handleExport() {
     setBusy(true);
@@ -99,7 +106,7 @@ export function DataSection() {
     setMessage(undefined);
     const result = readBackup(await file.text());
     if (result.ok) setPending(result.backup);
-    else setMessage({ text: IMPORT_ERRORS[result.error], error: true });
+    else setMessage({ text: importErrorText(result), error: true });
   }
 
   async function runImport(mode: ImportMode) {
