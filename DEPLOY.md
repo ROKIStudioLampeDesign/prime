@@ -36,9 +36,12 @@ La première fois, `wrangler` ouvre le navigateur pour se connecter et crée le 
 
 ## Ce qui est déjà configuré
 
-- **Routes de l’application** : Cloudflare Pages sert `index.html` pour toute URL inconnue (pas de
-  `404.html`), donc `/gym/workout/12` fonctionne au rechargement. Le service worker fait de même
-  hors connexion.
+- **Déploiement actuel** : le projet tourne en **Cloudflare Workers** (assets statiques) sur
+  <https://prime.thomasrocchi1111.workers.dev>, redéployé à chaque push sur `main`. La config est
+  dans `wrangler.jsonc` (`assets.directory = ./dist`).
+- **Routes de l’application** : `not_found_handling: "single-page-application"` (Workers) ou
+  l’absence de `404.html` (Pages) font servir `index.html` pour toute URL inconnue, donc
+  `/gym/workout/12` fonctionne au rechargement. Le service worker fait de même hors connexion.
 - **En-têtes** : `public/_headers` est copié dans `dist/` :
   - `sw.js`, `index.html` et le manifest ne sont jamais mis en cache (sinon les mises à jour
     n’arriveraient pas) ;
