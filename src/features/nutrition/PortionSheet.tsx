@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
+import { SegmentedControl } from '../../components/SegmentedControl';
 import { StarIcon } from '../../components/icons';
 import { iconButton } from '../../components/Screen';
 import { servingGrams, type Serving } from '../../domain/meal';
@@ -157,25 +158,29 @@ function PortionForm({
         </p>
       )}
       {slot !== undefined && (
-        <Segmented
-          legend="Repas"
+        <SegmentedControl
+          label="Repas"
           options={MEAL_SLOTS.map((s) => ({ value: s, label: SLOT_SHORT_LABELS[s] }))}
           value={slot}
           onChange={setSlot}
+          tone="accent"
+          dense
+          onSurface
         />
       )}
 
       {portionGrams && (
         <div className="mt-3">
-          <Segmented
-            legend="Unité"
+          <SegmentedControl
+            label="Unité"
             options={[
               { value: 'portions', label: 'Portions' },
               { value: 'grams', label: 'Grammes' },
             ]}
             value={mode}
             onChange={switchMode}
-            compact
+            tone="accent"
+            onSurface
           />
         </div>
       )}
@@ -247,43 +252,6 @@ function PortionForm({
         </Button>
       )}
     </form>
-  );
-}
-
-interface SegmentedProps<T extends string> {
-  legend: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-  compact?: boolean;
-}
-
-function Segmented<T extends string>({ legend, options, value, onChange, compact }: SegmentedProps<T>) {
-  return (
-    <fieldset
-      className="grid gap-1 rounded-xl bg-surface-2 p-1"
-      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
-    >
-      <legend className="sr-only">{legend}</legend>
-      {options.map((o) => (
-        <label
-          key={o.value}
-          className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg font-semibold has-focus-visible:ring-2 has-focus-visible:ring-accent ${
-            compact ? 'text-sm' : 'text-xs'
-          } ${value === o.value ? 'bg-accent-fill text-accent-fg' : 'text-muted'}`}
-        >
-          <input
-            type="radio"
-            name={legend}
-            value={o.value}
-            checked={value === o.value}
-            onChange={() => onChange(o.value)}
-            className="sr-only"
-          />
-          {o.label}
-        </label>
-      ))}
-    </fieldset>
   );
 }
 

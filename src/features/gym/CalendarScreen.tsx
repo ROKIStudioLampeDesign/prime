@@ -1,47 +1,29 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useToday } from '../../components/useToday';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
-import { BottomSheet } from '../../components/BottomSheet';
-import { Button } from '../../components/Button';
+import { useSearchParams } from 'react-router';
 import { BackIcon, ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { iconButton, Screen } from '../../components/Screen';
-import { useNow } from '../../components/useNow';
-import type { Workout } from '../../db/db';
-import { listGymDays, setGymDay } from '../../db/gymDays';
-import { listTemplates } from '../../db/templates';
-import {
-  createPastWorkout,
-  getActiveWorkout,
-  getWorkoutSets,
-  listAllWorkouts,
-  startWorkout,
-} from '../../db/workouts';
-import { type LocalDate } from '../../domain/date';
+import { useToday } from '../../components/useToday';
+import { listGymDays } from '../../db/gymDays';
+import { listAllWorkouts } from '../../db/workouts';
+import { formatMonthParam, parseMonthParam, shiftMonth, type LocalDate } from '../../domain/date';
 import { attendedDates, monthGrid, sessionsInMonth, weeklyStreak } from '../../domain/gymCalendar';
-import { formatDuration } from '../../lib/format';
+import { DaySheet } from './DaySheet';
 import { GymTabs } from './shared';
-import { longDay, workoutTitle } from './workoutLabels';
+import { ActiveOrStart, StartSheet } from './StartSheet';
+import { longDay } from './workoutLabels';
 
 const WEEKDAYS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-
-function parseMonth(raw: string | null, today: LocalDate): { year: number; month: number } {
-  const match = raw && /^(\d{4})-(\d{2})$/.exec(raw);
-  const year = match ? Number(match[1]) : Number(today.slice(0, 4));
-  const month = match ? Number(match[2]) : Number(today.slice(5, 7));
-  return month >= 1 && month <= 12 ? { year, month } : { year, month: Number(today.slice(5, 7)) };
-}
-
-const monthParam = (year: number, month: number) => `${year}-${String(month).padStart(2, '0')}`;
 
 /** /gym — start/resume a workout, attendance calendar and counters. */
 export function CalendarScreen() {
   const today = useToday();
   const [params, setParams] = useSearchParams();
-  const { year, month } = parseMonth(params.get('month'), today);
+  const shown = parseMonthParam(params.get('month'), today);
+  const { year, month } = shown;
   const workouts = useLiveQuery(listAllWorkouts);
   const gymDays = useLiveQuery(listGymDays);
   const [selectedDay, setSelectedDay] = useState<LocalDate>();
@@ -58,9 +40,8 @@ export function CalendarScreen() {
     [workouts, gymDays],
   );
 
-  function shiftMonth(delta: number) {
-    const d = new Date(year, month - 1 + delta, 1);
-    setParams({ month: monthParam(d.getFullYear(), d.getMonth() + 1) }, { replace: true });
+  function goToMonth(delta: number) {
+    setParams({ month: formatMonthParam(shiftMonth(shown, delta)) }, { replace: true });
   }
 
   const monthLabel = format(new Date(year, month - 1, 1), 'MMMM yyyy', { locale: fr });
@@ -92,7 +73,7 @@ export function CalendarScreen() {
                 type="button"
                 aria-label="Mois précédent"
                 className={iconButton}
-                onClick={() => shiftMonth(-1)}
+                onClick={() => goToMonth(-1)}
               >
                 <BackIcon />
               </button>
@@ -101,7 +82,7 @@ export function CalendarScreen() {
                 type="button"
                 aria-label="Mois suivant"
                 className={iconButton}
-                onClick={() => shiftMonth(1)}
+                onClick={() => goToMonth(1)}
               >
                 <ForwardIcon />
               </button>
@@ -177,160 +158,5 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
     >
       {day}
     </button>
-  );
-}
-
-/** Resume card while a workout is active, else the start button. */
-function ActiveOrStart({ onStart }: { onStart: () => void }) {
-  const active = useLiveQuery(async () => (await getActiveWorkout()) ?? null);
-  const sets = useLiveQuery(async () => (active ? getWorkoutSets(active.id) : []), [active?.id]);
-  const now = useNow(30_000, Boolean(active));
-  if (active === undefined) return <div className="h-12" />;
-  if (active === null) {
-    return (
-      <Button className="w-full" onClick={onStart}>
-        Commencer une séance
-      </Button>
-    );
-  }
-  const done = sets?.filter((s) => s.completed).length ?? 0;
-  return (
-    <Link
-      to={`/gym/workout/${active.id}`}
-      className="flex min-h-16 items-center gap-3 rounded-2xl bg-accent-fill px-4 py-3 text-accent-fg active:opacity-90"
-    >
-      <span className="size-2.5 animate-pulse rounded-full bg-accent-fg" aria-hidden="true" />
-      <span className="flex-1">
-        <span className="block font-semibold">{workoutTitle(active)}</span>
-        <span className="block text-sm opacity-80">
-          {formatDuration(now - active.startedAt)} · {done} série{done > 1 ? 's' : ''} validée
-          {done > 1 ? 's' : ''}
-        </span>
-      </span>
-      <span className="font-semibold">Reprendre</span>
-    </Link>
-  );
-}
-
-function StartSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const navigate = useNavigate();
-  const templates = useLiveQuery(listTemplates);
-
-  async function start(templateId?: number) {
-    const id = await startWorkout(templateId);
-    onClose();
-    void navigate(`/gym/workout/${id}`);
-  }
-
-  return (
-    <BottomSheet open={open} onClose={onClose} title="Commencer une séance">
-      <Button className="w-full" onClick={() => void start()}>
-        Séance libre
-      </Button>
-      <h3 className="mt-5 mb-2 text-sm font-semibold text-muted">Depuis un modèle</h3>
-      {templates === undefined ? null : templates.length === 0 ? (
-        <p className="text-sm text-muted">
-          Aucun modèle pour l’instant.{' '}
-          <Link to="/gym/templates/new" className="font-semibold text-accent" onClick={onClose}>
-            Créer un modèle
-          </Link>
-        </p>
-      ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-bg">
-          {templates.map((t) => (
-            <li key={t.id}>
-              <button
-                type="button"
-                onClick={() => void start(t.id)}
-                className="flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left active:bg-surface-2"
-              >
-                <span className="truncate font-semibold">{t.name}</span>
-                <span className="shrink-0 text-sm text-muted">
-                  {t.exercises.length} exercice{t.exercises.length > 1 ? 's' : ''}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </BottomSheet>
-  );
-}
-
-interface DaySheetProps {
-  date: LocalDate | undefined;
-  workouts: Workout[];
-  /** Manual attendance flag for the day. */
-  manual: boolean;
-  onClose: () => void;
-}
-
-function DaySheet({ date, workouts, manual, onClose }: DaySheetProps) {
-  const navigate = useNavigate();
-  const today = useToday();
-  const hasWorkout = workouts.length > 0;
-  const attended = hasWorkout || manual;
-  const isPastOrToday = date !== undefined && date <= today;
-
-  return (
-    <BottomSheet open={date !== undefined} onClose={onClose} title={date ? longDay(date) : ''}>
-      {date && (
-        <>
-          {hasWorkout && (
-            <ul className="mb-4 divide-y divide-line overflow-hidden rounded-2xl bg-bg">
-              {workouts.map((w) => (
-                <li key={w.id}>
-                  <Link
-                    to={`/gym/workout/${w.id}`}
-                    onClick={onClose}
-                    className="flex min-h-14 items-center justify-between gap-3 px-4 active:bg-surface-2"
-                  >
-                    <span className="truncate font-semibold">{workoutTitle(w)}</span>
-                    <span className="shrink-0 text-sm text-muted">
-                      {w.status === 'active'
-                        ? 'En cours'
-                        : w.endedAt
-                          ? formatDuration(w.endedAt - w.startedAt)
-                          : 'Ouvrir'}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <label className="flex min-h-12 items-center justify-between gap-3 rounded-xl bg-bg px-4">
-            <span>
-              <span className="block">Jour de salle</span>
-              {hasWorkout && (
-                <span className="block text-xs text-muted">Compté automatiquement (séance notée)</span>
-              )}
-            </span>
-            <input
-              type="checkbox"
-              role="switch"
-              checked={attended}
-              disabled={hasWorkout}
-              onChange={(e) => void setGymDay(date, e.target.checked)}
-              className="size-6 accent-(--color-accent)"
-            />
-          </label>
-
-          {isPastOrToday && (
-            <Button
-              variant="secondary"
-              className="mt-3 w-full"
-              onClick={async () => {
-                const id = await createPastWorkout(date);
-                onClose();
-                void navigate(`/gym/workout/${id}`);
-              }}
-            >
-              Noter une séance ce jour-là
-            </Button>
-          )}
-        </>
-      )}
-    </BottomSheet>
   );
 }

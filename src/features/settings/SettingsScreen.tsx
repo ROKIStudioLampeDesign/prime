@@ -5,6 +5,7 @@ import { Button } from '../../components/Button';
 import { ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
+import { SegmentedControl } from '../../components/SegmentedControl';
 import { getGoals } from '../../db/goals';
 import { getRestSeconds, REST_OPTIONS, setRestSeconds } from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
@@ -25,26 +26,23 @@ function RestTimerSetting() {
     <section className="mt-4 rounded-2xl bg-surface p-4" aria-labelledby="rest-timer">
       <h2 id="rest-timer">Minuteur de repos</h2>
       <p className="text-xs text-muted">Démarre automatiquement quand tu valides une série.</p>
-      <div
-        className="mt-3 grid grid-cols-5 gap-1 rounded-xl bg-surface-2 p-1"
-        role="radiogroup"
-        aria-labelledby="rest-timer"
-      >
-        {REST_OPTIONS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={seconds === option}
-            onClick={() => void setRestSeconds(option)}
-            className={`min-h-11 rounded-lg text-sm font-semibold tabular-nums ${
-              seconds === option ? 'bg-accent-fill text-accent-fg' : 'text-muted'
-            }`}
-          >
-            {option === 0 ? 'Non' : formatClock(option)}
-          </button>
-        ))}
-      </div>
+      {seconds === undefined ? (
+        <div className="mt-3 h-13" />
+      ) : (
+        <div className="mt-3">
+          <SegmentedControl
+            label="Minuteur de repos"
+            options={REST_OPTIONS.map((option) => ({
+              value: String(option),
+              label: option === 0 ? 'Non' : formatClock(option),
+            }))}
+            value={String(seconds)}
+            onChange={(v) => void setRestSeconds(Number(v))}
+            tone="accent"
+            onSurface
+          />
+        </div>
+      )}
     </section>
   );
 }

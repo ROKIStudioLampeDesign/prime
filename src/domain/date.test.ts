@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  formatMonthParam,
   fromLocalDate,
   isLocalDate,
   msUntilNextLocalMidnight,
+  parseMonthParam,
+  shiftMonth,
   toLocalDate,
   type LocalDate,
 } from './date';
@@ -53,5 +56,29 @@ describe('msUntilNextLocalMidnight', () => {
     expect(msUntilNextLocalMidnight(autumnStart)).toBe(
       new Date(2026, 9, 26).getTime() - autumnStart.getTime(),
     );
+  });
+});
+
+describe('month params', () => {
+  const today = '2026-11-03' as LocalDate;
+
+  it('parses "YYYY-MM" and falls back to the current month', () => {
+    expect(parseMonthParam('2025-02', today)).toEqual({ year: 2025, month: 2 });
+    expect(parseMonthParam(null, today)).toEqual({ year: 2026, month: 11 });
+    expect(parseMonthParam('', today)).toEqual({ year: 2026, month: 11 });
+    expect(parseMonthParam('2025-2', today)).toEqual({ year: 2026, month: 11 });
+    expect(parseMonthParam('nope', today)).toEqual({ year: 2026, month: 11 });
+  });
+
+  it('rejects months outside 1–12 as a whole, keeping year and month consistent', () => {
+    expect(parseMonthParam('2025-13', today)).toEqual({ year: 2026, month: 11 });
+    expect(parseMonthParam('2025-00', today)).toEqual({ year: 2026, month: 11 });
+  });
+
+  it('formats and shifts across year boundaries', () => {
+    expect(formatMonthParam({ year: 2026, month: 3 })).toBe('2026-03');
+    expect(shiftMonth({ year: 2026, month: 12 }, 1)).toEqual({ year: 2027, month: 1 });
+    expect(shiftMonth({ year: 2026, month: 1 }, -1)).toEqual({ year: 2025, month: 12 });
+    expect(shiftMonth({ year: 2026, month: 5 }, -17)).toEqual({ year: 2024, month: 12 });
   });
 });

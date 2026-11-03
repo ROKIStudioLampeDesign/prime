@@ -33,3 +33,30 @@ export function fromLocalDate(value: LocalDate): Date {
 export function addDays(value: LocalDate, days: number): LocalDate {
   return toLocalDate(addCalendarDays(fromLocalDate(value), days));
 }
+
+/** A calendar month; `month` is 1–12. */
+export interface YearMonth {
+  year: number;
+  month: number;
+}
+
+const MONTH_PARAM_RE = /^(\d{4})-(\d{2})$/;
+
+/** Parses a "YYYY-MM" URL param; anything invalid falls back to the month of `today`. */
+export function parseMonthParam(raw: string | null, today: LocalDate): YearMonth {
+  const match = raw ? MONTH_PARAM_RE.exec(raw) : null;
+  const year = Number(match?.[1]);
+  const month = Number(match?.[2]);
+  if (match && month >= 1 && month <= 12) return { year, month };
+  return { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) };
+}
+
+export function formatMonthParam({ year, month }: YearMonth): string {
+  return `${year}-${String(month).padStart(2, '0')}`;
+}
+
+/** Moves by `delta` months, carrying over years in both directions. */
+export function shiftMonth({ year, month }: YearMonth, delta: number): YearMonth {
+  const index = year * 12 + (month - 1) + delta;
+  return { year: Math.floor(index / 12), month: (((index % 12) + 12) % 12) + 1 };
+}

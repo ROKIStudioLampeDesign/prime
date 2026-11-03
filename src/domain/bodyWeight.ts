@@ -1,4 +1,5 @@
 import { addDays, type LocalDate } from './date';
+import { parseDecimal } from './number';
 
 export interface WeightPoint {
   date: LocalDate;
@@ -12,6 +13,12 @@ export const MAX_BODY_WEIGHT_KG = 400;
 export function validateBodyWeight(kg: number): number | undefined {
   if (!Number.isFinite(kg) || kg < MIN_BODY_WEIGHT_KG || kg > MAX_BODY_WEIGHT_KG) return undefined;
   return Math.round(kg * 10) / 10;
+}
+
+/** Parses a typed weight ("72,4" or "72.4"); undefined when empty, unparsable or implausible. */
+export function parseBodyWeight(text: string): number | undefined {
+  const parsed = parseDecimal(text);
+  return parsed === undefined ? undefined : validateBodyWeight(parsed);
 }
 
 /**

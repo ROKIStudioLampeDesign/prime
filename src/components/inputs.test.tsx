@@ -119,10 +119,19 @@ describe('SegmentedControl', () => {
     const user = userEvent.setup();
     render(<Harness />);
     expect(screen.getByRole('radiogroup', { name: 'Vue' })).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'Face' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('radio', { name: 'Face', checked: true })).toBeTruthy();
     await user.click(screen.getByRole('radio', { name: 'Dos' }));
-    expect(screen.getByRole('radio', { name: 'Dos' }).getAttribute('aria-checked')).toBe('true');
-    expect(screen.getByRole('radio', { name: 'Face' }).getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByRole('radio', { name: 'Dos', checked: true })).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'Face', checked: false })).toBeTruthy();
+  });
+
+  it('moves the selection with the arrow keys, as a native radio group', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    screen.getByRole('radio', { name: 'Face' }).focus();
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('radio', { name: 'Dos', checked: true })).toBeTruthy();
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'Dos' }));
   });
 
   it('has no accessibility violations', async () => {

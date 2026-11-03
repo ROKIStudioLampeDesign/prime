@@ -19,7 +19,7 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
 - [x] **2. Nouvelle identité visuelle** — 2 pistes proposées (palette, typographie, principes,
       mini aperçu) ; après choix : jetons de design, composants de base, finitions.
       _Skills : frontend-design, tailwind-design-system, make-interfaces-feel-better._
-- [ ] **3. Qualité du code** — découpage des gros composants, contrôle segmenté unique, logique
+- [x] **3. Qualité du code** — découpage des gros composants, contrôle segmenté unique, logique
       pure déplacée dans le domaine, tests de composants.
       _Skills : react-best-practices, typescript-patterns, react-testing._
 - [ ] **4. Performance** — mesure, chargement à la demande, listes longues, requêtes ciblées.

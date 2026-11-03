@@ -4,6 +4,7 @@ import {
   pointsInRange,
   rangeStart,
   summarizeWeights,
+  parseBodyWeight,
   validateBodyWeight,
   type WeightPoint,
 } from './bodyWeight';
@@ -79,5 +80,16 @@ describe('ranges and summary', () => {
     });
     expect(summarizeWeights([p('2026-11-09', 79.1)])?.change).toBe(0);
     expect(summarizeWeights([])).toBeUndefined();
+  });
+});
+
+describe('parseBodyWeight', () => {
+  it('parses French and English decimals and validates the range', () => {
+    expect(parseBodyWeight('72,46')).toBe(72.5);
+    expect(parseBodyWeight(' 80.0 ')).toBe(80);
+    expect(parseBodyWeight('')).toBeUndefined();
+    expect(parseBodyWeight('abc')).toBeUndefined();
+    expect(parseBodyWeight('0')).toBeUndefined();
+    expect(parseBodyWeight('401')).toBeUndefined();
   });
 });
