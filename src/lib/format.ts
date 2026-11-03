@@ -29,16 +29,26 @@ export function formatBodyWeight(kg: number): string {
   return `${formatWeight(Math.round(kg * 10) / 10)} kg`;
 }
 
-/** A change in body weight: "+0,4 kg", "−1,3 kg", "±0 kg" (signed after rounding). */
-export function formatSignedBodyWeight(kg: number): string {
+/** A change in body weight without its unit: "+0,4", "−1,3", "±0" (signed after rounding). */
+export function formatWeightChange(kg: number): string {
   const tenths = Math.round(Math.abs(kg) * 10);
   const sign = tenths === 0 ? '±' : kg > 0 ? '+' : '−';
-  return `${sign}${formatWeight(tenths / 10)} kg`;
+  return `${sign}${formatWeight(tenths / 10)}`;
+}
+
+/** A change in body weight: "+0,4 kg", "−1,3 kg", "±0 kg" (signed after rounding). */
+export function formatSignedBodyWeight(kg: number): string {
+  return `${formatWeightChange(kg)} kg`;
+}
+
+/** "12 450" */
+export function formatInteger(n: number): string {
+  return integer.format(n);
 }
 
 /** "12 450 kg" */
 export function formatVolume(kg: number): string {
-  return `${integer.format(kg)} kg`;
+  return `${formatInteger(kg)} kg`;
 }
 
 /** "< 1 min", "45 min", "1 h 05". */

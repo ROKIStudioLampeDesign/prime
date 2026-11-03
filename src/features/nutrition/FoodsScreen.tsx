@@ -47,7 +47,7 @@ export function FoodsScreen() {
           action={
             <Link
               to="/nutrition/foods/new"
-              className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
+              className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
             >
               Créer un produit
             </Link>
@@ -59,24 +59,29 @@ export function FoodsScreen() {
           {ranked.length === 0 ? (
             <EmptyState title={`Aucun produit pour « ${query.trim()} »`} />
           ) : (
-            <ul className="mt-4 grid grid-cols-2 gap-3">
+            // Edge-to-edge tiles: favourites yellow, the others paper; a photo or the initial on top.
+            <ul className="mt-4 edge grid grid-cols-2 gap-0.5">
               {ranked.map(({ food }) => (
-                <li className="list-row [--row-h:15rem]" key={food.id}>
+                <li className="list-row [--row-h:11rem]" key={food.id}>
                   <Link
                     to={`/nutrition/foods/${food.id}`}
-                    className="block overflow-hidden rounded-2xl bg-surface active:opacity-80"
+                    className={`flex h-44 flex-col justify-between p-3.5 text-ink focus-inset active:opacity-80 ${
+                      food.favorite === 1 ? 'bg-nutrition' : 'bg-paper'
+                    }`}
                   >
-                    <div className="relative">
-                      <BlobImage blob={food.photo} alt="" className="aspect-square w-full" />
-                      {food.favorite === 1 && (
-                        <span className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-bg/70 text-accent">
-                          <StarIcon filled className="size-4" aria-label="Favori" />
+                    <div className="flex items-start justify-between gap-2">
+                      {food.photo ? (
+                        <BlobImage blob={food.photo} alt="" className="size-16" />
+                      ) : (
+                        <span aria-hidden="true" className="text-[3.5rem] leading-[0.8] numeral">
+                          {food.name.trim().charAt(0).toLocaleUpperCase('fr')}
                         </span>
                       )}
+                      {food.favorite === 1 && <StarIcon filled className="size-5" aria-label="Favori" />}
                     </div>
-                    <div className="p-3">
-                      <p className="line-clamp-2 min-h-10 text-sm leading-5 font-semibold">{food.name}</p>
-                      <p className="mt-0.5 truncate text-xs text-muted">
+                    <div>
+                      <p className="line-clamp-2 text-[15px] leading-tight font-extrabold">{food.name}</p>
+                      <p className="mt-1 truncate text-xs font-bold text-ink/72">
                         {formatMacro('kcal', food.per100g.kcal)} kcal · P{' '}
                         {formatMacro('protein', food.per100g.protein)} g
                       </p>

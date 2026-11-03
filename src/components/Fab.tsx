@@ -7,9 +7,9 @@ export function Fab({ to, label }: { to: string; label: string }) {
     <Link
       to={to}
       aria-label={label}
-      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom)+1rem)] z-20 flex size-14 items-center justify-center rounded-full bg-accent-fill text-accent-fg float-shadow active:scale-95"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom)+1rem)] z-20 flex size-15 items-center justify-center bg-accent-fill text-accent-fg active:scale-95"
     >
-      <PlusIcon className="size-7" strokeWidth={2.2} />
+      <PlusIcon className="size-7" strokeWidth={2.8} />
     </Link>
   );
 }

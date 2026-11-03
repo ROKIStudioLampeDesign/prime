@@ -1,6 +1,6 @@
 import { BackIcon, ForwardIcon } from '../../components/icons';
 import { useToday } from '../../components/useToday';
-import { iconButton } from '../../components/Screen';
+import { headerButton } from '../../components/Screen';
 import { addDays, isLocalDate, type LocalDate } from '../../domain/date';
 import { formatDayLabel } from './labels';
 
@@ -13,17 +13,17 @@ export function DateNavigator({ date, onChange }: DateNavigatorProps) {
   const label = formatDayLabel(date, useToday());
 
   return (
-    <div className="mb-4 flex items-center gap-1">
+    <div className="mb-4 flex items-center gap-2">
       <button
         type="button"
         aria-label="Jour précédent"
-        className={iconButton}
+        className={headerButton}
         onClick={() => onChange(addDays(date, -1))}
       >
         <BackIcon />
       </button>
       {/* A transparent native date input over the label: tapping it opens the iOS date wheel. */}
-      <label className="relative flex min-h-11 flex-1 items-center justify-center rounded-xl font-semibold active:bg-surface-2">
+      <label className="relative flex min-h-11 flex-1 items-center justify-center text-lg headline active:bg-surface">
         {label}
         <input
           type="date"
@@ -45,7 +45,7 @@ export function DateNavigator({ date, onChange }: DateNavigatorProps) {
       <button
         type="button"
         aria-label="Jour suivant"
-        className={iconButton}
+        className={headerButton}
         onClick={() => onChange(addDays(date, 1))}
       >
         <ForwardIcon />

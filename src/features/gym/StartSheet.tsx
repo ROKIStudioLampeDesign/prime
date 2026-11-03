@@ -25,17 +25,17 @@ export function ActiveOrStart({ onStart }: { onStart: () => void }) {
   return (
     <Link
       to={`/gym/workout/${active.id}`}
-      className="flex min-h-20 items-center gap-3 rounded-3xl bg-sky px-5 py-4 text-ink active:opacity-90"
+      className="bleed flex min-h-20 items-center gap-3 bg-gym py-4 text-on-gym focus-inset active:opacity-90"
     >
-      <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-ink" aria-hidden="true" />
+      <span className="size-2.5 shrink-0 animate-pulse bg-on-gym" aria-hidden="true" />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-lg font-extrabold">{workoutTitle(active)}</span>
-        <span className="block text-sm font-semibold text-ink/75">
+        <span className="block text-sm font-bold">
           {formatDuration(now - active.startedAt)} · {done} série{done > 1 ? 's' : ''} validée
           {done > 1 ? 's' : ''}
         </span>
       </span>
-      <span className="rounded-full bg-ink px-4 py-2.5 text-sm font-bold text-on-ink">Reprendre</span>
+      <span className="bg-accent-fill px-4 py-3 text-sm font-black text-accent-fg">Reprendre</span>
     </Link>
   );
 }

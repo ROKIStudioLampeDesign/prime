@@ -24,7 +24,7 @@ export function TemplatesScreen() {
           action={
             <Link
               to="/gym/templates/new"
-              className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
+              className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
             >
               Créer un modèle
             </Link>
@@ -32,15 +32,12 @@ export function TemplatesScreen() {
         />
       ) : (
         <>
-          <ul className="flex flex-col gap-2">
+          <ul className="divide-y divide-line border-b border-line">
             {templates.map((t) => (
               <li key={t.id}>
-                <Link
-                  to={`/gym/templates/${t.id}`}
-                  className="block rounded-2xl bg-surface px-4 py-3 active:bg-surface-2"
-                >
-                  <p className="truncate font-semibold">{t.name}</p>
-                  <p className="truncate text-sm text-muted">
+                <Link to={`/gym/templates/${t.id}`} className="block py-3 active:opacity-60">
+                  <p className="truncate text-lg leading-tight headline">{t.name}</p>
+                  <p className="mt-0.5 truncate text-[13px] font-semibold text-muted">
                     {t.exercises.length} exercice{t.exercises.length > 1 ? 's' : ''}
                     {t.exercises.length > 0 &&
                       ` · ${t.exercises.map((e) => exerciseName(exercises, e.exerciseId)).join(', ')}`}

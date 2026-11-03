@@ -56,9 +56,9 @@ export function ExerciseList({ exercises, onSelect, disabledIds, disabledHint }:
         </div>
       </div>
       {filtered.length === 0 ? (
-        <p className="mt-6 text-center text-sm text-muted">Aucun exercice ne correspond.</p>
+        <p className="mt-6 text-center text-sm font-semibold text-muted">Aucun exercice ne correspond.</p>
       ) : (
-        <ul className="mt-3 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+        <ul className="mt-3 divide-y divide-line border-b border-line">
           {filtered.map((e) => {
             const disabled = disabledIds?.has(e.id) ?? false;
             return (
@@ -67,20 +67,20 @@ export function ExerciseList({ exercises, onSelect, disabledIds, disabledHint }:
                   type="button"
                   disabled={disabled}
                   onClick={() => onSelect(e)}
-                  className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-surface-2 disabled:opacity-40"
+                  className="flex min-h-15 w-full items-center gap-3 py-2 text-left active:opacity-60 disabled:opacity-40"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="flex items-center gap-1.5">
-                      <span className="truncate">{e.name}</span>
+                      <span className="truncate text-[17px] leading-tight headline">{e.name}</span>
                       {e.isCustom === 1 && <CustomBadge />}
                     </p>
-                    <p className="truncate text-xs text-muted">
+                    <p className="mt-0.5 truncate text-[13px] font-semibold text-muted">
                       {musclesLabel(e.primaryMuscles)}
                       {e.equipment && ` · ${EQUIPMENT_LABELS[e.equipment]}`}
                     </p>
                   </div>
                   {disabled && disabledHint && (
-                    <span className="shrink-0 text-xs text-muted">{disabledHint}</span>
+                    <span className="shrink-0 text-xs font-bold text-muted">{disabledHint}</span>
                   )}
                 </button>
               </li>
@@ -106,8 +106,10 @@ function FilterChip({
       type="button"
       aria-pressed={active}
       onClick={onClick}
-      className={`min-h-11 rounded-full px-4 text-sm font-semibold whitespace-nowrap ${
-        active ? 'bg-accent-fill text-accent-fg' : 'bg-surface text-muted'
+      className={`min-h-11 border-2 px-3.5 text-sm whitespace-nowrap ${
+        active
+          ? 'border-gym bg-gym font-black text-on-gym'
+          : 'border-fg font-extrabold text-fg active:bg-surface'
       }`}
     >
       {children}

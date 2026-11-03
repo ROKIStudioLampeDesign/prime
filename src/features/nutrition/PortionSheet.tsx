@@ -64,8 +64,8 @@ export function PortionSheet(props: PortionSheetProps) {
         target && (
           <div className="flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <h2 className="line-clamp-2 text-lg leading-snug font-semibold">{target.name}</h2>
-              <p className="text-sm text-muted">
+              <h2 className="line-clamp-2 text-[1.625rem] leading-[1.05] headline">{target.name}</h2>
+              <p className="mt-1 text-sm font-semibold text-muted">
                 {target.subtitle ??
                   `${target.brand ? `${target.brand} · ` : ''}${formatMacro('kcal', target.per100g.kcal)} kcal / 100 g`}
               </p>
@@ -153,7 +153,7 @@ function PortionForm({
   return (
     <form onSubmit={handleSubmit}>
       {target.warning && (
-        <p role="status" className="mb-3 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="status" className="mb-3 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">
           {target.warning}
         </p>
       )}
@@ -163,9 +163,8 @@ function PortionForm({
           options={MEAL_SLOTS.map((s) => ({ value: s, label: SLOT_SHORT_LABELS[s] }))}
           value={slot}
           onChange={setSlot}
-          tone="accent"
+          variant="tabs"
           dense
-          onSurface
         />
       )}
 
@@ -195,16 +194,16 @@ function PortionForm({
           onChange={(e) => setText(e.target.value)}
           onFocus={(e) => e.currentTarget.select()}
           aria-invalid={text !== '' && !valid}
-          className={`w-36 rounded-xl border bg-bg py-2 text-center text-5xl numeral outline-none focus:border-accent ${
-            text !== '' && !valid ? 'border-danger' : 'border-line'
+          className={`w-40 border-b-[3px] bg-transparent py-1 text-center text-[3.5rem] leading-none numeral outline-none focus:border-accent ${
+            text !== '' && !valid ? 'border-danger' : 'border-fg'
           }`}
         />
-        <span className="w-20 text-xl font-semibold text-muted">
+        <span className="w-20 text-xl font-extrabold text-muted">
           {mode === 'portions' ? (amount >= 2 ? 'portions' : 'portion') : 'g'}
         </span>
       </div>
       {mode === 'portions' && portionGrams && (
-        <p className="mt-1 text-center text-xs text-muted tabular-nums">
+        <p className="mt-2 text-center text-xs font-semibold text-muted tabular-nums">
           = {formatGrams(roundTo(grams, 0))} g · 1 portion = {formatGrams(roundTo(portionGrams, 0))} g
         </p>
       )}
@@ -215,7 +214,7 @@ function PortionForm({
               <Button
                 key={p}
                 variant={amount === p ? 'primary' : 'secondary'}
-                className="min-h-11 text-sm"
+                className="min-h-11 text-sm whitespace-nowrap"
                 onClick={() => setText(toInputValue(p))}
               >
                 {toInputValue(p)}
@@ -225,14 +224,18 @@ function PortionForm({
               <Button
                 key={step}
                 variant="secondary"
-                className="min-h-11 text-sm"
+                className="min-h-11 text-sm whitespace-nowrap"
                 onClick={() => setText(toInputValue(Math.min(MAX_GRAMS, amount + step)))}
               >
                 +{step} g
               </Button>
             ))}
         {mode === 'grams' && (
-          <Button variant="secondary" className="min-h-11 text-sm" onClick={() => setText('')}>
+          <Button
+            variant="secondary"
+            className="min-h-11 text-sm whitespace-nowrap"
+            onClick={() => setText('')}
+          >
             Effacer
           </Button>
         )}
@@ -241,7 +244,7 @@ function PortionForm({
       <MacroPreview macros={preview} />
 
       {target.disabledReason && (
-        <p className="mt-3 text-center text-sm text-danger">{target.disabledReason}</p>
+        <p className="mt-3 text-center text-sm font-semibold text-danger">{target.disabledReason}</p>
       )}
       <Button type="submit" className="mt-4 w-full" disabled={!valid || busy}>
         {submitLabel}
@@ -257,10 +260,11 @@ function PortionForm({
 
 export function MacroPreview({ macros }: { macros: ReturnType<typeof computeMacros> }) {
   return (
-    <div className="mt-4 rounded-xl bg-bg p-3" aria-live="polite">
+    // Alimentation yellow: what this amount adds to the day.
+    <div className="mt-4 bg-nutrition p-3 text-ink" aria-live="polite">
       <p className="text-center">
-        <span className="text-3xl leading-none numeral">{formatMacro('kcal', macros.kcal)}</span>
-        <span className="text-sm text-muted"> kcal</span>
+        <span className="text-[2.5rem] leading-none numeral">{formatMacro('kcal', macros.kcal)}</span>
+        <span className="text-sm font-extrabold"> kcal</span>
       </p>
       <dl className="mt-2 grid grid-cols-4 text-center text-xs">
         <MacroCell label="Protéines" value={formatMacro('protein', macros.protein)} />
@@ -279,9 +283,9 @@ export function MacroPreview({ macros }: { macros: ReturnType<typeof computeMacr
 function MacroCell({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
-      <dt className="text-muted">{label}</dt>
-      <dd className="text-base font-semibold tabular-nums">{value} g</dd>
-      {sub && <dd className="text-[11px] whitespace-nowrap text-muted">{sub}</dd>}
+      <dt className="font-extrabold">{label}</dt>
+      <dd className="text-base headline tabular-nums">{value} g</dd>
+      {sub && <dd className="text-[11px] font-semibold whitespace-nowrap text-ink/72">{sub}</dd>}
     </div>
   );
 }

@@ -7,14 +7,10 @@ export interface SubTab {
   end?: boolean;
 }
 
-/** Segmented links at the top of a section (e.g. Journal / Produits / Plats). */
+/** Underlined links at the top of a section (e.g. Journal / Produits / Plats). */
 export function SubTabs({ label, tabs }: { label: string; tabs: readonly SubTab[] }) {
   return (
-    <nav
-      aria-label={label}
-      className="mb-4 grid gap-1 rounded-full bg-surface p-1"
-      style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}
-    >
+    <nav aria-label={label} className="mb-4 flex gap-5 border-b border-line">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -22,12 +18,17 @@ export function SubTabs({ label, tabs }: { label: string; tabs: readonly SubTab[
           end={tab.end}
           replace
           className={({ isActive }) =>
-            `flex min-h-11 items-center justify-center truncate rounded-full px-1 text-sm font-semibold ${
-              isActive ? 'bg-accent-fill text-accent-fg' : 'text-muted'
-            }`
+            `relative flex min-h-11 items-center text-[15px] ${isActive ? 'font-extrabold text-fg' : 'font-bold text-muted'}`
           }
         >
-          {tab.label}
+          {({ isActive }) => (
+            <>
+              {tab.label}
+              {isActive && (
+                <span className="absolute inset-x-0 -bottom-px h-1 bg-indicator" aria-hidden="true" />
+              )}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

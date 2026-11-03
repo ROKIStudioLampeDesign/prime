@@ -64,6 +64,28 @@ Apple), B. Bento, C. Halo (verre et halo violet). **Tu as choisi B. Bento** :
 Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1 sur tous les fonds, tuiles comprises (texte
 secondaire `ink/75` ≥ 5,6:1) ; en thème clair, traits et courbes en variantes foncées ≥ 4,3:1.
 
+Ensuite, à ta demande, six autres pistes (D à I) puis la piste E déclinée sur tous les écrans
+(page « Grand format, tous les écrans » du même lien). **Tu as validé E. Grand format**, qui
+remplace Bento dans l'app :
+
+- Fond noir (clair : blanc), bandeaux pleine largeur aux angles droits, aucun arrondi sauf les
+  boutons ronds de l'en-tête.
+- Jaune `#F4E04D` pour l'Alimentation et les actions principales, cobalt `#2340FF` pour la Salle
+  (texte blanc), blanc « papier » pour le poids, le Corps et les chiffres secondaires (`#EDEDED`
+  en clair, pour se détacher de la page).
+- Police Archivo (variable, largeurs 62 à 125 %, 90 kB, hors connexion) : titres et grands chiffres
+  élargis et extra-gras ; un grand chiffre rétrécit selon son nombre de caractères pour tenir sur
+  une ligne à 375 px.
+- Onglets soulignés, barre d'onglets pleine largeur avec un repère jaune, listes en lignes sur la
+  page, champs soulignés, boutons et puces carrés.
+
+Écarts assumés avec les maquettes : le sélecteur de jour du Journal garde ses flèches (pas de
+bande de 7 jours) et la carte du corps garde son dégradé de couleurs (vert → rouge, seuils
+réglables) plutôt que trois teintes.
+
+Contrastes vérifiés (WCAG AA) : texte ≥ 4,5:1 sur le noir, le jaune, le cobalt et le papier, dans
+les deux thèmes ; traits et contours d'état ≥ 3:1.
+
 ## Risques et changements
 
 - L'apparence change entièrement (couleurs, police ; ~40 kB de police mis en cache hors ligne).

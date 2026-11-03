@@ -6,7 +6,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { Fab } from '../../components/Fab';
 import { PlusIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
-import { iconButton, Screen } from '../../components/Screen';
+import { Screen } from '../../components/Screen';
 import type { LogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
 import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
@@ -40,7 +40,7 @@ export function DiaryScreen() {
         !isToday && (
           <button
             type="button"
-            className="min-h-11 rounded-full px-3 text-sm font-semibold text-accent active:bg-surface-2"
+            className="min-h-11 px-3 text-sm font-extrabold text-accent active:bg-surface"
             onClick={() => setDate(today)}
           >
             Aujourd’hui
@@ -63,7 +63,7 @@ export function DiaryScreen() {
               action={
                 <Link
                   to={addEntryPath(date)}
-                  className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
+                  className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
                 >
                   Ajouter un aliment
                 </Link>
@@ -139,34 +139,36 @@ function SlotSection({ slot, entries, addTo, onSelect }: SlotSectionProps) {
   const subtotal = sumMacros(entries.map((e) => e.macros));
 
   return (
-    <section className="mt-5" aria-labelledby={`slot-${slot}`}>
+    <section className="mt-6" aria-labelledby={`slot-${slot}`}>
       <div className="flex items-center gap-2">
-        <h2 id={`slot-${slot}`} className="flex-1 font-semibold">
+        <h2 id={`slot-${slot}`} className="flex-1 text-[1.375rem] leading-tight headline">
           {SLOT_LABELS[slot]}
         </h2>
-        <span className="text-sm text-muted tabular-nums">{formatMacro('kcal', subtotal.kcal)} kcal</span>
+        <span className="text-[15px] font-bold text-muted tabular-nums">
+          {formatMacro('kcal', subtotal.kcal)} kcal
+        </span>
         <Link
           to={addTo}
           aria-label={`Ajouter un aliment : ${SLOT_LABELS[slot]}`}
-          className={`${iconButton} -mr-3`}
+          className="flex size-11 shrink-0 items-center justify-center border-2 border-fg active:bg-surface"
         >
-          <PlusIcon className="size-5" />
+          <PlusIcon className="size-5" strokeWidth={2.6} />
         </Link>
       </div>
-      <ul className="mt-1 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+      <ul className="mt-1 divide-y divide-line border-b border-line">
         {entries.map((entry) => (
           <li key={entry.id}>
             <button
               type="button"
               onClick={() => onSelect(entry.id)}
-              className="flex min-h-14 w-full items-center gap-3 px-4 py-2.5 text-left active:bg-surface-2"
+              className="flex min-h-15 w-full items-center gap-3 py-2.5 text-left active:opacity-60"
             >
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5">
-                  <span className="truncate">{entry.name}</span>
+                  <span className="truncate font-bold">{entry.name}</span>
                   {entry.kind === 'meal' && <MealBadge />}
                 </p>
-                <p className="truncate text-xs text-muted tabular-nums">
+                <p className="truncate text-[13px] font-medium text-muted tabular-nums">
                   {entry.kind === 'meal' &&
                     entry.portions !== undefined &&
                     `${portionsLabel(entry.portions)} · `}
@@ -174,9 +176,9 @@ function SlotSection({ slot, entries, addTo, onSelect }: SlotSectionProps) {
                   · G {formatMacro('carbs', entry.macros.carbs)} · L {formatMacro('fat', entry.macros.fat)}
                 </p>
               </div>
-              <span className="shrink-0 text-sm font-semibold tabular-nums">
+              <span className="shrink-0 text-xl headline tabular-nums">
                 {formatMacro('kcal', entry.macros.kcal)}
-                <span className="font-normal text-muted"> kcal</span>
+                <span className="text-xs font-bold text-muted"> kcal</span>
               </span>
             </button>
           </li>

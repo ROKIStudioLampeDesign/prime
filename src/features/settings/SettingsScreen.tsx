@@ -23,9 +23,11 @@ function goalsSummary(goals: Goals): string {
 function RestTimerSetting() {
   const seconds = useLiveQuery(getRestSeconds);
   return (
-    <section className="mt-4 rounded-2xl bg-surface p-4" aria-labelledby="rest-timer">
-      <h2 id="rest-timer">Minuteur de repos</h2>
-      <p className="text-xs text-muted">Démarre automatiquement quand tu valides une série.</p>
+    <section className="mt-6 bleed bg-gym py-4 text-on-gym" aria-labelledby="rest-timer">
+      <h2 id="rest-timer" className="text-[1.375rem] leading-tight headline">
+        Minuteur de repos
+      </h2>
+      <p className="mt-0.5 text-sm font-semibold">Démarre automatiquement quand tu valides une série.</p>
       {seconds === undefined ? (
         <div className="mt-3 h-13" />
       ) : (
@@ -38,8 +40,7 @@ function RestTimerSetting() {
             }))}
             value={String(seconds)}
             onChange={(v) => void setRestSeconds(Number(v))}
-            tone="accent"
-            onSurface
+            tone="gym"
           />
         </div>
       )}
@@ -56,13 +57,10 @@ export function SettingsScreen() {
         <Loading />
       ) : (
         <>
-          <section className="mt-2 overflow-hidden rounded-2xl bg-surface">
-            <Link
-              to="/settings/goals"
-              className="flex min-h-14 items-center gap-3 px-4 py-3 active:bg-surface-2"
-            >
-              <span className="flex-1">Objectifs</span>
-              <span className="text-sm text-muted">{goalsSummary(goals)}</span>
+          <section className="mt-2 border-b border-line">
+            <Link to="/settings/goals" className="flex min-h-16 items-center gap-3 py-3 active:opacity-60">
+              <span className="flex-1 text-xl headline">Objectifs</span>
+              <span className="text-sm font-bold text-muted">{goalsSummary(goals)}</span>
               <ForwardIcon className="size-5 text-muted" />
             </Link>
           </section>
@@ -82,8 +80,8 @@ export function SettingsScreen() {
 function DevTools() {
   const [status, setStatus] = useState<string>();
   return (
-    <section className="mt-8 rounded-2xl border border-dashed border-line p-4">
-      <h2 className="text-sm font-semibold text-muted">Développement</h2>
+    <section className="mt-8 border-2 border-dashed border-line p-4">
+      <h2 className="text-sm font-extrabold text-muted">Développement</h2>
       <Button
         variant="secondary"
         className="mt-3 w-full"

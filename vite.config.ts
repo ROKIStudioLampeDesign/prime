@@ -24,8 +24,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#17171c',
-        background_color: '#17171c',
+        theme_color: '#000000',
+        background_color: '#000000',
       },
       workbox: {
         // The manifest is added by the plugin itself; globbing it too creates a conflicting precache entry.

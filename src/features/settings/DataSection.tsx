@@ -56,6 +56,10 @@ function lastBackupLabel(days: number | undefined): string {
 }
 
 /** Réglages › Données: where data lives, persistence, export and import. */
+/** Buttons on the paper band. */
+const bandButton =
+  'flex min-h-12 items-center justify-center px-4 font-black [font-stretch:112%] focus-inset active:opacity-80 disabled:opacity-40';
+
 export function DataSection() {
   const lastExport = useLiveQuery(async () => ({ at: await getLastExportAt(), now: Date.now() }));
   const persisted = useLiveQuery(async () => (await db.settings.get('storagePersisted'))?.value ?? null);
@@ -130,43 +134,54 @@ export function DataSection() {
   }
 
   return (
-    <section className="mt-6" aria-labelledby="data-title" id="donnees">
-      <h2 id="data-title" className="mb-1 px-1 text-sm font-semibold text-muted">
+    // A paper band right under the cobalt rest timer band: ink text, ink buttons.
+    <section className="mt-0.5 bleed bg-paper py-4 text-ink" aria-labelledby="data-title" id="donnees">
+      <h2 id="data-title" className="text-[1.375rem] leading-tight headline">
         Données
       </h2>
-      <div className="rounded-2xl bg-surface p-4">
-        <p className="text-sm">
+      <div>
+        <p className="mt-1 text-sm font-medium">
           Tes données sont stockées <strong>uniquement sur ce téléphone</strong>, sans compte ni serveur. Si
           tu supprimes l’application ou changes de téléphone, elles sont perdues sans sauvegarde.
         </p>
-        <dl className="mt-3 divide-y divide-line text-sm">
-          <div className="flex min-h-11 items-center justify-between gap-3">
-            <dt>Dernière sauvegarde</dt>
-            <dd className={overdue ? 'font-semibold text-danger' : 'text-muted'}>
+        <dl className="mt-3 text-[15px]">
+          <div className="flex min-h-12 items-center justify-between gap-3 border-t-2 border-ink">
+            <dt className="font-bold">Dernière sauvegarde</dt>
+            <dd className={`font-black ${overdue ? 'text-danger-ink' : ''}`}>
               {lastExport === undefined ? '…' : lastBackupLabel(days)}
             </dd>
           </div>
-          <div className="flex min-h-11 items-center justify-between gap-3">
-            <dt>Stockage persistant</dt>
-            <dd className="text-muted">
+          <div className="flex min-h-12 items-center justify-between gap-3 border-t-2 border-ink">
+            <dt className="font-bold">Stockage persistant</dt>
+            <dd className="font-black">
               {persisted === undefined ? '…' : persisted === true ? 'Activé' : 'Non garanti'}
             </dd>
           </div>
         </dl>
         {persisted === false || persisted === null ? (
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-xs font-semibold text-ink/72">
             Sans stockage persistant, Safari peut effacer les données d’un site peu utilisé. Ajoute Prime à
             l’écran d’accueil et sauvegarde régulièrement.
           </p>
         ) : null}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <Button onClick={() => void handleExport()} disabled={busy}>
+          <button
+            type="button"
+            className={`${bandButton} bg-ink text-on-ink`}
+            onClick={() => void handleExport()}
+            disabled={busy}
+          >
             Exporter
-          </Button>
-          <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={busy}>
+          </button>
+          <button
+            type="button"
+            className={`${bandButton} border-2 border-ink`}
+            onClick={() => fileInput.current?.click()}
+            disabled={busy}
+          >
             Importer
-          </Button>
+          </button>
         </div>
         <input
           ref={fileInput}
@@ -176,7 +191,10 @@ export function DataSection() {
           onChange={(e) => void handleFile(e)}
         />
         {message && (
-          <p role="status" className={`mt-3 text-sm ${message.error ? 'text-danger' : 'text-muted'}`}>
+          <p
+            role="status"
+            className={`mt-3 text-sm font-semibold ${message.error ? 'text-danger-ink' : 'text-ink/72'}`}
+          >
             {message.text}
           </p>
         )}
@@ -192,13 +210,13 @@ export function DataSection() {
             <p className="text-sm text-muted">
               Sauvegarde du {format(new Date(pending.exportedAt), 'd MMMM yyyy à HH:mm', { locale: fr })}
             </p>
-            <ul className="mt-3 divide-y divide-line rounded-xl bg-bg px-3 text-sm">
+            <ul className="mt-3 divide-y divide-line border-y border-line text-sm">
               {Object.entries(backupCounts(pending))
                 .filter(([table]) => table in TABLE_LABELS)
                 .map(([table, count]) => (
                   <li key={table} className="flex min-h-10 items-center justify-between">
                     <span>{TABLE_LABELS[table]}</span>
-                    <span className="text-muted tabular-nums">{count}</span>
+                    <span className="font-black tabular-nums">{count}</span>
                   </li>
                 ))}
             </ul>

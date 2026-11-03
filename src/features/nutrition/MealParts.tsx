@@ -118,12 +118,12 @@ function MacroLine({ label, macros }: { label: string; macros: Macros }) {
 
 export function MealTotals({ summary }: { summary: MealSummary }) {
   return (
-    <section aria-labelledby="totals-title" className="rounded-2xl bg-surface p-4">
-      <h2 id="totals-title" className="font-semibold">
+    <section aria-labelledby="totals-title">
+      <h2 id="totals-title" className="text-[1.375rem] leading-tight headline">
         Total du plat
       </h2>
       {summary.missingCount > 0 && (
-        <p role="status" className="mt-2 rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="status" className="mt-2 bg-danger/10 px-3 py-2 text-sm font-semibold text-danger">
           {missingIngredientsWarning(summary.missingCount)}
         </p>
       )}

@@ -18,31 +18,32 @@ const TABS: Tab[] = [
 
 export function TabBar() {
   return (
-    // A floating pill above the home indicator; --spacing-tabbar reserves its height for the page.
+    // Full-width bar on the page background; the active section gets a bar along its top edge.
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-[max(env(safe-area-inset-bottom),0.75rem)] z-20 px-safe"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg pb-safe"
     >
-      <ul className="mx-auto grid h-16 max-w-lg grid-cols-5 rounded-full bg-surface/90 px-1 float-shadow backdrop-blur-xl">
+      <ul className="mx-auto grid h-tabbar max-w-lg grid-cols-5">
         {TABS.map(({ to, label, icon: TabIcon }) => (
           <li key={to}>
             <NavLink
               to={to}
               end={to === '/'}
               className={({ isActive }) =>
-                `group flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[10px] font-semibold ${
+                `relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] font-extrabold active:bg-surface ${
                   isActive ? 'text-fg' : 'text-muted'
                 }`
               }
             >
-              {/* The active section gets a pill behind its icon; labels stay readable at 390 px. */}
-              <span
-                className="flex h-8 w-12 items-center justify-center rounded-full group-active:bg-surface-2 group-aria-[current=page]:bg-accent-fill group-aria-[current=page]:text-accent-fg"
-                aria-hidden="true"
-              >
-                <TabIcon />
-              </span>
-              <span className="max-w-full truncate px-0.5">{label}</span>
+              {({ isActive }) => (
+                <>
+                  {isActive && (
+                    <span className="absolute inset-x-[18%] -top-px h-1 bg-indicator" aria-hidden="true" />
+                  )}
+                  <TabIcon />
+                  <span className="max-w-full truncate px-0.5">{label}</span>
+                </>
+              )}
             </NavLink>
           </li>
         ))}

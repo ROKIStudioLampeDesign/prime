@@ -6,7 +6,7 @@ import { useSearchParams } from 'react-router';
 import { Bar, BarChart, Cell, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import { BackIcon, ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
-import { iconButton, Screen } from '../../components/Screen';
+import { headerButton, Screen } from '../../components/Screen';
 import { listBodyWeights } from '../../db/bodyWeights';
 import { getGoals } from '../../db/goals';
 import { listEntriesBetween, listWorkoutVolumesBetween } from '../../db/stats';
@@ -20,10 +20,9 @@ import {
   weeklySummary,
   type DayNutrition,
 } from '../../domain/weeklySummary';
-import { formatMacro, formatVolume } from '../../lib/format';
+import { formatInteger, formatMacro, formatWeightChange } from '../../lib/format';
 import { axisProps, niceTicks } from './chartUtils';
-import { signedKg } from './labels';
-import { ChartEmpty, StatsTabs, StatTile } from './shared';
+import { BandTile, ChartEmpty, StatsTabs } from './shared';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 const CHART_HEIGHT = 130;
@@ -58,23 +57,23 @@ export function WeekScreen() {
   return (
     <Screen title="Stats">
       <StatsTabs />
-      <div className="mb-3 flex items-center gap-1">
+      <div className="mb-3 flex items-center gap-2">
         <button
           type="button"
           aria-label="Semaine précédente"
-          className={iconButton}
+          className={headerButton}
           onClick={() => go(prevStart)}
         >
           <BackIcon />
         </button>
         <div className="flex-1 text-center">
-          <p className="font-semibold">{isCurrent ? 'Cette semaine' : weekLabel(start)}</p>
-          {isCurrent && <p className="text-xs text-muted">{weekLabel(start)}</p>}
+          <p className="text-lg leading-tight headline">{isCurrent ? 'Cette semaine' : weekLabel(start)}</p>
+          {isCurrent && <p className="text-[13px] font-bold text-muted">{weekLabel(start)}</p>}
         </div>
         <button
           type="button"
           aria-label="Semaine suivante"
-          className={`${iconButton} disabled:opacity-30`}
+          className={`${headerButton} disabled:opacity-30`}
           disabled={isCurrent}
           onClick={() => go(addDays(start, 7))}
         >
@@ -94,37 +93,34 @@ export function WeekScreen() {
           const logged = week.loggedDays;
           return (
             <>
-              <dl className="grid grid-cols-2 gap-2">
-                <StatTile
+              {/* Domain cells edge to edge: Salle cobalt, calories yellow, the rest paper. */}
+              <dl className="edge grid grid-cols-2 gap-0.5">
+                <BandTile
+                  tone="gym"
                   label="Séances"
-                  value={week.workoutCount}
-                  hint={
-                    <span
-                      className={
-                        sessions.direction === 'down'
-                          ? 'text-danger'
-                          : sessions.direction === 'up'
-                            ? 'text-accent'
-                            : ''
-                      }
-                    >
-                      {arrow} {sessions.direction === 'same' ? 'comme' : `${Math.abs(sessions.value)} vs`}{' '}
-                      sem. préc.
-                    </span>
-                  }
+                  value={String(week.workoutCount)}
+                  maxRem={3.75}
+                  hint={`${arrow} ${sessions.direction === 'same' ? 'comme' : `${Math.abs(sessions.value)} vs`} sem. préc.`}
                 />
-                <StatTile label="Volume total" value={formatVolume(week.volumeKg)} />
-                <StatTile
-                  label="Calories moy."
-                  value={week.avgKcal === undefined ? '—' : `${formatMacro('kcal', week.avgKcal)} kcal`}
+                <BandTile tone="gym" label="Volume total" value={formatInteger(week.volumeKg)} unit="kg" />
+                <BandTile
+                  tone="nutrition"
+                  className="col-span-2"
+                  label="Calories, moyenne"
+                  value={week.avgKcal === undefined ? '—' : formatMacro('kcal', week.avgKcal)}
+                  unit={week.avgKcal === undefined ? undefined : 'kcal / jour'}
+                  maxRem={4.5}
                   hint={`${logged} jour${logged > 1 ? 's' : ''} renseigné${logged > 1 ? 's' : ''}`}
                 />
-                <StatTile
+                <BandTile
+                  tone="paper"
                   label="Protéines moy."
-                  value={week.avgProtein === undefined ? '—' : `${formatMacro('protein', week.avgProtein)} g`}
+                  value={week.avgProtein === undefined ? '—' : formatMacro('protein', week.avgProtein)}
+                  unit={week.avgProtein === undefined ? undefined : 'g'}
                   hint={`${logged} jour${logged > 1 ? 's' : ''} renseigné${logged > 1 ? 's' : ''}`}
                 />
-                <StatTile
+                <BandTile
+                  tone="paper"
                   label="Objectifs atteints"
                   value={
                     week.kcalGoalDays === undefined && week.proteinGoalDays === undefined
@@ -137,16 +133,19 @@ export function WeekScreen() {
                       : `jours kcal · protéines, sur ${logged}`
                   }
                 />
-                <StatTile
+                <BandTile
+                  tone="paper"
+                  className="col-span-2"
                   label="Poids"
-                  value={week.weightChange === undefined ? '—' : signedKg(week.weightChange)}
+                  value={week.weightChange === undefined ? '—' : formatWeightChange(week.weightChange)}
+                  unit={week.weightChange === undefined ? undefined : 'kg'}
                   hint={week.weightChange === undefined ? 'aucune pesée' : 'sur la semaine'}
                 />
               </dl>
 
               <DailyChart
                 title="Calories par jour"
-                color="var(--color-peach-strong)"
+                color="var(--color-nutrition-strong)"
                 unit="kcal"
                 days={week.days}
                 value={(d) => roundMacro('kcal', d.kcal)}
@@ -155,14 +154,14 @@ export function WeekScreen() {
               />
               <DailyChart
                 title="Protéines par jour"
-                color="var(--color-lilac-strong)"
+                color="var(--color-paper-strong)"
                 unit="g"
                 days={week.days}
                 value={(d) => roundMacro('protein', d.protein)}
                 goal={goals.protein}
                 met={(d) => goals.protein !== undefined && proteinGoalMet(d.protein, goals.protein)}
               />
-              <p className="mt-2 px-1 text-xs text-muted">
+              <p className="mt-3 text-xs font-semibold text-muted">
                 Moyennes calculées sur les jours renseignés seulement. Objectif calories atteint à ±10 %.
               </p>
             </>
@@ -190,11 +189,11 @@ function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartPr
   const max = Math.max(goal ?? 0, ...data.map((d) => d.value));
   const yTicks = niceTicks(0, max * 1.05, 3);
   return (
-    <section className="mt-3 rounded-2xl bg-surface p-3 pb-1" aria-label={title}>
-      <h2 className="mb-1 flex items-baseline justify-between text-sm">
-        <span className="font-semibold">{title}</span>
+    <section className="mt-5" aria-label={title}>
+      <h2 className="mb-1 flex items-baseline justify-between gap-3">
+        <span className="text-lg leading-tight headline">{title}</span>
         {goal !== undefined && (
-          <span className="text-xs text-muted">
+          <span className="text-xs font-bold text-muted">
             objectif {formatMacro(unit === 'kcal' ? 'kcal' : 'protein', goal)} {unit}
           </span>
         )}
@@ -209,7 +208,7 @@ function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartPr
             {goal !== undefined && (
               <ReferenceLine y={goal} stroke="var(--color-fg)" strokeOpacity={0.5} strokeDasharray="4 4" />
             )}
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={28}>
+            <Bar dataKey="value" isAnimationActive={false} maxBarSize={28}>
               {data.map((d) => (
                 <Cell
                   key={d.day.date}

@@ -74,11 +74,15 @@ export function ExerciseCard({
   }
 
   return (
-    <section aria-label={name} className="rounded-2xl bg-surface p-3">
+    <section aria-label={name} className="py-4">
       <div className="flex items-start gap-1">
-        <div className="min-w-0 flex-1 pt-1 pl-1">
-          <h2 className="line-clamp-2 leading-snug font-semibold">{name}</h2>
-          {exercise && <p className="truncate text-xs text-muted">{musclesLabel(exercise.primaryMuscles)}</p>}
+        <div className="min-w-0 flex-1 pt-1">
+          <h2 className="line-clamp-2 text-[1.3125rem] leading-tight headline">{name}</h2>
+          {exercise && (
+            <p className="mt-0.5 truncate text-[13px] font-semibold text-muted">
+              {musclesLabel(exercise.primaryMuscles)}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -110,15 +114,15 @@ export function ExerciseCard({
         </button>
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5 px-0.5 text-xs font-semibold text-muted">
+      <div className="mt-3 flex items-center gap-1.5 pl-1 text-xs font-extrabold text-muted">
         <span className="w-11 text-center">Série</span>
         <button
           type="button"
           onClick={cycleStep}
           aria-label={`Pas des boutons de poids : ${formatWeight(step)} kg. Changer`}
-          className="flex h-8 w-[140px] items-center justify-center gap-1 rounded-lg normal-case active:bg-surface-2"
+          className="flex h-8 w-[140px] items-center justify-center gap-1 normal-case active:bg-surface"
         >
-          kg <span className="rounded bg-surface-2 px-1.5 py-0.5 tabular-nums">±{formatWeight(step)}</span>
+          kg <span className="bg-surface px-1.5 py-0.5 text-fg tabular-nums">±{formatWeight(step)}</span>
         </button>
         <span className="w-14 text-center">Reps</span>
       </div>
@@ -137,13 +141,13 @@ export function ExerciseCard({
         ))}
       </ol>
 
-      <Button
-        variant="ghost"
-        className="mt-1 min-h-11 w-full text-sm"
+      <button
+        type="button"
+        className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface"
         onClick={() => void addSet(workout.id, exerciseId)}
       >
-        <PlusIcon className="size-4" /> Ajouter une série
-      </Button>
+        <PlusIcon className="size-4" strokeWidth={2.8} /> Ajouter une série
+      </button>
 
       <SetMenu set={menuSet} onClose={() => setMenuSetId(undefined)} />
       <ConfirmSheet
@@ -178,13 +182,13 @@ interface SetRowProps {
 function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
   return (
-    <li className={`rounded-xl px-0.5 py-1 ${set.completed ? 'bg-accent/10' : ''}`}>
+    <li className={`border-l-4 py-1 pr-0.5 ${set.completed ? 'border-gym bg-gym/18' : 'border-transparent'}`}>
       <div className="flex items-center gap-1.5">
         <button
           type="button"
           onClick={onMenu}
           aria-label={`Options de la ${label}`}
-          className="flex size-11 shrink-0 items-center justify-center rounded-lg font-semibold text-muted tabular-nums active:bg-surface-2"
+          className="flex size-11 shrink-0 items-center justify-center text-[17px] font-black tabular-nums active:bg-surface"
         >
           {set.setNumber}
         </button>
@@ -199,7 +203,7 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
             aria-label={`Poids en kg, ${label}`}
             value={set.weightKg}
             onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
-            className="h-11 w-full min-w-0 rounded-lg bg-bg text-center text-base font-semibold tabular-nums outline-none focus:ring-2 focus:ring-accent"
+            className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
           />
           <StepButton
             label={`Ajouter ${formatWeight(step)} kg, ${label}`}
@@ -213,7 +217,7 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
           aria-label={`Répétitions, ${label}`}
           value={set.reps}
           onCommit={(reps) => void updateSet(set.id, { reps })}
-          className="h-11 w-14 shrink-0 rounded-lg bg-bg text-center text-base font-semibold tabular-nums outline-none focus:ring-2 focus:ring-accent"
+          className="h-11 w-14 shrink-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
         />
         <div className="flex-1" />
         <button
@@ -221,20 +225,18 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
           onClick={onToggle}
           aria-pressed={set.completed}
           aria-label={set.completed ? `Annuler la validation, ${label}` : `Valider la ${label}`}
-          className={`flex size-11 shrink-0 items-center justify-center rounded-full border-2 ${
-            set.completed
-              ? 'border-accent bg-accent-fill text-accent-fg'
-              : 'border-line text-muted active:bg-surface-2'
+          className={`flex size-11 shrink-0 items-center justify-center ${
+            set.completed ? 'bg-gym text-on-gym' : 'border-2 border-fg active:bg-surface'
           }`}
         >
-          <CheckIcon className="size-5" strokeWidth={2.6} />
+          <CheckIcon className="size-5" strokeWidth={3} />
         </button>
       </div>
       {(previous || set.rpe !== undefined || records.length > 0) && (
-        <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-[11px] text-muted tabular-nums">
+        <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-xs font-semibold text-muted tabular-nums">
           {records.length > 0 && (
             <span
-              className="rounded bg-accent-fill px-1.5 py-px text-[10px] font-bold text-accent-fg"
+              className="bg-accent-fill px-1.5 py-px text-[11px] font-black text-accent-fg"
               title={records.map((k) => RECORD_LABELS[k]).join(', ')}
               aria-label={`Record battu : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
             >
@@ -264,7 +266,7 @@ function StepButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-11 w-10 shrink-0 items-center justify-center rounded-lg text-muted active:bg-surface-2 active:text-fg"
+      className="flex h-11 w-10 shrink-0 items-center justify-center text-muted active:bg-surface active:text-fg"
     >
       {children}
     </button>

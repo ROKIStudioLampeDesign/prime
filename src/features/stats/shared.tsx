@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { BigNumber } from '../../components/BigNumber';
 import { SubTabs } from '../../components/SubTabs';
 
 const STATS_TABS = [
@@ -21,18 +22,42 @@ export function ChartEmpty({
   children?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-center px-6 text-center text-sm text-muted" style={{ height }}>
+    <div
+      className="flex items-center justify-center px-6 text-center text-sm font-semibold text-muted"
+      style={{ height }}
+    >
       {children}
     </div>
   );
 }
 
-export function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: ReactNode }) {
+const BAND_TONES = {
+  gym: { cell: 'bg-gym text-on-gym', secondary: '' },
+  nutrition: { cell: 'bg-nutrition text-ink', secondary: 'text-ink/72' },
+  paper: { cell: 'bg-paper text-ink', secondary: 'text-ink/72' },
+};
+
+interface BandTileProps {
+  tone: keyof typeof BAND_TONES;
+  label: string;
+  value: string;
+  unit?: string;
+  hint?: ReactNode;
+  /** Size of the figure when it fits, in rem. */
+  maxRem?: number;
+  className?: string;
+}
+
+/** A figure in a full-width grid of domain cells (inside an `edge` grid: it pads itself). */
+export function BandTile({ tone, label, value, unit, hint, maxRem = 2.5, className = '' }: BandTileProps) {
+  const { cell, secondary } = BAND_TONES[tone];
   return (
-    <div className="min-w-0 rounded-2xl bg-surface p-3">
-      <dt className="truncate text-xs text-muted">{label}</dt>
-      <dd className="mt-0.5 truncate text-2xl leading-tight numeral">{value}</dd>
-      {hint && <dd className="truncate text-xs text-muted">{hint}</dd>}
+    <div className={`@container min-w-0 py-3 px-safe ${cell} ${className}`}>
+      <dt className="truncate text-xs font-extrabold">{label}</dt>
+      <dd className="mt-1">
+        <BigNumber value={value} unit={unit} maxRem={maxRem} className="leading-none" />
+      </dd>
+      {hint && <dd className={`mt-1.5 truncate text-xs font-bold ${secondary}`}>{hint}</dd>}
     </div>
   );
 }
@@ -40,7 +65,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
 /** Tooltip box matching the theme. */
 export function TooltipBox({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-line bg-surface-2 px-3 py-2 text-xs shadow-lg shadow-black/30">
+    <div className="border-2 border-fg bg-bg px-3 py-2 text-xs font-semibold">
       <p className="mb-0.5 text-muted">{title}</p>
       {children}
     </div>

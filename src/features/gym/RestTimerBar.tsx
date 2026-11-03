@@ -34,24 +34,23 @@ export function RestTimerBar({ workoutId, endsAt }: { workoutId: number; endsAt:
     <div
       role="timer"
       aria-live={done ? 'assertive' : 'off'}
-      className="fixed inset-x-0 bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom)+0.5rem)] z-20 px-safe"
+      className={`fixed inset-x-0 bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom))] z-20 px-safe ${
+        done ? 'bg-gym text-on-gym' : 'bg-accent-fill text-ink'
+      }`}
     >
-      <div
-        className={`mx-auto flex max-w-lg items-center gap-1 rounded-2xl py-1.5 pr-1.5 pl-4 float-shadow ${
-          done ? 'bg-accent-fill text-accent-fg' : 'bg-surface-2'
-        }`}
-      >
+      {/* A band right above the tab bar: yellow while resting, cobalt (Salle) once it's time to lift. */}
+      <div className="mx-auto flex min-h-17 max-w-lg items-center gap-2 py-2">
         <div className="flex-1">
-          <p className={`text-xs ${done ? '' : 'text-muted'}`}>{done ? 'Repos terminé' : 'Repos'}</p>
-          <p className="text-3xl leading-tight numeral">{formatClock(remaining)}</p>
+          <p className="text-xs font-extrabold">{done ? 'Repos terminé' : 'Repos'}</p>
+          <p className="text-[2.5rem] leading-[0.9] numeral">{formatClock(remaining)}</p>
         </div>
         {!done && (
           <>
             <TimerButton label="Retirer 15 secondes" onClick={() => shift(-15)}>
-              −15
+              −15 s
             </TimerButton>
             <TimerButton label="Ajouter 15 secondes" onClick={() => shift(15)}>
-              +15
+              +15 s
             </TimerButton>
           </>
         )}
@@ -59,7 +58,7 @@ export function RestTimerBar({ workoutId, endsAt }: { workoutId: number; endsAt:
           type="button"
           aria-label={done ? 'Fermer' : 'Passer le repos'}
           onClick={() => void setRestEndsAt(workoutId, undefined)}
-          className="flex size-11 items-center justify-center rounded-xl active:bg-black/10"
+          className="flex size-11 items-center justify-center border-2 border-current focus-inset active:opacity-70"
         >
           <CloseIcon className="size-5" />
         </button>
@@ -74,7 +73,7 @@ function TimerButton({ label, onClick, children }: { label: string; onClick: () 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex h-11 min-w-12 items-center justify-center rounded-xl bg-surface px-2 text-sm font-semibold tabular-nums active:opacity-70"
+      className="flex h-11 min-w-12 items-center justify-center bg-ink px-3 text-sm font-black text-on-ink tabular-nums focus-inset active:opacity-70"
     >
       {children}
     </button>

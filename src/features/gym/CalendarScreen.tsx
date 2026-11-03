@@ -140,10 +140,10 @@ export function CalendarScreen() {
 
 function Counter({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="rounded-3xl bg-sky p-4 text-ink">
+    <div className="bg-gym p-4 text-on-gym">
       <dt className="text-xs font-bold">{label}</dt>
       <dd className="mt-1 text-3xl leading-none numeral">{value}</dd>
-      {hint && <dd className="mt-1 text-[11px] leading-tight font-semibold text-ink/75">{hint}</dd>}
+      {hint && <dd className="mt-1 text-xs leading-tight font-bold">{hint}</dd>}
     </div>
   );
 }
@@ -165,8 +165,8 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
       aria-label={`${longDay(date)}${attended ? ', séance' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
-        attended ? 'bg-sky text-ink' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
-      } ${isToday ? 'ring-2 ring-fg ring-inset' : attended ? 'ring-1 ring-sky-strong ring-inset' : ''}`}
+        attended ? 'bg-gym text-on-gym' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
+      } ${isToday ? 'ring-2 ring-fg ring-inset' : ''}`}
     >
       {day}
     </button>

@@ -8,7 +8,7 @@ interface SearchFieldProps {
 
 export function SearchField({ value, onChange, placeholder }: SearchFieldProps) {
   return (
-    <div className="flex min-h-12 items-center gap-2 rounded-xl bg-surface px-3 focus-within:ring-2 focus-within:ring-accent">
+    <div className="flex min-h-12 items-center gap-2 border-b-[3px] border-fg focus-within:border-accent">
       <SearchIcon className="size-5 shrink-0 text-muted" />
       <input
         type="search"
@@ -18,7 +18,7 @@ export function SearchField({ value, onChange, placeholder }: SearchFieldProps) 
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="h-12 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+        className="h-12 min-w-0 flex-1 bg-transparent text-xl font-bold outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <button

@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { BigNumber } from '../../components/BigNumber';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
 import { TrashIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
@@ -23,7 +24,7 @@ import type { LocalDate } from '../../domain/date';
 import { formatWeight } from '../../lib/format';
 import { axisProps, niceTicks, shortDateLabel, timeTicks, toTime } from './chartUtils';
 import { kg, signedKg } from './labels';
-import { ChartEmpty, StatsTabs, StatTile, TooltipBox } from './shared';
+import { ChartEmpty, StatsTabs, TooltipBox } from './shared';
 import { QuickAdd, TargetSheet } from './WeightForms';
 
 const RANGES: { value: WeightRange; label: string }[] = [
@@ -34,6 +35,9 @@ const RANGES: { value: WeightRange; label: string }[] = [
 ];
 
 const CHART_HEIGHT = 220;
+
+/** "72,4" (0.1 kg, a scale's precision) for the big number; the unit is drawn apart. */
+const bodyKg = (value: number) => formatWeight(Math.round(value * 10) / 10);
 
 /** /stats — body weight. */
 export function WeightScreen() {
@@ -82,22 +86,38 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
         initialKg={formSeed?.kg ?? last?.kg}
       />
 
+      {/* The paper band: weight is the Corps domain. */}
+      <section aria-label="Poids actuel" className="@container mt-4 bleed bg-paper py-4 text-ink">
+        <div className="flex items-baseline justify-between gap-3 text-sm font-extrabold">
+          <span>Poids actuel</span>
+          {target !== undefined && <span className="font-bold text-ink/72">cible {kg(target)}</span>}
+        </div>
+        <BigNumber
+          value={summary ? bodyKg(summary.current.kg) : '—'}
+          unit={summary ? 'kg' : undefined}
+          maxRem={7}
+          className="mt-1.5 leading-[0.82]"
+        />
+        <p className="mt-2.5 text-[15px] font-extrabold tabular-nums">
+          {summary ? `${signedKg(summary.change)} sur la période` : 'Aucune pesée sur la période'}
+        </p>
+        <dl className="mt-3 grid grid-cols-2 gap-3 border-t-2 border-ink pt-2">
+          <div>
+            <dt className="text-xs font-extrabold text-ink/72">Min</dt>
+            <dd className="text-xl headline tabular-nums">{summary ? kg(summary.min.kg) : '—'}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-extrabold text-ink/72">Max</dt>
+            <dd className="text-xl headline tabular-nums">{summary ? kg(summary.max.kg) : '—'}</dd>
+          </div>
+        </dl>
+      </section>
+
       <div className="mt-4">
         <SegmentedControl label="Période" options={RANGES} value={range} onChange={setRange} />
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-2">
-        <StatTile
-          label="Actuel"
-          value={summary ? kg(summary.current.kg) : '—'}
-          hint={summary && target !== undefined ? `cible ${kg(target)}` : undefined}
-        />
-        <StatTile label="Variation" value={summary ? signedKg(summary.change) : '—'} hint="sur la période" />
-        <StatTile label="Min" value={summary ? kg(summary.min.kg) : '—'} />
-        <StatTile label="Max" value={summary ? kg(summary.max.kg) : '—'} />
-      </dl>
-
-      <section className="mt-3 rounded-2xl bg-surface pt-3 pr-3" aria-label="Courbe de poids">
+      <section className="mt-4" aria-label="Courbe de poids">
         {data.length === 0 ? (
           <ChartEmpty height={CHART_HEIGHT} />
         ) : (
@@ -160,7 +180,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
               />
               <Line
                 dataKey="avg"
-                stroke="var(--color-mint-strong)"
+                stroke="var(--color-paper-strong)"
                 strokeWidth={2.5}
                 dot={false}
                 activeDot={false}
@@ -170,33 +190,35 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
             </LineChart>
           </ResponsiveContainer>
         )}
-        <p className="flex items-center gap-4 px-4 pb-3 text-xs text-muted">
+        <p className="flex items-center gap-4 pt-2 text-xs font-semibold text-muted">
           <span className="flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-muted" /> Pesées
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-mint-strong" /> Moyenne 7 jours
+            <span className="h-0.5 w-4 bg-paper-strong" /> Moyenne 7 jours
           </span>
         </p>
       </section>
 
-      <section className="mt-3 overflow-hidden rounded-2xl bg-surface">
+      <section className="mt-4 border-y border-line">
         <button
           type="button"
           onClick={() => setEditingTarget(true)}
-          className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-left active:bg-surface-2"
+          className="flex min-h-14 w-full items-center justify-between gap-3 text-left active:opacity-60"
         >
-          <span>Poids cible</span>
-          <span className="text-sm text-muted">{target !== undefined ? kg(target) : 'Non défini'}</span>
+          <span className="text-lg headline">Poids cible</span>
+          <span className="text-sm font-bold text-muted">
+            {target !== undefined ? kg(target) : 'Non défini'}
+          </span>
         </button>
       </section>
 
       {entries.length > 0 && (
         <section className="mt-4" aria-labelledby="recent-weights">
-          <h2 id="recent-weights" className="mb-1 px-1 text-sm font-semibold text-muted">
+          <h2 id="recent-weights" className="mb-1 text-[1.375rem] leading-tight headline">
             Dernières pesées
           </h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+          <ul className="divide-y divide-line border-b border-line">
             {[...entries]
               .reverse()
               .slice(0, 7)
@@ -208,15 +230,17 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
                       setFormSeed({ date: e.date, kg: e.kg });
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="flex min-h-12 flex-1 items-center justify-between gap-3 px-4 text-left active:bg-surface-2"
+                    className="flex min-h-13 flex-1 items-center justify-between gap-3 text-left active:opacity-60"
                   >
-                    <span className="text-sm first-letter:uppercase">{shortDateLabel(toTime(e.date))}</span>
-                    <span className="font-semibold tabular-nums">{kg(e.kg)}</span>
+                    <span className="text-[15px] font-semibold first-letter:uppercase">
+                      {shortDateLabel(toTime(e.date))}
+                    </span>
+                    <span className="text-lg headline tabular-nums">{kg(e.kg)}</span>
                   </button>
                   <button
                     type="button"
                     aria-label={`Supprimer la pesée du ${shortDateLabel(toTime(e.date))}`}
-                    className={`${iconButton} mr-1`}
+                    className={`${iconButton} -mr-2.5 ml-1`}
                     onClick={() => setToDelete(e)}
                   >
                     <TrashIcon className="size-5" />

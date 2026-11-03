@@ -8,28 +8,28 @@ interface TextFieldProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'cl
   hint?: string;
 }
 
-/** Labelled input. Text is 16 px so iOS Safari doesn't zoom in on focus. */
+/** Labelled, underlined input. Text is at least 16 px so iOS Safari doesn't zoom in on focus. */
 export function TextField({ label, suffix, error, hint, ...props }: TextFieldProps) {
   const id = useId();
   const descId = error || hint ? `${id}-desc` : undefined;
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm text-muted">
+      <label htmlFor={id} className="block text-xs font-extrabold text-muted">
         {label}
       </label>
       <div
-        className={`flex min-h-12 items-center rounded-xl border bg-surface px-3 focus-within:border-accent ${
-          error ? 'border-danger' : 'border-line'
+        className={`flex min-h-12 items-center border-b-2 focus-within:border-accent ${
+          error ? 'border-danger' : 'border-fg'
         }`}
       >
         <input
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={descId}
-          className="h-12 w-full min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted/60"
+          className="h-12 w-full min-w-0 flex-1 bg-transparent text-lg font-bold outline-none placeholder:font-semibold placeholder:text-muted/60"
           {...props}
         />
-        {suffix && <span className="ml-2 shrink-0 text-sm text-muted">{suffix}</span>}
+        {suffix && <span className="ml-2 shrink-0 text-sm font-extrabold text-muted">{suffix}</span>}
       </div>
       {(error || hint) && (
         <p id={descId} className={`mt-1 text-xs ${error ? 'text-danger' : 'text-muted'}`}>

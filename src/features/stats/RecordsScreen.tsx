@@ -40,24 +40,25 @@ export function RecordsScreen() {
           description="Tes records apparaîtront après tes premières séances avec des charges."
         />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-line border-b border-line">
           {rows.map(({ exercise, records, latest }) => (
             <li key={exercise.id}>
-              <Link
-                to={`/stats/progress?exercise=${exercise.id}`}
-                className="block rounded-2xl bg-surface px-4 py-3 active:bg-surface-2"
-              >
+              <Link to={`/stats/progress?exercise=${exercise.id}`} className="block py-3 active:opacity-60">
                 <div className="flex items-baseline justify-between gap-3">
-                  <p className="truncate font-semibold">{exercise.name}</p>
-                  {latest && <p className="shrink-0 text-xs text-muted">{shortDateLabel(toTime(latest))}</p>}
+                  <p className="truncate text-lg leading-tight headline">{exercise.name}</p>
+                  {latest && (
+                    <p className="shrink-0 text-xs font-bold text-muted">{shortDateLabel(toTime(latest))}</p>
+                  )}
                 </div>
                 <dl className="mt-1.5 grid grid-cols-3 gap-2">
                   {RECORD_KINDS.map((kind) => {
                     const r = records[kind];
                     return (
                       <div key={kind} className="min-w-0">
-                        <dt className="truncate text-[11px] text-muted">{RECORD_LABELS[kind]}</dt>
-                        <dd className="truncate text-sm font-semibold tabular-nums">
+                        <dt className="truncate text-[11px] font-extrabold text-muted">
+                          {RECORD_LABELS[kind]}
+                        </dt>
+                        <dd className="truncate text-lg leading-tight headline tabular-nums">
                           {r ? kg(r.value) : '—'}
                         </dd>
                         {r && (

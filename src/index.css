@@ -1,66 +1,74 @@
 @import 'tailwindcss';
 
 /*
- * Plus Jakarta Sans (SIL OFL 1.1, see src/assets/fonts/OFL.txt): one variable file (weights
- * 500–800, Latin subset), self-hosted and precached so the app looks the same offline.
+ * Archivo (SIL OFL 1.1, see src/assets/fonts/OFL.txt): one variable file (weights 400–900,
+ * widths 62–125 %, Latin subset), self-hosted and precached so the app looks the same offline.
+ * Titles and big numbers use the expanded widths (`headline`, `numeral`).
  */
 @font-face {
-  font-family: 'Plus Jakarta Sans';
+  font-family: 'Archivo';
   font-style: normal;
-  font-weight: 500 800;
+  font-weight: 400 900;
+  font-stretch: 62% 125%;
   font-display: swap;
-  src: url('./assets/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+  src: url('./assets/fonts/archivo-latin.woff2') format('woff2');
 }
 
 /*
- * Theme tokens ("Bento": neutral chrome, one pastel tile colour per domain).
+ * Theme tokens ("Grand format": black page, full-width colour bands, square shapes, huge type).
  * Dark is the default; light applies only when the system asks for it.
  * Use the semantic utilities (bg-bg, bg-surface, text-fg, text-muted, border-line, text-accent)
  * instead of raw palette colours so both themes stay consistent.
  */
 @theme {
-  --color-bg: #17171c;
-  --color-surface: #232329;
-  --color-surface-2: #2e2e36;
-  --color-line: #3a3a43;
-  --color-fg: #f5f5f7;
-  --color-muted: #a1a1aa;
-  /* Interactive text (links), focus rings and default strokes. */
-  --color-accent: #d7c6ff;
-  /* Primary actions: an inverted pill (light on dark, ink on light); text on it is accent-fg. */
-  --color-accent-fill: #f5f5f7;
-  --color-accent-fg: #17171c;
-  --color-danger: #ff8577;
+  --color-bg: #000000;
+  --color-surface: #1a1a1a;
+  --color-surface-2: #262626;
+  --color-line: #333333;
+  --color-fg: #ffffff;
+  --color-muted: #b5b5b5;
+  /* Interactive text (links) and focus rings. */
+  --color-accent: #f4e04d;
+  /* Primary actions: a yellow rectangle; text on it is accent-fg. */
+  --color-accent-fill: #f4e04d;
+  --color-accent-fg: #000000;
+  /* The bar under the active tab and sub-tab. */
+  --color-indicator: #f4e04d;
+  --color-danger: #ff6b5b;
   /* Body map silhouette, behind the colored muscles. */
-  --color-body: #2e2e36;
+  --color-body: #2a2a2a;
 
   /*
-   * Domain tiles: Alimentation peach, protéines lilac, poids and Corps mint, Salle sky. Text on a
-   * tile is always `ink` (secondary `ink/75`, warnings `danger-ink`), in both themes.
+   * Domain bands: Alimentation yellow, Salle cobalt, poids / Corps / secondary figures paper
+   * (white). Text on yellow and paper is `ink` (secondary `ink/72`, warnings `danger-ink`,
+   * buttons `bg-ink text-on-ink`); text on cobalt is `on-gym`.
    */
-  --color-peach: #ffc4a3;
-  --color-lilac: #d7c6ff;
-  --color-mint: #b8ebd3;
-  --color-sky: #bfddff;
-  --color-ink: #17171c;
-  /* Text on an ink pill (buttons inside tiles). */
+  --color-nutrition: #f4e04d;
+  --color-gym: #2340ff;
+  --color-on-gym: #ffffff;
+  --color-paper: #ffffff;
+  --color-ink: #000000;
   --color-on-ink: #ffffff;
   --color-danger-ink: #8a1510;
-  /* Domain colours for strokes and text on neutral surfaces (chart lines): pastel on dark, deep on light. */
-  --color-peach-strong: #ffc4a3;
-  --color-lilac-strong: #d7c6ff;
-  --color-mint-strong: #b8ebd3;
-  --color-sky-strong: #bfddff;
+  /* Domain colours for strokes on the page background (chart lines, goal lines). */
+  --color-nutrition-strong: #f4e04d;
+  --color-gym-strong: #6b84ff;
+  --color-paper-strong: #ffffff;
 
-  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Rounder than Tailwind's defaults: cards 24 px, tiles and sheets 32 px. */
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --radius-3xl: 2rem;
+  /* Square everything (rounded-full stays for the round header buttons and the spinner). */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+  --radius-3xl: 0;
+  --radius-4xl: 0;
 
-  /* Height reserved above the floating tab bar (64 px pill + its gap). */
-  --spacing-tabbar: 5rem;
+  /* Height of the tab bar above the home indicator. */
+  --spacing-tabbar: 3.75rem;
 
   --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 150ms ease-out;
@@ -78,31 +86,29 @@
 }
 
 :root {
-  --float-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  /* Flat poster style: no drop shadows. */
+  --float-shadow: none;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-bg: #f6f5f1;
-    --color-surface: #ffffff;
-    --color-surface-2: #ececf0;
-    --color-line: #dedde3;
-    --color-fg: #17171c;
-    --color-muted: #5f5f66;
-    --color-accent: #5b3fd9;
-    --color-accent-fill: #17171c;
-    --color-accent-fg: #ffffff;
+    --color-bg: #ffffff;
+    --color-surface: #ededed;
+    --color-surface-2: #e0e0e0;
+    --color-line: #dddddd;
+    --color-fg: #000000;
+    --color-muted: #5a5a5a;
+    --color-accent: #1f33d6;
+    --color-accent-fill: #f4e04d;
+    --color-accent-fg: #000000;
+    --color-indicator: #000000;
     --color-danger: #a8201a;
-    --color-body: #dcdce0;
-    --color-peach: #ffb48c;
-    --color-lilac: #ccb8ff;
-    --color-mint: #a6e4c7;
-    --color-sky: #acd3ff;
-    --color-peach-strong: #b4501f;
-    --color-lilac-strong: #6a4fe0;
-    --color-mint-strong: #1f7a55;
-    --color-sky-strong: #2a68c9;
-    --float-shadow: 0 10px 30px rgb(23 23 28 / 0.1);
+    --color-body: #d9d9d9;
+    /* A white band would vanish on the white page. */
+    --color-paper: #ededed;
+    --color-nutrition-strong: #8a7600;
+    --color-gym-strong: #2340ff;
+    --color-paper-strong: #000000;
   }
 }
 
@@ -130,11 +136,47 @@
   }
 }
 
-/* Big numbers: extra-bold, tight, tabular figures so values don't jitter as they change. */
+/* Big numbers: black weight, expanded width, tabular figures so values don't jitter. */
 @utility numeral {
-  font-weight: 800;
+  font-weight: 900;
+  font-stretch: 125%;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
+}
+
+/* Titles: black weight, slightly expanded. */
+@utility headline {
+  font-weight: 900;
+  font-stretch: 112%;
+  letter-spacing: -0.02em;
+}
+
+/*
+ * Full-width band inside a padded screen: cancels the page gutter (px-safe) and restores it as
+ * padding, so the colour runs edge to edge while the text stays aligned with the page.
+ */
+@utility bleed {
+  margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+}
+
+/* Cancels the page gutter without padding back: for grids of full-width cells that pad themselves. */
+@utility edge {
+  margin-left: calc(-1 * max(1rem, env(safe-area-inset-left)));
+  margin-right: calc(-1 * max(1rem, env(safe-area-inset-right)));
+}
+
+/*
+ * Focus ring for controls on a colour band: drawn inside, in the band's text colour (the accent
+ * ring would vanish on yellow, and outside a full-width band there is nothing to draw it on).
+ */
+@utility focus-inset {
+  &:focus-visible {
+    outline-color: currentColor;
+    outline-offset: -4px;
+  }
 }
 
 /* Floating elements (tab bar, FAB, toasts): a soft shadow that suits each theme. */

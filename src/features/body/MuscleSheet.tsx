@@ -40,11 +40,7 @@ export function MuscleSheet({
       title={label}
       header={
         <div className="flex items-center gap-3">
-          <span
-            className="size-4 shrink-0 rounded-full"
-            style={{ backgroundColor: color }}
-            aria-hidden="true"
-          />
+          <span className="size-4 shrink-0" style={{ backgroundColor: color }} aria-hidden="true" />
           <h2 className="text-lg font-semibold">{label}</h2>
         </div>
       }

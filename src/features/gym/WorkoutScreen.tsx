@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { BigNumber } from '../../components/BigNumber';
 import { Button } from '../../components/Button';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
 import { EmptyState } from '../../components/EmptyState';
@@ -22,7 +23,7 @@ import {
 } from '../../db/workouts';
 import { isLocalDate } from '../../domain/date';
 import { workoutStats } from '../../domain/workout';
-import { formatDuration, formatVolume } from '../../lib/format';
+import { formatInteger } from '../../lib/format';
 import { ExerciseCard } from './ExerciseCard';
 import { ExerciseList } from './ExerciseList';
 import { RestTimerBar } from './RestTimerBar';
@@ -115,20 +116,24 @@ export function WorkoutScreen() {
           <button
             type="button"
             onClick={requestFinish}
-            className="-mr-1 min-h-11 rounded-full bg-accent-fill px-4 text-sm font-semibold text-accent-fg active:opacity-80"
+            className="min-h-11 bg-fg px-4 text-[15px] font-black text-bg active:opacity-80"
           >
             Terminer
           </button>
         )
       }
     >
-      <dl className="mb-4 grid grid-cols-3 gap-2 text-center">
-        <Stat label="Durée" value={stats.durationMs === undefined ? '—' : formatDuration(stats.durationMs)} />
+      <dl className="bleed grid grid-cols-3 gap-3 bg-gym py-3.5 text-on-gym">
+        {stats.durationMs === undefined ? (
+          <Stat label="Durée" value="—" />
+        ) : (
+          <Stat label="Durée" value={String(Math.floor(stats.durationMs / 60_000))} unit="min" />
+        )}
         <Stat
           label="Séries"
           value={active ? `${stats.completedSets}/${sets.length}` : String(stats.completedSets)}
         />
-        <Stat label="Volume" value={formatVolume(stats.volumeKg)} />
+        <Stat label="Volume" value={formatInteger(stats.volumeKg)} unit="kg" />
       </dl>
 
       {groups.length === 0 ? (
@@ -137,7 +142,7 @@ export function WorkoutScreen() {
           description="Ajoute un exercice : ses séries seront pré-remplies avec tes charges de la dernière fois."
         />
       ) : (
-        <div className="flex flex-col gap-3">
+        <div className="divide-y divide-line">
           {groups.map((g, i) => (
             <ExerciseCard
               key={g.exerciseId}
@@ -153,7 +158,7 @@ export function WorkoutScreen() {
         </div>
       )}
 
-      <Button variant="secondary" className="mt-4 w-full" onClick={() => setPicking(true)}>
+      <Button variant="secondary" className="mt-2 w-full" onClick={() => setPicking(true)}>
         <PlusIcon className="size-5" /> Ajouter un exercice
       </Button>
 
@@ -210,11 +215,14 @@ export function WorkoutScreen() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+/** A figure of the cobalt stats band. */
+function Stat({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-xl bg-surface px-2 py-2">
-      <dt className="text-[11px] text-muted">{label}</dt>
-      <dd className="truncate font-semibold tabular-nums">{value}</dd>
+    <div className="@container min-w-0">
+      <dt className="text-xs font-extrabold">{label}</dt>
+      <dd className="mt-1">
+        <BigNumber value={value} unit={unit} maxRem={2.25} className="leading-none" />
+      </dd>
     </div>
   );
 }
@@ -246,7 +254,7 @@ function DetailsForm({ workout }: { workout: Workout }) {
         onBlur={() => void updateWorkoutMeta(workout.id, { name })}
       />
       <div>
-        <label htmlFor="workout-notes" className="mb-1 block text-sm text-muted">
+        <label htmlFor="workout-notes" className="mb-1 block text-xs font-extrabold text-muted">
           Notes (facultatif)
         </label>
         <textarea
@@ -255,7 +263,7 @@ function DetailsForm({ workout }: { workout: Workout }) {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           onBlur={() => void updateWorkoutMeta(workout.id, { notes })}
-          className="w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-base outline-none focus:border-accent"
+          className="w-full border-2 border-fg bg-transparent px-3 py-2.5 text-base font-semibold outline-none focus:border-accent"
         />
       </div>
     </section>

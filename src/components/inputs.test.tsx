@@ -100,13 +100,14 @@ describe('NumericInput', () => {
 });
 
 describe('SegmentedControl', () => {
-  function Harness() {
+  function Harness({ variant }: { variant?: 'segments' | 'tabs' }) {
     const [value, setValue] = useState<'front' | 'back'>('front');
     return (
       <SegmentedControl
         label="Vue"
         value={value}
         onChange={setValue}
+        variant={variant}
         options={[
           { value: 'front', label: 'Face' },
           { value: 'back', label: 'Dos' },
@@ -136,6 +137,14 @@ describe('SegmentedControl', () => {
 
   it('has no accessibility violations', async () => {
     render(<Harness />);
+    expect(await axeViolations()).toEqual([]);
+  });
+
+  it('keeps the radio semantics when drawn as tabs', async () => {
+    const user = userEvent.setup();
+    render(<Harness variant="tabs" />);
+    await user.click(screen.getByRole('radio', { name: 'Dos' }));
+    expect(screen.getByRole('radio', { name: 'Dos', checked: true })).toBeTruthy();
     expect(await axeViolations()).toEqual([]);
   });
 });

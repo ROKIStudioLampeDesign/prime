@@ -3,9 +3,11 @@ import {
   formatBodyWeight,
   formatClock,
   formatDuration,
+  formatInteger,
   formatSignedBodyWeight,
   formatVolume,
   formatWeight,
+  formatWeightChange,
 } from './format';
 
 // fr-FR uses a (narrow) no-break space as thousands separator.
@@ -20,6 +22,8 @@ describe('gym formatting', () => {
 
   it('formats volume as integer kg', () => {
     expect(nb(formatVolume(12450.4))).toBe('12 450 kg');
+    expect(nb(formatInteger(12450.6))).toBe('12 451');
+    expect(formatInteger(0)).toBe('0');
   });
 
   it('formats durations', () => {
@@ -47,5 +51,7 @@ describe('body weight formatting', () => {
     expect(formatSignedBodyWeight(0.04)).toBe('±0 kg');
     expect(formatSignedBodyWeight(-0.04)).toBe('±0 kg');
     expect(formatSignedBodyWeight(0)).toBe('±0 kg');
+    expect(formatWeightChange(-1.25)).toBe('−1,3');
+    expect(formatWeightChange(0.04)).toBe('±0');
   });
 });

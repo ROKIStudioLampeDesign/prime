@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import { ProgressBar, ProgressRing, type ProgressTone } from '../../components/Progress';
+import { BigNumber } from '../../components/BigNumber';
+import { ProgressBar, type ProgressTone } from '../../components/Progress';
 import {
   GOAL_KINDS,
   goalProgress,
@@ -22,83 +23,71 @@ function progressFor(key: MacroKey, totals: Macros, goals: Goals): GoalProgress 
   return goal === undefined ? undefined : goalProgress(totals[key], goal, GOAL_KINDS[key]);
 }
 
-/** The summary is an Alimentation tile: ink on peach, warnings in danger-ink. */
+/** The summary is an Alimentation band: ink on yellow, warnings in danger-ink. */
 function toneFor(progress: GoalProgress | undefined): ProgressTone {
   return progress?.bad ? 'danger-ink' : 'ink';
 }
 
-function ringCaption(macro: MacroKey, progress: GoalProgress | undefined): string {
-  const unit = MACRO_UNITS[macro];
-  if (!progress) return 'Pas d’objectif';
-  if (progress.remaining > 0) return `Reste ${formatMacro(macro, progress.remaining)} ${unit}`;
-  if (progress.bad) return `${formatMacro(macro, -progress.remaining)} ${unit} en trop`;
+function kcalCaption(progress: GoalProgress | undefined): string {
+  if (!progress) return 'Pas d’objectif de calories';
+  if (progress.remaining > 0) return `Reste ${formatMacro('kcal', progress.remaining)} kcal`;
+  if (progress.bad) return `${formatMacro('kcal', -progress.remaining)} kcal en trop`;
   return 'Objectif atteint';
 }
 
-function RingStat({ macro, totals, goals }: { macro: 'kcal' | 'protein'; totals: Macros; goals: Goals }) {
-  const progress = progressFor(macro, totals, goals);
-  const goal = goals[macro];
-  const unit = MACRO_UNITS[macro];
-  const caption = ringCaption(macro, progress);
-
-  return (
-    <div className="flex flex-1 flex-col items-center gap-2">
-      <ProgressRing ratio={progress?.ratio ?? 0} tone={toneFor(progress)} size={120}>
-        <span className="text-3xl leading-none numeral">{formatMacro(macro, totals[macro])}</span>
-        <span className="text-xs font-semibold text-ink/75 tabular-nums">
-          {goal === undefined ? unit : `/ ${formatMacro(macro, goal)} ${unit}`}
-        </span>
-      </ProgressRing>
-      <div className="text-center">
-        <p className="text-sm font-bold">{MACRO_LABELS[macro]}</p>
-        <p className={`text-xs font-semibold ${progress?.bad ? 'text-danger-ink' : 'text-ink/75'}`}>
-          {caption}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function BarStat({ macro, totals, goals }: { macro: MacroKey; totals: Macros; goals: Goals }) {
+function MacroStat({ macro, totals, goals }: { macro: MacroKey; totals: Macros; goals: Goals }) {
   const progress = progressFor(macro, totals, goals);
   const goal = goals[macro];
   return (
-    <div>
-      <div className="mb-1 flex items-baseline justify-between gap-2 text-xs">
-        <span className="font-semibold text-ink/75">
-          {MACRO_LABELS[macro]}
-          {GOAL_KINDS[macro] === 'max' && goal !== undefined && ' (max)'}
+    <div className="min-w-0">
+      <p className="truncate text-xs font-extrabold">
+        {MACRO_LABELS[macro]}
+        {GOAL_KINDS[macro] === 'max' && goal !== undefined && ' (max)'}
+      </p>
+      <p
+        className={`mt-0.5 text-[1.375rem] leading-tight headline tabular-nums ${progress?.bad ? 'text-danger-ink' : ''}`}
+      >
+        {formatMacro(macro, totals[macro])}
+        <span className="text-xs font-bold text-ink/72">
+          {goal === undefined ? ` ${MACRO_UNITS[macro]}` : ` / ${formatMacro(macro, goal)}`}
         </span>
-        <span className={`font-bold tabular-nums ${progress?.bad ? 'text-danger-ink' : ''}`}>
-          {formatMacro(macro, totals[macro])}
-          {goal !== undefined && (
-            <span className="font-semibold text-ink/75"> / {formatMacro(macro, goal)}</span>
-          )}{' '}
-          g
-        </span>
+      </p>
+      <div className="mt-1">
+        <ProgressBar ratio={progress?.ratio ?? 0} tone={toneFor(progress)} />
       </div>
-      <ProgressBar ratio={progress?.ratio ?? 0} tone={toneFor(progress)} />
     </div>
   );
 }
 
 export function DailySummary({ totals, goals }: DailySummaryProps) {
   const hasGoals = MACRO_KEYS.some((key) => goals[key] !== undefined);
+  const kcal = progressFor('kcal', totals, goals);
   return (
-    <section aria-label="Totaux du jour" className="rounded-3xl bg-peach p-5 text-ink">
-      <div className="flex gap-2">
-        <RingStat macro="kcal" totals={totals} goals={goals} />
-        <RingStat macro="protein" totals={totals} goals={goals} />
+    <section aria-label="Totaux du jour" className="@container bleed bg-nutrition py-4 text-ink">
+      <div className="flex justify-between text-sm font-extrabold">
+        <span>Calories</span>
+        <span className="font-bold tabular-nums">
+          {goals.kcal === undefined ? 'kcal' : `sur ${formatMacro('kcal', goals.kcal)} kcal`}
+        </span>
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3">
-        {(['carbs', 'sugars', 'fat', 'fiber'] as const).map((macro) => (
-          <BarStat key={macro} macro={macro} totals={totals} goals={goals} />
+      <BigNumber value={formatMacro('kcal', totals.kcal)} maxRem={7.5} className="mt-1.5 leading-[0.82]" />
+      <p className={`mt-2 text-[15px] font-bold tabular-nums ${kcal?.bad ? 'text-danger-ink' : ''}`}>
+        {kcalCaption(kcal)}
+      </p>
+      {kcal && (
+        <div className="mt-2 [&>div]:h-3">
+          <ProgressBar ratio={kcal.ratio} tone={toneFor(kcal)} />
+        </div>
+      )}
+      <div className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3">
+        {(['protein', 'carbs', 'fat', 'sugars', 'fiber'] as const).map((macro) => (
+          <MacroStat key={macro} macro={macro} totals={totals} goals={goals} />
         ))}
       </div>
       {!hasGoals && (
         <Link
           to="/settings/goals"
-          className="mt-4 flex min-h-11 items-center justify-center rounded-full bg-ink text-sm font-bold text-on-ink active:opacity-80"
+          className="mt-4 flex min-h-12 items-center justify-center bg-ink text-sm font-black text-on-ink focus-inset active:opacity-80"
         >
           Définir mes objectifs
         </Link>

@@ -1,6 +1,7 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
+import { BigNumber } from '../../components/BigNumber';
 import { Button } from '../../components/Button';
 import { EmptyState } from '../../components/EmptyState';
 import { CheckIcon } from '../../components/icons';
@@ -9,7 +10,7 @@ import { Screen } from '../../components/Screen';
 import type { WorkoutSet } from '../../db/db';
 import { getWorkout, getWorkoutSets } from '../../db/workouts';
 import { workoutStats } from '../../domain/workout';
-import { formatDuration, formatVolume, formatWeight } from '../../lib/format';
+import { formatInteger, formatWeight } from '../../lib/format';
 import { SaveTemplateSheet } from './SaveTemplateSheet';
 import { exerciseName, useExercisesById } from './exerciseData';
 import { workoutTitle } from './workoutLabels';
@@ -48,29 +49,32 @@ export function WorkoutSummaryScreen() {
 
   return (
     <Screen title="Séance terminée" back backFallback="/gym">
-      <div className="flex flex-col items-center py-4 text-center">
-        <span className="flex size-14 items-center justify-center rounded-full bg-accent-fill text-accent-fg">
-          <CheckIcon className="size-8" strokeWidth={2.6} />
-        </span>
-        <p className="mt-3 text-lg font-semibold">{workoutTitle(workout)}</p>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-2">
-        <Tile label="Durée" value={stats.durationMs === undefined ? '—' : formatDuration(stats.durationMs)} />
-        <Tile label="Volume total" value={formatVolume(stats.volumeKg)} />
-        <Tile label="Séries" value={String(stats.completedSets)} />
-        <Tile label="Exercices" value={String(stats.exercises)} />
-      </dl>
+      <section aria-label="Bilan" className="bleed bg-gym py-4 text-on-gym">
+        <p className="flex items-center gap-2 text-[1.625rem] leading-tight headline">
+          <CheckIcon className="size-7 shrink-0" strokeWidth={3} />
+          <span className="truncate">{workoutTitle(workout)}</span>
+        </p>
+        <dl className="mt-3 grid grid-cols-2 gap-3">
+          {stats.durationMs === undefined ? (
+            <Tile label="Durée" value="—" />
+          ) : (
+            <Tile label="Durée" value={String(Math.floor(stats.durationMs / 60_000))} unit="min" />
+          )}
+          <Tile label="Volume total" value={formatInteger(stats.volumeKg)} unit="kg" />
+          <Tile label="Séries" value={String(stats.completedSets)} />
+          <Tile label="Exercices" value={String(stats.exercises)} />
+        </dl>
+      </section>
 
       {byExercise.size > 0 && (
-        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+        <ul className="mt-2 divide-y divide-line border-b border-line">
           {[...byExercise.entries()].map(([exerciseId, exSets]) => {
             const best = bestSet(exSets);
             return (
-              <li key={exerciseId} className="flex min-h-14 items-center gap-3 px-4 py-2">
+              <li key={exerciseId} className="flex min-h-15 items-center gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
-                  <p className="truncate">{exerciseName(exercises, exerciseId)}</p>
-                  <p className="text-xs text-muted tabular-nums">
+                  <p className="truncate font-extrabold">{exerciseName(exercises, exerciseId)}</p>
+                  <p className="text-[13px] font-semibold text-muted tabular-nums">
                     {exSets.length} série{exSets.length > 1 ? 's' : ''}
                     {best && ` · meilleure : ${formatWeight(best.weightKg)} kg × ${best.reps}`}
                   </p>
@@ -90,7 +94,7 @@ export function WorkoutSummaryScreen() {
         <Link
           to="/gym"
           replace
-          className="flex min-h-12 items-center justify-center rounded-xl bg-accent-fill font-semibold text-accent-fg"
+          className="flex min-h-12 items-center justify-center bg-accent-fill font-black text-accent-fg [font-stretch:112%] active:opacity-80"
         >
           Retour au calendrier
         </Link>
@@ -110,11 +114,14 @@ export function WorkoutSummaryScreen() {
   );
 }
 
-function Tile({ label, value }: { label: string; value: string }) {
+/** A figure of the cobalt summary band. */
+function Tile({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
-    <div className="rounded-2xl bg-surface p-4">
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-1 text-3xl leading-none numeral">{value}</dd>
+    <div className="@container min-w-0">
+      <dt className="text-xs font-extrabold">{label}</dt>
+      <dd className="mt-1">
+        <BigNumber value={value} unit={unit} maxRem={2.5} className="leading-none" />
+      </dd>
     </div>
   );
 }

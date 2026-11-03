@@ -95,7 +95,7 @@ function ExerciseForm({ exercise }: { exercise?: Exercise }) {
         />
 
         <fieldset disabled={readOnly}>
-          <legend className="mb-2 text-sm text-muted">Équipement</legend>
+          <legend className="mb-2 text-xs font-extrabold text-muted">Équipement</legend>
           <div className="flex flex-wrap gap-2">
             {EQUIPMENT.map((eq) => (
               <button
@@ -103,8 +103,10 @@ function ExerciseForm({ exercise }: { exercise?: Exercise }) {
                 type="button"
                 aria-pressed={equipment === eq}
                 onClick={() => setEquipment(equipment === eq ? undefined : eq)}
-                className={`min-h-11 rounded-full px-4 text-sm font-semibold disabled:opacity-60 ${
-                  equipment === eq ? 'bg-accent-fill text-accent-fg' : 'bg-surface text-muted'
+                className={`min-h-11 border-2 px-3.5 text-sm disabled:opacity-60 ${
+                  equipment === eq
+                    ? 'border-gym bg-gym font-black text-on-gym'
+                    : 'border-fg font-extrabold text-fg'
                 }`}
               >
                 {EQUIPMENT_LABELS[eq]}
@@ -114,7 +116,7 @@ function ExerciseForm({ exercise }: { exercise?: Exercise }) {
         </fieldset>
 
         <div>
-          <h2 className="mb-2 text-sm text-muted">Muscles sollicités</h2>
+          <h2 className="mb-2 text-xs font-extrabold text-muted">Muscles sollicités</h2>
           <MusclePicker
             primary={primary}
             secondary={secondary}

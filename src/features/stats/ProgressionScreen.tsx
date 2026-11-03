@@ -2,6 +2,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { BigNumber } from '../../components/BigNumber';
 import { EmptyState } from '../../components/EmptyState';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
@@ -18,6 +19,7 @@ import {
   type HistorySet,
   type PersonalRecord,
   type ProgressMetric,
+  type RecordKind,
 } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
 import { axisProps, niceTicks, shortDateLabel, timeTicks, toTime } from './chartUtils';
@@ -72,7 +74,7 @@ function ProgressionContent({
         action={
           <Link
             to="/gym"
-            className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
+            className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
           >
             Aller à la salle
           </Link>
@@ -86,6 +88,8 @@ function ProgressionContent({
   const sets = history.get(selected.id) ?? [];
   const points = sessionProgression(sets, metric).map((p) => ({ t: toTime(p.date), value: p.value }));
   const records = personalRecords(sets);
+  const headlineKind: RecordKind = metric === 'e1rm' ? 'e1rm' : 'weight';
+  const headline = records[headlineKind];
   const tMin = points[0]?.t ?? 0;
   const tMax = points.at(-1)?.t ?? 0;
   const values = points.map((p) => p.value);
@@ -96,11 +100,11 @@ function ProgressionContent({
   return (
     <>
       <label className="block">
-        <span className="mb-1 block text-sm text-muted">Exercice</span>
+        <span className="mb-1 block text-xs font-extrabold text-muted">Exercice</span>
         <select
           value={selected.id}
           onChange={(e) => setParams({ exercise: e.target.value }, { replace: true })}
-          className="h-12 w-full rounded-xl border border-line bg-surface px-3 text-base outline-none focus:border-accent"
+          className="h-14 w-full border-2 border-fg bg-bg px-3 text-lg font-extrabold outline-none focus:border-accent"
         >
           {options.map((e) => (
             <option key={e.id} value={e.id}>
@@ -122,7 +126,23 @@ function ProgressionContent({
         />
       </div>
 
-      <section className="mt-3 rounded-2xl bg-surface pt-3 pr-3" aria-label="Progression par séance">
+      {/* The best value of the chosen measure, as a cobalt (Salle) band. */}
+      <section aria-label="Record" className="@container mt-4 bleed bg-gym py-4 text-on-gym">
+        <p className="text-sm font-extrabold">Record · {RECORD_LABELS[headlineKind]}</p>
+        <BigNumber
+          value={headline ? formatWeight(Math.round(headline.value * 10) / 10) : '—'}
+          unit={headline ? 'kg' : undefined}
+          maxRem={7}
+          className="mt-1.5 leading-[0.82]"
+        />
+        <p className="mt-2.5 text-sm font-semibold tabular-nums">
+          {headline
+            ? `${recordDetail(headline)}, ${shortDateLabel(toTime(headline.date))}`
+            : 'Pas encore de record pour cette mesure.'}
+        </p>
+      </section>
+
+      <section className="mt-4" aria-label="Progression par séance">
         {points.length === 0 ? (
           <ChartEmpty height={CHART_HEIGHT}>
             {metric === 'e1rm'
@@ -167,9 +187,9 @@ function ProgressionContent({
               />
               <Line
                 dataKey="value"
-                stroke="var(--color-sky-strong)"
+                stroke="var(--color-gym-strong)"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--color-sky-strong)', stroke: 'none' }}
+                dot={{ r: 3, fill: 'var(--color-gym-strong)', stroke: 'none' }}
                 activeDot={{ r: 5, fill: 'var(--color-fg)', stroke: 'none' }}
                 isAnimationActive={false}
               />
@@ -183,15 +203,15 @@ function ProgressionContent({
         </p>
       </section>
 
-      <h2 className="mt-5 mb-1 px-1 text-sm font-semibold text-muted">Records</h2>
-      <dl className="flex flex-col gap-2">
+      <h2 className="mt-6 mb-1 text-[1.375rem] leading-tight headline">Records</h2>
+      <dl className="divide-y divide-line border-y border-line">
         {RECORD_KINDS.map((kind) => (
           <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
         ))}
       </dl>
       <Link
         to="/stats/records"
-        className="mt-3 flex min-h-11 items-center justify-center rounded-xl text-sm font-semibold text-accent active:bg-surface-2"
+        className="mt-3 flex min-h-11 items-center justify-center text-sm font-extrabold text-accent active:bg-surface"
       >
         Tous les records
       </Link>
@@ -201,15 +221,15 @@ function ProgressionContent({
 
 function RecordRow({ label, record }: { label: string; record: PersonalRecord | undefined }) {
   return (
-    <div className="flex min-h-14 items-center gap-3 rounded-2xl bg-surface px-4 py-2">
+    <div className="flex min-h-15 items-center gap-3 py-2">
       <div className="min-w-0 flex-1">
-        <dt className="text-xs text-muted">{label}</dt>
-        <dd className="text-lg font-bold tabular-nums">
+        <dt className="text-xs font-extrabold text-muted">{label}</dt>
+        <dd className="text-xl leading-tight headline tabular-nums">
           {record ? `${formatWeight(Math.round(record.value * 10) / 10)} kg` : '—'}
         </dd>
       </div>
       {record && (
-        <dd className="shrink-0 text-right text-xs text-muted tabular-nums">
+        <dd className="shrink-0 text-right text-xs font-semibold text-muted tabular-nums">
           <span className="block">{recordDetail(record)}</span>
           <span className="block">{shortDateLabel(toTime(record.date))}</span>
         </dd>

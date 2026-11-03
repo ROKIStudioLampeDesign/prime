@@ -8,6 +8,12 @@ export function shortDay(date: LocalDate): string {
   return format(fromLocalDate(date), 'EEE d MMM', { locale: fr });
 }
 
+/** The two halves of a history row's date block: "lun." and "2". */
+export function dayBlock(date: LocalDate): { weekday: string; day: string } {
+  const d = fromLocalDate(date);
+  return { weekday: format(d, 'EEE', { locale: fr }), day: format(d, 'd') };
+}
+
 /** "Lundi 2 novembre" */
 export function longDay(date: LocalDate): string {
   const s = format(fromLocalDate(date), 'EEEE d MMMM', { locale: fr });

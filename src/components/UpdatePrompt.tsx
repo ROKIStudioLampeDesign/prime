@@ -29,13 +29,14 @@ export function UpdatePrompt() {
   // z-40: below a sheet's backdrop (z-50). An open sheet makes the page inert, this toast included,
   // so drawing it on top would let a tap fall through to the backdrop and close the sheet.
   return (
-    <div role="alert" className="fixed inset-x-0 top-[calc(env(safe-area-inset-top)+0.5rem)] z-40 px-safe">
-      <div className="mx-auto flex max-w-lg items-center gap-2 rounded-2xl bg-surface-2 py-2 pr-2 pl-4 float-shadow">
-        <p className="flex-1 text-sm font-semibold">Nouvelle version disponible</p>
+    // A yellow band across the top, over the header.
+    <div role="alert" className="fixed inset-x-0 top-0 z-40 bg-accent-fill pt-safe px-safe text-ink">
+      <div className="mx-auto flex min-h-16 max-w-lg items-center gap-2 py-2">
+        <p className="flex-1 text-[15px] font-extrabold">Nouvelle version disponible</p>
         <button
           type="button"
           onClick={() => setNeedRefresh(false)}
-          className="min-h-11 rounded-xl px-3 text-sm text-muted active:bg-surface"
+          className="min-h-11 px-3 text-sm font-bold focus-inset active:bg-ink/10"
         >
           Plus tard
         </button>
@@ -49,7 +50,7 @@ export function UpdatePrompt() {
             });
             void updateServiceWorker(true);
           }}
-          className="min-h-11 rounded-xl bg-accent-fill px-4 text-sm font-semibold text-accent-fg active:opacity-80"
+          className="min-h-11 bg-ink px-4 text-sm font-black text-on-ink focus-inset active:opacity-80"
         >
           Mettre à jour
         </button>

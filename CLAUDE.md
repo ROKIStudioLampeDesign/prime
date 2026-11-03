@@ -131,15 +131,19 @@ Rules:
 - **Mobile first:** design for 390px wide; content max width `max-w-lg`. No horizontal scrolling.
 - **Touch targets ≥ 44px** (`min-h-11`, `size-11`). Primary actions within thumb reach (bottom half).
 - **Safe areas:** use the `pt-safe`, `pb-safe`, `px-safe` utilities; the viewport uses `viewport-fit=cover`.
-- **Theme:** dark by default, light when the system asks. Use only the semantic colour tokens defined in
-  `src/index.css` (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-fg`, `text-muted`, `border-line`,
-  `text-accent` for links and focus, `bg-accent-fill text-accent-fg` for primary pills, `text-danger`),
-  never raw palette colours like `bg-zinc-900`. Each domain has a pastel tile colour ("bento"):
-  Alimentation `bg-peach`, protéines `bg-lilac`, poids and Corps `bg-mint`, Salle `bg-sky`. Text on a
-  tile is `text-ink` (secondary `text-ink/75`, warnings `text-danger-ink`), buttons on a tile are
-  `bg-ink text-on-ink`; strokes and chart lines use the `*-strong` variants. Type is Plus Jakarta Sans
-  (self-hosted); big numbers use the `numeral` utility (extra-bold, tabular figures). Labels are
-  sentence case, never all caps.
+- **Theme ("Grand format"):** black page, full-width colour bands, square shapes, huge type. Dark by
+  default, light when the system asks. Use only the semantic colour tokens defined in `src/index.css`
+  (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-fg`, `text-muted`, `border-line`, `text-accent` for
+  links and focus, `bg-accent-fill text-accent-fg` for primary actions, `bg-indicator` for the active
+  tab, `text-danger`), never raw palette colours like `bg-zinc-900`. Each domain has a band colour:
+  Alimentation `bg-nutrition` (yellow), Salle `bg-gym` (cobalt, text `text-on-gym`), poids, Corps and
+  secondary figures `bg-paper`. Text on yellow and paper is `text-ink` (secondary `text-ink/72`,
+  warnings `text-danger-ink`, buttons `bg-ink text-on-ink`); strokes and chart lines use the
+  `*-strong` variants. Bands run edge to edge with `bleed` (`edge` for a grid of cells that pad
+  themselves). No radius except the round header buttons (`headerButton`) and the spinner; lists are
+  rows on the page separated by `border-line`, inputs are underlined. Type is Archivo (variable,
+  self-hosted): titles use `headline`, big figures `numeral` or `<BigNumber>` (shrinks to fit its
+  `@container`). Labels are sentence case, never all caps.
 - Every screen is wrapped in `<Screen title=…>`, which provides the sticky header and the gear/back button.
 - Every data view handles three states: loading (`useLiveQuery` returns `undefined` → `<Loading />`),
   empty (`<EmptyState />` with a hint on what to do), and data.

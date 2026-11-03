@@ -96,11 +96,10 @@ export function BottomSheet({ open, onClose, title, header, children }: BottomSh
         aria-label={title}
         tabIndex={-1}
         style={{ bottom: keyboardInset }}
-        className="absolute inset-x-0 mx-auto flex max-h-[90dvh] max-w-lg flex-col rounded-t-3xl bg-surface pb-safe outline-none motion-safe:animate-sheet-in"
+        className="absolute inset-x-0 mx-auto flex max-h-[90dvh] max-w-lg flex-col border-t-[6px] border-accent-fill bg-surface pb-safe outline-none motion-safe:animate-sheet-in"
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-line" aria-hidden="true" />
-        <div className="shrink-0 px-5 pt-3">
-          {header ?? <h2 className="text-lg font-semibold">{title}</h2>}
+        <div className="shrink-0 px-5 pt-4">
+          {header ?? <h2 className="text-2xl leading-tight headline">{title}</h2>}
         </div>
         <div className="overflow-y-auto overscroll-contain px-5 pt-4 pb-4">{children}</div>
       </div>

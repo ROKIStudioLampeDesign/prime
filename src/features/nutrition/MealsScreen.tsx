@@ -40,7 +40,7 @@ export function MealsScreen() {
           action={
             <Link
               to="/nutrition/meals/new"
-              className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
+              className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
             >
               Créer un plat
             </Link>
@@ -52,28 +52,28 @@ export function MealsScreen() {
           {meals.length === 0 ? (
             <EmptyState title={`Aucun plat pour « ${query.trim()} »`} />
           ) : (
-            <ul className="mt-4 divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+            <ul className="mt-4 divide-y divide-line border-b border-line">
               {meals.map(({ meal, summary }) => (
                 <li className="list-row [--row-h:5rem]" key={meal.id}>
                   <Link
                     to={`/nutrition/meals/${meal.id}`}
-                    className="flex min-h-20 items-center gap-3 px-3 py-2 active:bg-surface-2"
+                    className="flex min-h-20 items-center gap-3 py-2 active:opacity-60"
                   >
-                    <BlobImage blob={meal.photo} alt="" className="size-14 rounded-xl" />
+                    <BlobImage blob={meal.photo} alt="" className="size-14" />
                     <div className="min-w-0 flex-1">
                       <p className="flex items-center gap-1.5">
-                        <span className="truncate font-semibold">{meal.name}</span>
+                        <span className="truncate text-lg leading-tight headline">{meal.name}</span>
                         {meal.favorite === 1 && (
                           <StarIcon filled className="size-3.5 shrink-0 text-accent" aria-label="Favori" />
                         )}
                       </p>
-                      <p className="truncate text-xs text-muted tabular-nums">
+                      <p className="mt-0.5 truncate text-[13px] font-semibold text-muted tabular-nums">
                         {meal.ingredients.length} ingrédient{meal.ingredients.length > 1 ? 's' : ''} ·{' '}
                         {formatMacro('kcal', summary.perPortion.kcal)} kcal / portion · P{' '}
                         {formatMacro('protein', summary.perPortion.protein)} g
                       </p>
                       {summary.missingCount > 0 && (
-                        <p className="text-xs text-danger">
+                        <p className="text-xs font-bold text-danger">
                           {summary.missingCount} produit{summary.missingCount > 1 ? 's' : ''} supprimé
                           {summary.missingCount > 1 ? 's' : ''}
                         </p>

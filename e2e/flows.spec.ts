@@ -27,7 +27,7 @@ test('create a product, log it in the diary and see the totals', async ({ page }
     .getByRole('link', { name: "Aujourd'hui" })
     .click();
   await expect(
-    page.getByRole('link', { name: /Alimentation/ }).getByText('186', { exact: true }),
+    page.getByRole('link', { name: /Calories du jour/ }).getByText('186', { exact: true }),
   ).toBeVisible();
 });
 

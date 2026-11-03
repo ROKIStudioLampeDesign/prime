@@ -100,6 +100,7 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
         ]}
         value={mode}
         onChange={setMode}
+        variant="tabs"
       />
 
       {records.length === 0 && (
@@ -113,19 +114,22 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
 
       {mode === 'map' ? (
         <>
-          <div className="mt-3">
-            <SegmentedControl
-              label="Vue"
-              options={[
-                { value: 'front', label: 'Face' },
-                { value: 'back', label: 'Dos' },
-              ]}
-              value={view}
-              onChange={setView}
-            />
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <p className="text-sm font-extrabold text-muted">Dernier entraînement</p>
+            <div className="w-36">
+              <SegmentedControl
+                label="Vue"
+                options={[
+                  { value: 'front', label: 'Face' },
+                  { value: 'back', label: 'Dos' },
+                ]}
+                value={view}
+                onChange={setView}
+              />
+            </div>
           </div>
           <div
-            className="mt-3 touch-pan-y rounded-2xl bg-surface py-3 select-none"
+            className="mt-2 touch-pan-y py-2 select-none"
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
             onPointerCancel={() => (swipeStart.current = null)}
@@ -138,7 +142,7 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
               onSelect={setSelected}
               className="mx-auto block aspect-[1/2] w-[min(62vw,240px)] motion-safe:animate-fade-in"
             />
-            <p className="mt-1 text-center text-xs text-muted">
+            <p className="mt-2 text-center text-xs font-semibold text-muted">
               Touche un muscle pour le détail · glisse pour voir {view === 'front' ? 'le dos' : 'la face'}
             </p>
           </div>
@@ -186,24 +190,21 @@ function MuscleList({
     return da === db ? collator.compare(MUSCLES[a].label, MUSCLES[b].label) : db - da;
   });
   return (
-    <ul
-      className="mt-3 divide-y divide-line overflow-hidden rounded-2xl bg-surface"
-      aria-label="Muscles par ancienneté"
-    >
+    <ul className="mt-3 divide-y divide-line border-b border-line" aria-label="Muscles par ancienneté">
       {sorted.map((m) => (
         <li key={m}>
           <button
             type="button"
             onClick={() => onSelect(m)}
-            className="flex min-h-12 w-full items-center gap-3 px-4 text-left active:bg-surface-2"
+            className="flex min-h-13 w-full items-center gap-3 text-left active:opacity-60"
           >
             <span
-              className="size-3.5 shrink-0 rounded-full transition-colors duration-500"
+              className="size-4 shrink-0 transition-colors duration-500"
               style={{ backgroundColor: colors[m] }}
               aria-hidden="true"
             />
-            <span className="flex-1">{MUSCLES[m].label}</span>
-            <span className="text-sm text-muted tabular-nums">
+            <span className="flex-1 font-bold">{MUSCLES[m].label}</span>
+            <span className="text-sm font-bold text-muted tabular-nums">
               {recency[m].days === undefined ? 'Jamais' : shortAgo(recency[m].days)}
             </span>
           </button>

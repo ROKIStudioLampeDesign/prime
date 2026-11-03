@@ -1,9 +1,8 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
-import { TextField } from '../../components/TextField';
 import { useGoBack } from '../../components/useGoBack';
 import { getGoals, saveGoals } from '../../db/goals';
 import { parseDecimal } from '../../domain/number';
@@ -65,32 +64,98 @@ function GoalsForm({ goals }: { goals: Goals }) {
     }
   }
 
+  const field = (macro: MacroKey, tone: GoalTone, className = '', note?: string) => (
+    <GoalField
+      macro={macro}
+      tone={tone}
+      className={className}
+      text={texts[macro]}
+      onChange={(text) => setTexts((t) => ({ ...t, [macro]: text }))}
+      invalid={errors[macro] !== undefined}
+      note={note}
+    />
+  );
+
   return (
-    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-      <p className="text-sm text-muted">
+    <form onSubmit={handleSubmit} noValidate>
+      <p className="text-sm font-semibold text-muted">
         Objectifs quotidiens. Laisse un champ vide pour ne pas suivre ce nutriment.
       </p>
-      {MACRO_KEYS.map((key) => (
-        <TextField
-          key={key}
-          label={MACRO_LABELS[key]}
-          suffix={MACRO_UNITS[key]}
-          inputMode="decimal"
-          enterKeyHint="next"
-          autoComplete="off"
-          value={texts[key]}
-          onChange={(e) => setTexts((t) => ({ ...t, [key]: e.target.value }))}
-          error={errors[key] && 'Nombre positif attendu'}
-          hint={
-            key === 'kcal' && macroKcal !== undefined
-              ? `${HINTS[GOAL_KINDS[key]]} · tes macros donnent ≈ ${formatMacro('kcal', macroKcal)} kcal`
-              : HINTS[GOAL_KINDS[key]]
-          }
-        />
-      ))}
-      <Button type="submit" disabled={!value || saving} className="mt-2">
+      {/* Full-width cells: energy is the yellow band, protein the paper cell, the rest plain. */}
+      <div className="mt-4 edge grid grid-cols-2 gap-0.5">
+        {field(
+          'kcal',
+          'nutrition',
+          'col-span-2',
+          macroKcal === undefined ? undefined : `Tes macros donnent ≈ ${formatMacro('kcal', macroKcal)} kcal`,
+        )}
+        {field('protein', 'paper')}
+        {field('carbs', 'plain')}
+        {field('fat', 'plain')}
+        {field('sugars', 'plain')}
+        {field('fiber', 'plain', 'col-span-2')}
+      </div>
+      <Button type="submit" disabled={!value || saving} className="mt-4 w-full">
         Enregistrer
       </Button>
     </form>
+  );
+}
+
+type GoalTone = 'nutrition' | 'paper' | 'plain';
+
+const TONES: Record<GoalTone, { cell: string; secondary: string; danger: string }> = {
+  nutrition: { cell: 'bg-nutrition text-ink', secondary: 'text-ink/72', danger: 'text-danger-ink' },
+  paper: { cell: 'bg-paper text-ink', secondary: 'text-ink/72', danger: 'text-danger-ink' },
+  plain: { cell: 'bg-surface text-fg', secondary: 'text-muted', danger: 'text-danger' },
+};
+
+interface GoalFieldProps {
+  macro: MacroKey;
+  tone: GoalTone;
+  className: string;
+  text: string;
+  onChange: (text: string) => void;
+  invalid: boolean;
+  note?: string;
+}
+
+/** One goal as a cell with a big input; focus draws a bar along the cell's bottom edge. */
+function GoalField({ macro, tone, className, text, onChange, invalid, note }: GoalFieldProps) {
+  const id = useId();
+  const { cell, secondary, danger } = TONES[tone];
+  const kindId = `${id}-kind`;
+  const descId = invalid || note ? `${id}-desc` : undefined;
+  return (
+    <div className={`${cell} py-3 px-safe focus-within:shadow-[inset_0_-4px_0_currentColor] ${className}`}>
+      <div className="flex justify-between gap-2 text-xs font-extrabold">
+        <label htmlFor={id}>{MACRO_LABELS[macro]}</label>
+        <span id={kindId} className={secondary}>
+          {HINTS[GOAL_KINDS[macro]]}
+        </span>
+      </div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <input
+          id={id}
+          inputMode="decimal"
+          enterKeyHint="next"
+          autoComplete="off"
+          placeholder="—"
+          value={text}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={invalid || undefined}
+          aria-describedby={descId ? `${kindId} ${descId}` : kindId}
+          className={`w-full min-w-0 flex-1 bg-transparent numeral outline-none placeholder:text-current/40 ${
+            macro === 'kcal' ? 'text-[4.5rem] leading-[0.95]' : 'text-[2.5rem] leading-tight'
+          }`}
+        />
+        <span className="shrink-0 text-sm font-extrabold">{MACRO_UNITS[macro]}</span>
+      </div>
+      {descId && (
+        <p id={descId} className={`mt-1 text-xs font-bold ${invalid ? danger : secondary}`}>
+          {invalid ? 'Nombre positif attendu' : note}
+        </p>
+      )}
+    </div>
   );
 }

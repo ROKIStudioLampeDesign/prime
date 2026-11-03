@@ -14,23 +14,16 @@ export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds })
   const pos = (days: number) => `${(days / max) * 100}%`;
 
   return (
-    <figure className="rounded-2xl bg-surface p-3" aria-label="Légende des couleurs">
+    <figure className="bg-surface p-3" aria-label="Légende des couleurs">
       <div className="relative mx-2 mt-1 mb-6">
-        <div
-          className="h-3 rounded-full"
-          style={{ background: `linear-gradient(to right, ${stops.join(', ')})` }}
-        />
+        <div className="h-3" style={{ background: `linear-gradient(to right, ${stops.join(', ')})` }} />
         <Marker left={pos(thresholds.greenDays)} label={`≤ ${thresholds.greenDays} j`} />
         <Marker left={pos(thresholds.redDays)} label={`≥ ${thresholds.redDays} j`} />
       </div>
-      <figcaption className="flex items-center justify-between gap-2 text-xs text-muted">
+      <figcaption className="flex items-center justify-between gap-2 text-xs font-semibold text-muted">
         <span>Entraîné récemment → pas depuis longtemps</span>
         <span className="flex shrink-0 items-center gap-1.5">
-          <span
-            className="size-3 rounded-full"
-            style={{ backgroundColor: NEUTRAL_COLOR }}
-            aria-hidden="true"
-          />
+          <span className="size-3" style={{ backgroundColor: NEUTRAL_COLOR }} aria-hidden="true" />
           Jamais
         </span>
       </figcaption>
@@ -41,8 +34,8 @@ export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds })
 function Marker({ left, label }: { left: string; label: string }) {
   return (
     <div className="absolute top-0 -translate-x-1/2" style={{ left }}>
-      <div className="mx-auto h-4 w-0.5 rounded-full bg-fg" />
-      <div className="mt-0.5 text-[11px] font-semibold whitespace-nowrap tabular-nums">{label}</div>
+      <div className="mx-auto h-4 w-0.5 bg-fg" />
+      <div className="mt-0.5 text-[11px] font-extrabold whitespace-nowrap tabular-nums">{label}</div>
     </div>
   );
 }

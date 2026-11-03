@@ -88,28 +88,30 @@ function ItemList({
   if (items.length === 0) return null;
   return (
     <section className="mt-4">
-      {title && <h2 className="mb-1 px-1 text-sm font-semibold text-muted">{title}</h2>}
-      <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
+      {title && <h2 className="mb-1 text-lg leading-tight headline">{title}</h2>}
+      <ul className="divide-y divide-line border-b border-line">
         {items.map((item) => (
           <li className="list-row [--row-h:4rem]" key={item.key}>
             <button
               type="button"
               onClick={() => onSelect(item.key)}
-              className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left active:bg-surface-2"
+              className="flex min-h-16 w-full items-center gap-3 py-2 text-left active:opacity-60"
             >
-              <BlobImage blob={item.photo} alt="" className="size-11 rounded-lg" />
+              <BlobImage blob={item.photo} alt="" className="size-11" />
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1.5">
-                  <span className="truncate">{item.name}</span>
+                  <span className="truncate font-bold">{item.name}</span>
                   {item.favorite && (
                     <StarIcon filled className="size-3.5 shrink-0 text-accent" aria-label="Favori" />
                   )}
                   {item.kind === 'meal' && <MealBadge />}
                 </p>
-                <p className="truncate text-xs text-muted">{itemSubtitle(item)}</p>
+                <p className="truncate text-[13px] font-medium text-muted">{itemSubtitle(item)}</p>
               </div>
               {item.recent && (
-                <span className="shrink-0 text-sm text-muted tabular-nums">{recentAmount(item)}</span>
+                <span className="shrink-0 text-sm font-bold text-muted tabular-nums">
+                  {recentAmount(item)}
+                </span>
               )}
             </button>
           </li>
@@ -121,9 +123,7 @@ function ItemList({
 
 export function MealBadge() {
   return (
-    <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-xs font-medium text-accent">
-      Plat
-    </span>
+    <span className="shrink-0 bg-accent-fill px-1.5 py-0.5 text-[11px] font-black text-accent-fg">Plat</span>
   );
 }
 
