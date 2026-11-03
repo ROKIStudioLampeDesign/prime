@@ -55,8 +55,10 @@ export default defineConfig({
     },
   },
   test: {
+    // Pure and DB tests run in node; component tests opt into jsdom with a
+    // '@vitest-environment jsdom' docblock. End-to-end tests live in e2e/ (Playwright).
     environment: 'node',
-    include: ['src/**/*.test.ts'],
-    setupFiles: ['fake-indexeddb/auto'],
+    include: ['src/**/*.test.{ts,tsx}'],
+    setupFiles: ['./src/test/setup.ts'],
   },
 });

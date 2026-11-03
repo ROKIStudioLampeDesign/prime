@@ -9,7 +9,7 @@ avant l'étape suivante. Skills utilisés indiqués pour chaque étape (`.claude
 
 ## Étapes
 
-- [ ] **0. Socle de tests** — tests de composants (Testing Library + jsdom + vitest-axe) et tests
+- [x] **0. Socle de tests** — tests de composants (Testing Library + jsdom + vitest-axe) et tests
       end-to-end Playwright versionnés dans le dépôt (navigation, hors connexion, journal, séance).
       _Skills : react-testing, test-driven-development._
 - [ ] **1. Robustesse et sécurité** — validation de chaque ligne à l'import d'une sauvegarde,

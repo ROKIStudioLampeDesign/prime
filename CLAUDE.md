@@ -15,7 +15,8 @@ Sections: **Aujourd'hui** (daily summary), **Alimentation** (meals, macros), **S
   `@vite-pwa/assets-generator` at build time (`pwa-assets.config.ts`)
 - React Router 7 (`react-router`, data router in `src/app/router.tsx`)
 - Recharts (charts), date-fns (dates, `fr` locale for display)
-- Vitest (+ `fake-indexeddb` for DB tests), ESLint (typescript-eslint strict) + Prettier
+- Vitest (+ `fake-indexeddb` for DB tests, Testing Library + jsdom + axe-core for component tests),
+  Playwright for end-to-end tests (`e2e/`), ESLint (typescript-eslint strict) + Prettier
 
 ## Commands
 
@@ -23,7 +24,8 @@ Sections: **Aujourd'hui** (daily summary), **Alimentation** (meals, macros), **S
 npm run dev        # dev server (service worker disabled in dev)
 npm run build      # typecheck + production build (generates SW and icons)
 npm run preview    # serve the production build; use this to test PWA/offline
-npm test           # vitest run
+npm test           # vitest run (unit, DB and component tests)
+npm run test:e2e   # Playwright against the production build, 390 px (uses installed Edge)
 npm run test:watch
 npm run typecheck  # tsc -b
 npm run lint       # eslint + prettier --check
@@ -147,7 +149,9 @@ Rules:
 - Named exports only; components in `PascalCase.tsx`, other modules in `camelCase.ts`.
 - No `any`, no non-null assertions (`!`); narrow instead.
 - Keep components small; move logic that can be pure into `src/domain`.
-- Tests: colocated `*.test.ts`. Domain logic needs tests for edge cases (empty input, zero, boundaries,
+- Tests: colocated `*.test.ts`; component tests are `*.test.tsx` with a `/** @vitest-environment jsdom */`
+  docblock, query by role/label (`src/test/utils.tsx`: `renderWithRouter`, `axeViolations`). User
+  flows go in `e2e/` (the fixture fails a test on any console error). Domain logic needs tests for edge cases (empty input, zero, boundaries,
   DST/month/year boundaries for dates).
 - Prettier formats everything (Tailwind classes are auto-sorted); don't hand-format.
 
@@ -156,7 +160,8 @@ Rules:
 A change is done only when all of these hold:
 
 - [ ] `npm run typecheck` passes
-- [ ] `npm test` passes, and new domain logic has unit tests
+- [ ] `npm test` passes, and new domain logic has unit tests (new shared components: component tests)
+- [ ] `npm run test:e2e` passes when a user flow changed
 - [ ] `npm run lint` passes (ESLint + Prettier)
 - [ ] `npm run build` succeeds
 - [ ] Usable at 390px: no horizontal scroll, touch targets ≥ 44px, nothing hidden behind the notch,
