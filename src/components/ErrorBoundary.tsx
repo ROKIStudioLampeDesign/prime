@@ -27,7 +27,7 @@ function ErrorScreen({ error }: { error: unknown }) {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="min-h-12 rounded-xl bg-accent px-4 font-semibold text-accent-fg active:opacity-80"
+          className="min-h-12 rounded-xl bg-accent-fill px-4 font-semibold text-accent-fg active:opacity-80"
         >
           Recharger
         </button>

@@ -63,7 +63,7 @@ export function DiaryScreen() {
               action={
                 <Link
                   to={addEntryPath(date)}
-                  className="flex min-h-12 items-center rounded-xl bg-accent px-5 font-semibold text-accent-fg"
+                  className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
                 >
                   Ajouter un aliment
                 </Link>

@@ -104,7 +104,7 @@ function ExerciseForm({ exercise }: { exercise?: Exercise }) {
                 aria-pressed={equipment === eq}
                 onClick={() => setEquipment(equipment === eq ? undefined : eq)}
                 className={`min-h-11 rounded-full px-4 text-sm font-semibold disabled:opacity-60 ${
-                  equipment === eq ? 'bg-accent text-accent-fg' : 'bg-surface text-muted'
+                  equipment === eq ? 'bg-accent-fill text-accent-fg' : 'bg-surface text-muted'
                 }`}
               >
                 {EQUIPMENT_LABELS[eq]}

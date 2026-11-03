@@ -47,7 +47,7 @@ export function UpdatePrompt() {
             });
             void updateServiceWorker(true);
           }}
-          className="min-h-11 rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg active:opacity-80"
+          className="min-h-11 rounded-xl bg-accent-fill px-4 text-sm font-semibold text-accent-fg active:opacity-80"
         >
           Mettre à jour
         </button>

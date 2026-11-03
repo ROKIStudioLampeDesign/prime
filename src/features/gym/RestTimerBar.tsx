@@ -38,12 +38,12 @@ export function RestTimerBar({ workoutId, endsAt }: { workoutId: number; endsAt:
     >
       <div
         className={`mx-auto flex max-w-lg items-center gap-1 rounded-2xl py-1.5 pr-1.5 pl-4 shadow-lg shadow-black/40 ${
-          done ? 'bg-accent text-accent-fg' : 'bg-surface-2'
+          done ? 'bg-accent-fill text-accent-fg' : 'bg-surface-2'
         }`}
       >
         <div className="flex-1">
           <p className={`text-xs ${done ? '' : 'text-muted'}`}>{done ? 'Repos terminé' : 'Repos'}</p>
-          <p className="text-2xl leading-tight font-bold tabular-nums">{formatClock(remaining)}</p>
+          <p className="numeral text-3xl leading-tight">{formatClock(remaining)}</p>
         </div>
         {!done && (
           <>

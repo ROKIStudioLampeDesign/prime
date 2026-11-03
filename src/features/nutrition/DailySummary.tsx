@@ -44,9 +44,7 @@ function RingStat({ macro, totals, goals }: { macro: 'kcal' | 'protein'; totals:
   return (
     <div className="flex flex-1 flex-col items-center gap-2">
       <ProgressRing ratio={progress?.ratio ?? 0} tone={toneFor(progress)} size={120}>
-        <span className="text-2xl leading-tight font-bold tabular-nums">
-          {formatMacro(macro, totals[macro])}
-        </span>
+        <span className="numeral text-4xl leading-none">{formatMacro(macro, totals[macro])}</span>
         <span className="text-xs text-muted tabular-nums">
           {goal === undefined ? unit : `/ ${formatMacro(macro, goal)} ${unit}`}
         </span>

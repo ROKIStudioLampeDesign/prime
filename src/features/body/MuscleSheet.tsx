@@ -66,10 +66,7 @@ export function MuscleSheet({
           </dl>
 
           <section aria-labelledby="muscle-exercises">
-            <h3
-              id="muscle-exercises"
-              className="mb-1.5 text-xs font-semibold tracking-wide text-muted uppercase"
-            >
+            <h3 id="muscle-exercises" className="mb-1.5 text-sm font-semibold text-muted">
               Derniers exercices
             </h3>
             <RecentList muscle={muscle} records={records} exercises={exercises} options={options} />

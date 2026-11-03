@@ -131,7 +131,7 @@ export function DataSection() {
 
   return (
     <section className="mt-6" aria-labelledby="data-title" id="donnees">
-      <h2 id="data-title" className="mb-1 px-1 text-xs font-semibold tracking-wide text-muted uppercase">
+      <h2 id="data-title" className="mb-1 px-1 text-sm font-semibold text-muted">
         Données
       </h2>
       <div className="rounded-2xl bg-surface p-4">

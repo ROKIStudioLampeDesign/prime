@@ -49,7 +49,7 @@ export function WorkoutSummaryScreen() {
   return (
     <Screen title="Séance terminée" back backFallback="/gym">
       <div className="flex flex-col items-center py-4 text-center">
-        <span className="flex size-14 items-center justify-center rounded-full bg-accent text-accent-fg">
+        <span className="flex size-14 items-center justify-center rounded-full bg-accent-fill text-accent-fg">
           <CheckIcon className="size-8" strokeWidth={2.6} />
         </span>
         <p className="mt-3 text-lg font-semibold">{workoutTitle(workout)}</p>
@@ -90,7 +90,7 @@ export function WorkoutSummaryScreen() {
         <Link
           to="/gym"
           replace
-          className="flex min-h-12 items-center justify-center rounded-xl bg-accent font-semibold text-accent-fg"
+          className="flex min-h-12 items-center justify-center rounded-xl bg-accent-fill font-semibold text-accent-fg"
         >
           Retour au calendrier
         </Link>
@@ -114,7 +114,7 @@ function Tile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-surface p-4">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="mt-1 text-2xl font-bold tabular-nums">{value}</dd>
+      <dd className="mt-1 numeral text-3xl leading-none">{value}</dd>
     </div>
   );
 }

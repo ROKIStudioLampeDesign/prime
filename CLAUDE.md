@@ -133,7 +133,9 @@ Rules:
 - **Safe areas:** use the `pt-safe`, `pb-safe`, `px-safe` utilities; the viewport uses `viewport-fit=cover`.
 - **Theme:** dark by default, light when the system asks. Use only the semantic colour tokens defined in
   `src/index.css` (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-fg`, `text-muted`, `border-line`,
-  `text-accent`, `bg-accent text-accent-fg`, `text-danger`), never raw palette colours like `bg-zinc-900`.
+  `text-accent`, `bg-accent-fill text-accent-fg` for solid accent surfaces, `text-danger`), never raw
+  palette colours like `bg-zinc-900`. Screen titles use `font-display`; big numbers use the `numeral`
+  utility (Barlow Condensed, tabular figures). Labels are sentence case, never all caps.
 - Every screen is wrapped in `<Screen title=…>`, which provides the sticky header and the gear/back button.
 - Every data view handles three states: loading (`useLiveQuery` returns `undefined` → `<Loading />`),
   empty (`<EmptyState />` with a hint on what to do), and data.

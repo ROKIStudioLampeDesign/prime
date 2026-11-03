@@ -24,12 +24,12 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#0a0a0a',
-        background_color: '#0a0a0a',
+        theme_color: '#10151f',
+        background_color: '#10151f',
       },
       workbox: {
         // The manifest is added by the plugin itself; globbing it too creates a conflicting precache entry.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         navigateFallback: '/index.html',
         // Control the page on first install (offline-ready right away). Updates still wait for
         // the user's "Mettre à jour" because skipWaiting stays off in prompt mode.

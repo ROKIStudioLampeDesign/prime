@@ -16,7 +16,7 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
       _focus trap_ des bottom sheets, « Aujourd'hui » qui suit le changement de jour, arrêt du
       minuteur de mise à jour, état de chargement de « Dernière sauvegarde ».
       _Skills : typescript-patterns, frontend-a11y, test-driven-development._
-- [ ] **2. Nouvelle identité visuelle** — 2 pistes proposées (palette, typographie, principes,
+- [x] **2. Nouvelle identité visuelle** — 2 pistes proposées (palette, typographie, principes,
       mini aperçu) ; après choix : jetons de design, composants de base, finitions.
       _Skills : frontend-design, tailwind-design-system, make-interfaces-feel-better._
 - [ ] **3. Qualité du code** — découpage des gros composants, contrôle segmenté unique, logique
@@ -30,6 +30,21 @@ Règles : une étape = un commit, tests lancés et verts à chaque étape. Depui
       conditions réelles (nécessite la connexion Wrangler).
 - [ ] **6. Vérification finale** — e2e, Lighthouse sur l'URL réelle, revue de code par sous-agent.
       _Skills : verification-before-completion, requesting-code-review._
+
+## Identité visuelle (étape 2)
+
+Deux pistes étudiées ; la piste A est retenue (choix délégué, cf. « n'attends plus mes OK ») :
+
+- **A. Fonte et craie (retenue)** : encre bleu-nuit `#10151F`, surfaces `#182030` / `#222C3F`,
+  craie `#EEF0F4`, jaune des disques étalonnés `#FFC42E` (ocre `#8A5C00` pour le texte en thème
+  clair). Titres et grands chiffres en Barlow Condensed (affichage de salle), texte courant en
+  police système. Un seul élément fort : les chiffres condensés ; le reste reste sobre.
+  Libellés en casse normale, jamais en capitales.
+- **B. Carnet d'entraînement** : papier clair par défaut, encre graphite, rouge pointé pour les
+  records, chiffres manuscrits. Écartée : l'app est surtout utilisée le soir et en salle, où un
+  thème sombre par défaut est plus confortable (et c'est la règle du projet).
+
+Contrastes vérifiés (WCAG AA, ≥ 4,8:1 pour tous les couples texte/fond, dans les deux thèmes).
 
 ## Risques et changements
 

@@ -37,7 +37,7 @@ export function MusclePicker({ primary, secondary, onChange, disabled }: MuscleP
     <div className="flex flex-col gap-3">
       <p className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         <span className="flex items-center gap-1.5">
-          <span className="size-3 rounded-full bg-accent" /> Principal
+          <span className="size-3 rounded-full bg-accent-fill" /> Principal
         </span>
         <span className="flex items-center gap-1.5">
           <span className="size-3 rounded-full border border-accent bg-accent/15" /> Secondaire
@@ -46,9 +46,7 @@ export function MusclePicker({ primary, secondary, onChange, disabled }: MuscleP
       </p>
       {GROUPS.map((group) => (
         <fieldset key={group} disabled={disabled}>
-          <legend className="mb-1.5 text-xs font-semibold tracking-wide text-muted uppercase">
-            {MUSCLE_GROUP_LABELS[group]}
-          </legend>
+          <legend className="mb-1.5 text-sm font-semibold text-muted">{MUSCLE_GROUP_LABELS[group]}</legend>
           <div className="flex flex-wrap gap-2">
             {musclesInGroup(group).map((m) => {
               const role = primary.includes(m) ? 'primary' : secondary.includes(m) ? 'secondary' : 'none';
@@ -60,7 +58,7 @@ export function MusclePicker({ primary, secondary, onChange, disabled }: MuscleP
                   aria-label={`${MUSCLES[m].label} : ${role === 'primary' ? 'principal' : role === 'secondary' ? 'secondaire' : 'non sollicité'}`}
                   className={`min-h-11 rounded-full border px-3.5 text-sm font-semibold disabled:opacity-60 ${
                     role === 'primary'
-                      ? 'border-accent bg-accent text-accent-fg'
+                      ? 'border-accent bg-accent-fill text-accent-fg'
                       : role === 'secondary'
                         ? 'border-accent bg-accent/15 text-fg'
                         : 'border-line bg-surface text-muted'

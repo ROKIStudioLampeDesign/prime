@@ -115,7 +115,7 @@ export function WorkoutScreen() {
           <button
             type="button"
             onClick={requestFinish}
-            className="-mr-1 min-h-11 rounded-full bg-accent px-4 text-sm font-semibold text-accent-fg active:opacity-80"
+            className="-mr-1 min-h-11 rounded-full bg-accent-fill px-4 text-sm font-semibold text-accent-fg active:opacity-80"
           >
             Terminer
           </button>

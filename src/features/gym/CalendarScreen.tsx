@@ -149,7 +149,7 @@ function Counter({ label, value, hint }: { label: string; value: string; hint?: 
   return (
     <div className="rounded-2xl bg-surface p-3">
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="text-2xl font-bold tabular-nums">{value}</dd>
+      <dd className="numeral text-3xl leading-none">{value}</dd>
       {hint && <dd className="text-[11px] leading-tight text-muted">{hint}</dd>}
     </div>
   );
@@ -172,7 +172,7 @@ function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
       aria-label={`${longDay(date)}${attended ? ', séance' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
-        attended ? 'bg-accent text-accent-fg' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
+        attended ? 'bg-accent-fill text-accent-fg' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
       } ${isToday ? 'ring-2 ring-fg ring-inset' : ''}`}
     >
       {day}
@@ -197,7 +197,7 @@ function ActiveOrStart({ onStart }: { onStart: () => void }) {
   return (
     <Link
       to={`/gym/workout/${active.id}`}
-      className="flex min-h-16 items-center gap-3 rounded-2xl bg-accent px-4 py-3 text-accent-fg active:opacity-90"
+      className="flex min-h-16 items-center gap-3 rounded-2xl bg-accent-fill px-4 py-3 text-accent-fg active:opacity-90"
     >
       <span className="size-2.5 animate-pulse rounded-full bg-accent-fg" aria-hidden="true" />
       <span className="flex-1">
@@ -227,7 +227,7 @@ function StartSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       <Button className="w-full" onClick={() => void start()}>
         Séance libre
       </Button>
-      <h3 className="mt-5 mb-2 text-xs font-semibold tracking-wide text-muted uppercase">Depuis un modèle</h3>
+      <h3 className="mt-5 mb-2 text-sm font-semibold text-muted">Depuis un modèle</h3>
       {templates === undefined ? null : templates.length === 0 ? (
         <p className="text-sm text-muted">
           Aucun modèle pour l’instant.{' '}

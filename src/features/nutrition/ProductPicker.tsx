@@ -86,9 +86,7 @@ function ItemList({
   if (items.length === 0) return null;
   return (
     <section className="mt-4">
-      {title && (
-        <h2 className="mb-1 px-1 text-xs font-semibold tracking-wide text-muted uppercase">{title}</h2>
-      )}
+      {title && <h2 className="mb-1 px-1 text-sm font-semibold text-muted">{title}</h2>}
       <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">
         {items.map((item) => (
           <li key={item.key}>
@@ -121,7 +119,7 @@ function ItemList({
 
 export function MealBadge() {
   return (
-    <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-accent uppercase">
+    <span className="shrink-0 rounded-md bg-accent/15 px-1.5 py-0.5 text-xs font-medium text-accent">
       Plat
     </span>
   );

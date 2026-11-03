@@ -36,7 +36,7 @@ export function Screen({ title, back = false, backFallback = '/', onBack, action
               <BackIcon />
             </button>
           )}
-          <h1 className="flex-1 truncate text-2xl font-bold tracking-tight">{title}</h1>
+          <h1 className="flex-1 truncate font-display text-3xl font-bold">{title}</h1>
           {actions}
           {!back && (
             <Link to="/settings" aria-label="Réglages" className={iconButton + ' -mr-3'}>

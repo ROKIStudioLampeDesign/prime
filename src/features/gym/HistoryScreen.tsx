@@ -25,7 +25,7 @@ export function HistoryScreen() {
           action={
             <Link
               to="/gym"
-              className="flex min-h-12 items-center rounded-xl bg-accent px-5 font-semibold text-accent-fg"
+              className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
             >
               Commencer une séance
             </Link>

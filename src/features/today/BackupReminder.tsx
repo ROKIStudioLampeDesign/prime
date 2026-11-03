@@ -31,7 +31,7 @@ export function BackupReminder() {
       <div className="mt-3 flex gap-2">
         <Link
           to="/settings#donnees"
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-accent px-4 text-sm font-semibold text-accent-fg"
+          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-accent-fill px-4 text-sm font-semibold text-accent-fg"
         >
           Sauvegarder
         </Link>

@@ -190,7 +190,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
             <span className="size-2 rounded-full bg-muted" /> Pesées
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-0.5 w-4 rounded bg-accent" /> Moyenne 7 jours
+            <span className="h-0.5 w-4 rounded bg-accent-fill" /> Moyenne 7 jours
           </span>
         </p>
       </section>
@@ -208,10 +208,7 @@ function WeightContent({ entries, target }: { entries: BodyWeightEntry[]; target
 
       {entries.length > 0 && (
         <section className="mt-4" aria-labelledby="recent-weights">
-          <h2
-            id="recent-weights"
-            className="mb-1 px-1 text-xs font-semibold tracking-wide text-muted uppercase"
-          >
+          <h2 id="recent-weights" className="mb-1 px-1 text-sm font-semibold text-muted">
             Dernières pesées
           </h2>
           <ul className="divide-y divide-line overflow-hidden rounded-2xl bg-surface">

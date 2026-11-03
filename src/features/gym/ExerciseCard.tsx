@@ -110,7 +110,7 @@ export function ExerciseCard({
         </button>
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5 px-0.5 text-[11px] font-semibold tracking-wide text-muted uppercase">
+      <div className="mt-2 flex items-center gap-1.5 px-0.5 text-xs font-semibold text-muted">
         <span className="w-11 text-center">Série</span>
         <button
           type="button"
@@ -223,7 +223,7 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
           aria-label={set.completed ? `Annuler la validation, ${label}` : `Valider la ${label}`}
           className={`flex size-11 shrink-0 items-center justify-center rounded-full border-2 ${
             set.completed
-              ? 'border-accent bg-accent text-accent-fg'
+              ? 'border-accent bg-accent-fill text-accent-fg'
               : 'border-line text-muted active:bg-surface-2'
           }`}
         >
@@ -234,7 +234,7 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
         <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-[11px] text-muted tabular-nums">
           {records.length > 0 && (
             <span
-              className="rounded bg-accent px-1.5 py-px text-[10px] font-bold text-accent-fg"
+              className="rounded bg-accent-fill px-1.5 py-px text-[10px] font-bold text-accent-fg"
               title={records.map((k) => RECORD_LABELS[k]).join(', ')}
               aria-label={`Record battu : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
             >

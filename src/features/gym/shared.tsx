@@ -13,7 +13,7 @@ export function GymTabs() {
 
 export function CustomBadge() {
   return (
-    <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-muted uppercase">
+    <span className="shrink-0 rounded-md bg-surface-2 px-1.5 py-0.5 text-xs font-medium text-muted">
       Perso
     </span>
   );

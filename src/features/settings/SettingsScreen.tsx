@@ -38,7 +38,7 @@ function RestTimerSetting() {
             aria-checked={seconds === option}
             onClick={() => void setRestSeconds(option)}
             className={`min-h-11 rounded-lg text-sm font-semibold tabular-nums ${
-              seconds === option ? 'bg-accent text-accent-fg' : 'text-muted'
+              seconds === option ? 'bg-accent-fill text-accent-fg' : 'text-muted'
             }`}
           >
             {option === 0 ? 'Non' : formatClock(option)}

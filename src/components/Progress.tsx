@@ -8,7 +8,7 @@ const STROKE: Record<ProgressTone, string> = {
   muted: 'stroke-muted',
 };
 const FILL: Record<ProgressTone, string> = {
-  accent: 'bg-accent',
+  accent: 'bg-accent-fill',
   danger: 'bg-danger',
   muted: 'bg-muted',
 };

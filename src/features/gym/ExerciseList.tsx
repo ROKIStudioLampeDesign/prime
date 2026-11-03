@@ -106,7 +106,7 @@ function FilterChip({
       aria-pressed={active}
       onClick={onClick}
       className={`min-h-11 rounded-full px-4 text-sm font-semibold whitespace-nowrap ${
-        active ? 'bg-accent text-accent-fg' : 'bg-surface text-muted'
+        active ? 'bg-accent-fill text-accent-fg' : 'bg-surface text-muted'
       }`}
     >
       {children}

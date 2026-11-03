@@ -72,7 +72,7 @@ function ProgressionContent({
         action={
           <Link
             to="/gym"
-            className="flex min-h-12 items-center rounded-xl bg-accent px-5 font-semibold text-accent-fg"
+            className="flex min-h-12 items-center rounded-xl bg-accent-fill px-5 font-semibold text-accent-fg"
           >
             Aller à la salle
           </Link>
@@ -183,7 +183,7 @@ function ProgressionContent({
         </p>
       </section>
 
-      <h2 className="mt-5 mb-1 px-1 text-xs font-semibold tracking-wide text-muted uppercase">Records</h2>
+      <h2 className="mt-5 mb-1 px-1 text-sm font-semibold text-muted">Records</h2>
       <dl className="flex flex-col gap-2">
         {RECORD_KINDS.map((kind) => (
           <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
