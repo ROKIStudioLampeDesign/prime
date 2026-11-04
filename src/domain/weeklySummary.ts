@@ -1,18 +1,16 @@
 import type { WeightPoint } from './bodyWeight';
 import type { LocalDate } from './date';
-import { sumMacros, type Goals, type Macros } from './nutrition';
+import { GOAL_KINDS, goalProgress, sumMacros, type Goals, type Macros } from './nutrition';
 import { weekDays, weekStart } from './week';
 
-/** Calorie goal counts as met within ±10 % of the target (being 50 kcal over is still on target). */
-export const KCAL_GOAL_TOLERANCE = 0.1;
-
+/** Calories are a ceiling: met just under the goal (90 to 100 %), never above it. */
 export function kcalGoalMet(kcal: number, goal: number): boolean {
-  return goal > 0 && Math.abs(kcal - goal) <= goal * KCAL_GOAL_TOLERANCE;
+  return goal > 0 && goalProgress(kcal, goal, GOAL_KINDS.kcal).status === 'reached';
 }
 
-/** Protein is a minimum: met once the goal is reached. */
+/** Protein is a minimum: met once the goal is reached or very close (95 %). */
 export function proteinGoalMet(protein: number, goal: number): boolean {
-  return goal > 0 && protein >= goal;
+  return goal > 0 && goalProgress(protein, goal, GOAL_KINDS.protein).status === 'reached';
 }
 
 export interface DayNutrition {

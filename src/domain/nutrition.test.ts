@@ -108,6 +108,21 @@ describe('goalProgress', () => {
     expect(goalProgress(2000, 2000, 'target').status).toBe('reached');
   });
 
+  it('reads a ceiling as "just under": 90 % up to the goal, any excess is bad', () => {
+    expect(goalProgress(2070, 2300, 'ceiling').status).toBe('reached');
+    expect(goalProgress(2300, 2300, 'ceiling').status).toBe('reached');
+    expect(goalProgress(2069, 2300, 'ceiling').status).toBe('under');
+    expect(goalProgress(2301, 2300, 'ceiling')).toMatchObject({ status: 'over', bad: true });
+  });
+
+  it('counts a minimum as reached when very close or above', () => {
+    expect(goalProgress(152, 160, 'min').status).toBe('reached');
+    expect(goalProgress(151.9, 160, 'min').status).toBe('under');
+    expect(goalProgress(200, 160, 'min')).toMatchObject({ status: 'reached', bad: false });
+    expect(goalProgress(0, 0, 'min').status).toBe('reached');
+    expect(goalProgress(0, 0, 'ceiling').status).toBe('under');
+  });
+
   it('flags going over a target or a max as bad', () => {
     expect(goalProgress(2100, 2000, 'target')).toMatchObject({ status: 'over', bad: true, remaining: -100 });
     expect(goalProgress(51, 50, 'max')).toMatchObject({ status: 'over', bad: true });
@@ -117,7 +132,7 @@ describe('goalProgress', () => {
 
   it('treats exceeding a min goal as reached, not bad', () => {
     expect(goalProgress(180, 150, 'min')).toMatchObject({ status: 'reached', bad: false, ratio: 1.2 });
-    expect(goalProgress(149, 150, 'min').status).toBe('under');
+    expect(goalProgress(142, 150, 'min').status).toBe('under'); // below 95 %
   });
 
   it('handles a goal of 0 without dividing by zero', () => {

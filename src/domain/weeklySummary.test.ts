@@ -99,13 +99,17 @@ describe('weeklySummary', () => {
 });
 
 describe('goal helpers and delta', () => {
-  it('kcal within ±10 %, protein as a minimum', () => {
+  it('kcal just under the goal, protein at or very close to it', () => {
     expect(kcalGoalMet(2070, 2300)).toBe(true);
-    expect(kcalGoalMet(2530, 2300)).toBe(true);
-    expect(kcalGoalMet(2531, 2300)).toBe(false);
+    expect(kcalGoalMet(2300, 2300)).toBe(true);
+    expect(kcalGoalMet(2301, 2300)).toBe(false);
+    expect(kcalGoalMet(2069, 2300)).toBe(false);
     expect(kcalGoalMet(100, 0)).toBe(false);
     expect(proteinGoalMet(150, 150)).toBe(true);
-    expect(proteinGoalMet(149.9, 150)).toBe(false);
+    expect(proteinGoalMet(190, 150)).toBe(true);
+    expect(proteinGoalMet(142.5, 150)).toBe(true);
+    expect(proteinGoalMet(142.4, 150)).toBe(false);
+    expect(proteinGoalMet(10, 0)).toBe(false);
   });
 
   it('gives the direction of change', () => {

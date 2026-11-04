@@ -19,6 +19,7 @@ import { formatMacro, toInputValue } from '../../lib/format';
 import { MACRO_LABELS, MACRO_UNITS } from './labels';
 
 const HINTS: Record<(typeof GOAL_KINDS)[MacroKey], string> = {
+  ceiling: 'Rester juste en dessous',
   target: 'Cible',
   min: 'Minimum',
   max: 'Maximum',

@@ -71,14 +71,15 @@ export type Goals = Partial<Macros>;
 
 /**
  * How a goal is read:
- * - `target`: aim for it, going over is bad (kcal, carbs, fat)
- * - `min`: at least this much, more is fine (protein, fiber)
+ * - `ceiling`: stay just under it: reached from 90 % up to the goal, any excess is bad (kcal)
+ * - `target`: aim for it, going over is bad (carbs, fat)
+ * - `min`: at least this much, more is fine; very close (95 %) counts (protein, fiber)
  * - `max`: never above (sugars)
  */
-export type GoalKind = 'target' | 'min' | 'max';
+export type GoalKind = 'ceiling' | 'target' | 'min' | 'max';
 
 export const GOAL_KINDS: Readonly<Record<MacroKey, GoalKind>> = {
-  kcal: 'target',
+  kcal: 'ceiling',
   protein: 'min',
   carbs: 'target',
   sugars: 'max',
@@ -98,16 +99,25 @@ export interface GoalProgress {
   bad: boolean;
 }
 
-/** Share of the goal at which a `target` counts as reached (so 1950/2000 kcal is "reached"). */
-const TARGET_REACHED_RATIO = 0.95;
+/** Share of the goal from which each kind counts as reached (a `max` is reached at the goal). */
+const REACHED_RATIO: Readonly<Record<Exclude<GoalKind, 'max'>, number>> = {
+  ceiling: 0.9, // 2070–2300 kcal for 2300: just under
+  target: 0.95,
+  min: 0.95, // 152 g of protein for 160 is close enough
+};
 
 export function goalProgress(value: number, goal: number, kind: GoalKind): GoalProgress {
   const ratio = goal > 0 ? value / goal : 0;
   const remaining = goal - value;
   const over = value > goal;
+  let reached: boolean;
+  if (kind === 'max') reached = value >= goal;
+  else if (goal <= 0)
+    reached = kind === 'min' && value >= goal; // nothing to aim for below 0
+  else reached = ratio >= REACHED_RATIO[kind];
   let status: GoalStatus;
   if (over && kind !== 'min') status = 'over';
-  else if (kind === 'target' ? ratio >= TARGET_REACHED_RATIO : value >= goal) status = 'reached';
+  else if (reached) status = 'reached';
   else status = 'under';
   return { ratio, remaining, status, bad: status === 'over' };
 }

@@ -162,7 +162,8 @@ export function WeekScreen() {
                 met={(d) => goals.protein !== undefined && proteinGoalMet(d.protein, goals.protein)}
               />
               <p className="mt-3 text-xs font-semibold text-muted">
-                Moyennes calculées sur les jours renseignés seulement. Objectif calories atteint à ±10 %.
+                Moyennes calculées sur les jours renseignés seulement. Calories : objectif atteint juste en
+                dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
               </p>
             </>
           );
