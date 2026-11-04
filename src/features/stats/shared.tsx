@@ -1,6 +1,10 @@
 import type { ReactNode } from 'react';
 import { BigNumber } from '../../components/BigNumber';
 import { SubTabs } from '../../components/SubTabs';
+import type { PersonalRecord } from '../../domain/strength';
+import { formatWeight } from '../../lib/format';
+import { shortDateLabel, toTime } from './chartUtils';
+import { recordDetail } from './labels';
 
 const STATS_TABS = [
   { to: '/stats', label: 'Poids', end: true },
@@ -58,6 +62,27 @@ export function BandTile({ tone, label, value, unit, hint, maxRem = 2.5, classNa
         <BigNumber value={value} unit={unit} maxRem={maxRem} className="leading-none" />
       </dd>
       {hint && <dd className={`mt-1.5 truncate text-xs font-bold ${secondary}`}>{hint}</dd>}
+    </div>
+  );
+}
+
+/**
+ * One personal record as a list row: value, then the set behind it and its date on the right.
+ * A grid keeps `dt` and `dd` direct children of the row, as a `dl` group requires.
+ */
+export function RecordRow({ label, record }: { label: string; record: PersonalRecord | undefined }) {
+  return (
+    <div className="grid min-h-15 grid-cols-[minmax(0,1fr)_auto] content-center gap-x-3 py-2">
+      <dt className="text-xs font-extrabold text-muted">{label}</dt>
+      <dd className="text-xl leading-tight headline tabular-nums">
+        {record ? `${formatWeight(Math.round(record.value * 10) / 10)} kg` : '—'}
+      </dd>
+      {record && (
+        <dd className="col-start-2 row-span-2 row-start-1 self-center text-right text-xs font-semibold text-muted tabular-nums">
+          <span className="block">{recordDetail(record)}</span>
+          <span className="block">{shortDateLabel(toTime(record.date))}</span>
+        </dd>
+      )}
     </div>
   );
 }

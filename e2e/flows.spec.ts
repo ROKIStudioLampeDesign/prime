@@ -49,10 +49,10 @@ test('log a workout set, see the rest timer and finish with a summary', async ({
   await expect(page).toHaveURL(/\/gym\/workout\/\d+$/);
 
   await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
-  await page.getByPlaceholder('Rechercher un exercice').fill('couché (barre)');
-  await page.getByRole('button', { name: /^Développé couché \(barre\)/ }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
 
-  const bench = page.getByRole('region', { name: 'Développé couché (barre)' });
+  const bench = page.getByRole('region', { name: 'Bench' });
   await bench.getByLabel('Poids en kg, série 1').fill('60');
   await bench.getByLabel('Répétitions, série 1').fill('8');
   await bench.getByRole('button', { name: 'Valider la série 1' }).click();

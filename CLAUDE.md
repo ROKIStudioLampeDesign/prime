@@ -97,8 +97,10 @@ Rules:
   views, groups). Never hard-code muscle lists or labels elsewhere.
 - **Exercise library:** built-in exercises come from `src/db/exerciseSeed.ts`, inserted by `seedId`
   on populate and on upgrade. Never change an existing `seedId`; to add exercises, append to the seed
-  and add a schema version whose upgrade calls `seedExercises`. Built-ins are read-only; custom
-  exercises can't be deleted while a workout or template uses them.
+  and add a schema version whose upgrade calls `seedExercises`. To rename a built-in, change its
+  name in the seed, add a schema version whose upgrade calls `syncBuiltInNames` and a
+  `BACKUP_MIGRATIONS` transform (the barbell bench press became "Bench" in v6). Built-ins are
+  read-only; custom exercises can't be deleted while a workout or template uses them.
 - **Workouts:** at most one `status: 'active'` workout. Every set edit is written to Dexie
   immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
   unvalidated sets. Durations and the rest timer are computed from stored timestamps
@@ -112,7 +114,8 @@ Rules:
   (`toTime`) so gaps are to scale, `niceTicks` for Y ticks, theme colours via `var(--color-…)`,
   `isAnimationActive={false}`, and a `ChartEmpty` placeholder ("Pas encore de données") of the same
   height. Records only count finished workouts; live PR badges compare against records from
-  _before_ the current workout (`getRecordsBefore`). Body weight: one entry per day (upsert).
+  _before_ the current workout (`getRecordsBefore`). The Records tab follows the bench only
+  (`BENCH_SEED_ID`); Progression still covers every exercise. Body weight: one entry per day (upsert).
 - **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
   lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
   saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly

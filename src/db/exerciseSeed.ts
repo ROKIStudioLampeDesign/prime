@@ -6,6 +6,9 @@ export interface SeedExercise extends ExerciseDefinition {
   seedId: string;
 }
 
+/** The barbell bench press: the only lift Stats › Records follows. */
+export const BENCH_SEED_ID = 'bench-press';
+
 function ex(
   seedId: string,
   name: string,
@@ -19,7 +22,8 @@ function ex(
 /** Built-in exercise library. Primary = prime movers; secondary = significant synergists. */
 export const EXERCISE_SEED: readonly SeedExercise[] = [
   // Chest
-  ex('bench-press', 'Développé couché (barre)', 'barbell', ['chest'], ['shoulders_front', 'triceps']),
+  // Renamed from "Développé couché (barre)" in schema v6 (see syncBuiltInNames).
+  ex(BENCH_SEED_ID, 'Bench', 'barbell', ['chest'], ['shoulders_front', 'triceps']),
   ex(
     'incline-bench-press',
     'Développé incliné (barre)',

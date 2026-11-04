@@ -17,14 +17,13 @@ import {
   RECORD_LABELS,
   sessionProgression,
   type HistorySet,
-  type PersonalRecord,
   type ProgressMetric,
   type RecordKind,
 } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
 import { axisProps, niceTicks, shortDateLabel, timeTicks, toTime } from './chartUtils';
 import { recordDetail } from './labels';
-import { ChartEmpty, StatsTabs, TooltipBox } from './shared';
+import { ChartEmpty, RecordRow, StatsTabs, TooltipBox } from './shared';
 
 const CHART_HEIGHT = 220;
 
@@ -209,31 +208,6 @@ function ProgressionContent({
           <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
         ))}
       </dl>
-      <Link
-        to="/stats/records"
-        className="mt-3 flex min-h-11 items-center justify-center text-sm font-extrabold text-accent active:bg-surface"
-      >
-        Tous les records
-      </Link>
     </>
-  );
-}
-
-function RecordRow({ label, record }: { label: string; record: PersonalRecord | undefined }) {
-  return (
-    <div className="flex min-h-15 items-center gap-3 py-2">
-      <div className="min-w-0 flex-1">
-        <dt className="text-xs font-extrabold text-muted">{label}</dt>
-        <dd className="text-xl leading-tight headline tabular-nums">
-          {record ? `${formatWeight(Math.round(record.value * 10) / 10)} kg` : '—'}
-        </dd>
-      </div>
-      {record && (
-        <dd className="shrink-0 text-right text-xs font-semibold text-muted tabular-nums">
-          <span className="block">{recordDetail(record)}</span>
-          <span className="block">{shortDateLabel(toTime(record.date))}</span>
-        </dd>
-      )}
-    </div>
   );
 }

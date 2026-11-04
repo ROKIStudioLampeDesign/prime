@@ -49,7 +49,7 @@ describe('schema v5', () => {
 
     await db.delete();
     db = new PrimeDB(name);
-    expect(db.verno).toBe(5);
+    expect(db.verno).toBe(6); // opened at the latest version, through v5
     expect(await db.workouts.count()).toBe(1);
     expect(await db.bodyWeights.count()).toBe(0);
     // The upgrade from v4 must not re-run the exercise seed (v4 had none here, v5 adds nothing).

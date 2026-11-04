@@ -30,7 +30,62 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(5);
+    expect(db.verno).toBe(6);
+  });
+
+  it('migrates v5 → v6: built-in names follow the seed, ids and custom exercises are kept', async () => {
+    const dbName = `prime-migration-v5-${name}`;
+    const v5 = new Dexie(dbName);
+    v5.version(5).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+    });
+    const muscles = { primaryMuscles: ['chest'], secondaryMuscles: [] };
+    await v5.table('exercises').bulkAdd([
+      {
+        id: 3,
+        seedId: 'bench-press',
+        name: 'Développé couché (barre)',
+        nameNormalized: 'developpe couche (barre)',
+        isCustom: 0,
+        ...muscles,
+      },
+      {
+        id: 4,
+        seedId: 'db-bench-press',
+        name: 'Développé couché (haltères)',
+        nameNormalized: 'developpe couche (halteres)',
+        isCustom: 0,
+        ...muscles,
+      },
+      {
+        id: 9,
+        name: 'Développé couché (barre)',
+        nameNormalized: 'developpe couche (barre)',
+        isCustom: 1,
+        ...muscles,
+      },
+    ]);
+    v5.close();
+
+    db = new PrimeDB(dbName);
+    expect(await db.exercises.get(3)).toMatchObject({
+      name: 'Bench',
+      nameNormalized: 'bench',
+      seedId: 'bench-press',
+    });
+    expect((await db.exercises.get(4))?.name).toBe('Développé couché (haltères)');
+    // A custom exercise is the user's: never renamed, even with the old built-in name.
+    expect((await db.exercises.get(9))?.name).toBe('Développé couché (barre)');
   });
 
   it('migrates v1 → latest keeping settings', async () => {

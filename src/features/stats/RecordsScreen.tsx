@@ -1,78 +1,87 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
+import { BigNumber } from '../../components/BigNumber';
 import { EmptyState } from '../../components/EmptyState';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
+import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { listExercises } from '../../db/exercises';
 import { listExerciseHistory } from '../../db/stats';
-import { latestRecordDate, personalRecords, RECORD_KINDS, RECORD_LABELS } from '../../domain/strength';
+import {
+  latestRecordDate,
+  personalRecords,
+  RECORD_KINDS,
+  RECORD_LABELS,
+  type PersonalRecords,
+  type RecordKind,
+} from '../../domain/strength';
+import { formatWeight } from '../../lib/format';
 import { shortDateLabel, toTime } from './chartUtils';
-import { kg, recordDetail } from './labels';
-import { StatsTabs } from './shared';
+import { recordDetail } from './labels';
+import { RecordRow, StatsTabs } from './shared';
 
-/** /stats/records — personal records of every exercise, most recently improved first. */
+/** /stats/records — the bench records: the one lift followed here (see BENCH_SEED_ID). */
 export function RecordsScreen() {
   const exercises = useLiveQuery(listExercises);
   const history = useLiveQuery(listExerciseHistory);
-
-  const rows = useMemo(() => {
-    if (!exercises || !history) return undefined;
-    return exercises
-      .map((exercise) => {
-        const records = personalRecords(history.get(exercise.id) ?? []);
-        return { exercise, records, latest: latestRecordDate(records) };
-      })
-      .filter((r) => r.latest !== undefined)
-      .sort((a, b) =>
-        (a.latest ?? '') < (b.latest ?? '') ? 1 : (a.latest ?? '') > (b.latest ?? '') ? -1 : 0,
-      );
-  }, [exercises, history]);
+  const bench = exercises?.find((e) => e.seedId === BENCH_SEED_ID);
+  const records = useMemo(() => personalRecords((bench && history?.get(bench.id)) ?? []), [bench, history]);
 
   return (
     <Screen title="Stats">
       <StatsTabs />
-      {rows === undefined ? (
+      {exercises === undefined || history === undefined ? (
         <Loading />
-      ) : rows.length === 0 ? (
+      ) : !bench || latestRecordDate(records) === undefined ? (
         <EmptyState
-          title="Pas encore de données"
-          description="Tes records apparaîtront après tes premières séances avec des charges."
+          title="Pas encore de record au bench"
+          description="Valide des séries de bench avec des charges : tes records apparaîtront ici."
         />
       ) : (
-        <ul className="divide-y divide-line border-b border-line">
-          {rows.map(({ exercise, records, latest }) => (
-            <li key={exercise.id}>
-              <Link to={`/stats/progress?exercise=${exercise.id}`} className="block py-3 active:opacity-60">
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="truncate text-lg leading-tight headline">{exercise.name}</p>
-                  {latest && (
-                    <p className="shrink-0 text-xs font-bold text-muted">{shortDateLabel(toTime(latest))}</p>
-                  )}
-                </div>
-                <dl className="mt-1.5 grid grid-cols-3 gap-2">
-                  {RECORD_KINDS.map((kind) => {
-                    const r = records[kind];
-                    return (
-                      <div key={kind} className="min-w-0">
-                        <dt className="truncate text-[11px] font-extrabold text-muted">
-                          {RECORD_LABELS[kind]}
-                        </dt>
-                        <dd className="truncate text-lg leading-tight headline tabular-nums">
-                          {r ? kg(r.value) : '—'}
-                        </dd>
-                        {r && (
-                          <dd className="truncate text-[11px] text-muted tabular-nums">{recordDetail(r)}</dd>
-                        )}
-                      </div>
-                    );
-                  })}
-                </dl>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <BenchRecords id={bench.id} name={bench.name} records={records} />
       )}
     </Screen>
+  );
+}
+
+function BenchRecords({ id, name, records }: { id: number; name: string; records: PersonalRecords }) {
+  // The estimated 1RM leads; without one (only sets of many reps), the heaviest load does.
+  const lead: RecordKind = records.e1rm ? 'e1rm' : 'weight';
+  const top = records[lead];
+  return (
+    <>
+      <section aria-labelledby="bench-title" className="@container bleed bg-gym py-4 text-on-gym">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 id="bench-title" className="text-[1.875rem] leading-none headline">
+            {name}
+          </h2>
+          {top && <p className="shrink-0 text-sm font-bold">{shortDateLabel(toTime(top.date))}</p>}
+        </div>
+        <BigNumber
+          value={top ? formatWeight(Math.round(top.value * 10) / 10) : '—'}
+          unit={top ? 'kg' : undefined}
+          maxRem={7}
+          className="mt-3 leading-[0.82]"
+        />
+        <p className="mt-2.5 text-sm font-semibold tabular-nums">
+          {RECORD_LABELS[lead]}
+          {top && ` · ${recordDetail(top)}`}
+        </p>
+      </section>
+
+      <dl className="mt-2 divide-y divide-line border-b border-line">
+        {RECORD_KINDS.filter((kind) => kind !== lead).map((kind) => (
+          <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
+        ))}
+      </dl>
+
+      <Link
+        to={`/stats/progress?exercise=${id}`}
+        className="mt-4 flex min-h-12 items-center justify-center border-2 border-fg font-black [font-stretch:112%] active:bg-surface"
+      >
+        Voir la progression
+      </Link>
+    </>
   );
 }

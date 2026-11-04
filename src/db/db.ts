@@ -167,6 +167,21 @@ export interface BodyWeightEntry {
   updatedAt: number;
 }
 
+/**
+ * Built-ins are read-only, so their names always come from the seed: after renaming one in
+ * EXERCISE_SEED, a schema upgrade calls this to rename it in existing databases (ids, and so
+ * every workout and template using it, are kept).
+ */
+export async function syncBuiltInNames(table: Table<Exercise, number>): Promise<void> {
+  const names = new Map(EXERCISE_SEED.map((e) => [e.seedId, e.name]));
+  await table.toCollection().modify((exercise) => {
+    const name = exercise.seedId === undefined ? undefined : names.get(exercise.seedId);
+    if (name === undefined || name === exercise.name) return;
+    exercise.name = name;
+    exercise.nameNormalized = normalizeText(name);
+  });
+}
+
 /** Inserts built-in exercises that are not in the table yet (matched by seedId). */
 export async function seedExercises(table: Table<Omit<Exercise, 'id'>, number>): Promise<void> {
   const existing = new Set((await table.toArray()).map((e) => e.seedId).filter(Boolean));
@@ -266,6 +281,23 @@ export class PrimeDB extends Dexie {
       templates: '++id, name',
       bodyWeights: '++id, &date',
     });
+
+    // v6: built-in names follow the seed ("Développé couché (barre)" became "Bench").
+    this.version(6)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+      })
+      .upgrade((tx) => syncBuiltInNames(tx.table('exercises')));
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

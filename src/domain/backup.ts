@@ -1,4 +1,5 @@
 import { MAX_TIMESTAMP_MS, validateBackupRows } from './backupRows';
+import { normalizeText } from './search';
 
 /** Identifies Prime backup files. */
 export const BACKUP_APP = 'prime';
@@ -33,7 +34,29 @@ export type ParseBackupResult =
  */
 export const BACKUP_MIGRATIONS: Readonly<
   Record<number, (tables: Record<string, unknown[]>) => Record<string, unknown[]>>
-> = {};
+> = {
+  // v5 → v6: the built-in barbell bench press is now called "Bench" (frozen here on purpose:
+  // a later rename gets its own transform).
+  5: (tables) => renameBuiltIns(tables, new Map([['bench-press', 'Bench']])),
+};
+
+/** Renames built-in exercise rows (matched by seedId); other rows and tables are left as they are. */
+function renameBuiltIns(
+  tables: Record<string, unknown[]>,
+  names: ReadonlyMap<string, string>,
+): Record<string, unknown[]> {
+  const exercises = tables.exercises;
+  if (!Array.isArray(exercises)) return tables;
+  return {
+    ...tables,
+    exercises: exercises.map((row) => {
+      if (typeof row !== 'object' || row === null) return row;
+      const seedId: unknown = (row as { seedId?: unknown }).seedId;
+      const name = typeof seedId === 'string' ? names.get(seedId) : undefined;
+      return name === undefined ? row : { ...row, name, nameNormalized: normalizeText(name) };
+    }),
+  };
+}
 
 /** Oldest schema version a backup can come from (backups exist since schema v5). */
 export const MIN_BACKUP_SCHEMA = 5;

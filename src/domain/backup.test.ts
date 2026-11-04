@@ -40,6 +40,42 @@ describe('parseBackup', () => {
     expect(r.ok && r.backup.schemaVersion).toBe(6);
   });
 
+  it('renames the built-in bench in v5 backups, leaving custom exercises alone', () => {
+    const exercise = { primaryMuscles: ['chest'], secondaryMuscles: [], equipment: 'barbell' };
+    const v5 = {
+      ...valid,
+      tables: {
+        exercises: [
+          {
+            id: 1,
+            seedId: 'bench-press',
+            name: 'Développé couché (barre)',
+            nameNormalized: 'developpe couche (barre)',
+            isCustom: 0,
+            ...exercise,
+          },
+          {
+            id: 2,
+            name: 'Développé couché (barre)',
+            nameNormalized: 'developpe couche (barre)',
+            isCustom: 1,
+            ...exercise,
+          },
+        ],
+      },
+    };
+    const r = parseBackup(JSON.stringify(v5), 6);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.tables.exercises?.[0]).toMatchObject({ name: 'Bench', nameNormalized: 'bench' });
+    expect(r.backup.tables.exercises?.[1]).toMatchObject({ name: 'Développé couché (barre)' });
+    // A backup already at v6 is not transformed again.
+    expect(parseBackup(JSON.stringify({ ...v5, schemaVersion: 6 }), 6)).toMatchObject({
+      ok: true,
+      backup: { tables: { exercises: [{ name: 'Développé couché (barre)' }, {}] } },
+    });
+  });
+
   it('rejects malformed tables', () => {
     expect(parseBackup(JSON.stringify({ ...valid, tables: { foods: 'x' } }), 5)).toEqual({
       ok: false,
