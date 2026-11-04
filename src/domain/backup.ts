@@ -38,7 +38,41 @@ export const BACKUP_MIGRATIONS: Readonly<
   // v5 → v6: the built-in barbell bench press is now called "Bench" (frozen here on purpose:
   // a later rename gets its own transform).
   5: (tables) => renameBuiltIns(tables, new Map([['bench-press', 'Bench']])),
+  // v6 → v7: built-in muscles reviewed (frozen here on purpose, like the rename above).
+  6: (tables) =>
+    setBuiltInMuscles(
+      tables,
+      new Map([
+        [
+          'deadlift',
+          {
+            primaryMuscles: ['hamstrings', 'glutes', 'lower_back'],
+            secondaryMuscles: ['quads', 'traps', 'upper_back', 'lats', 'forearms'],
+          },
+        ],
+        ['crunch', { primaryMuscles: ['abs'], secondaryMuscles: ['obliques'] }],
+      ]),
+    ),
 };
+
+/** Replaces the muscles of built-in exercise rows (matched by seedId); other rows are kept. */
+function setBuiltInMuscles(
+  tables: Record<string, unknown[]>,
+  muscles: ReadonlyMap<string, { primaryMuscles: string[]; secondaryMuscles: string[] }>,
+): Record<string, unknown[]> {
+  const exercises = tables.exercises;
+  if (!Array.isArray(exercises)) return tables;
+  return {
+    ...tables,
+    exercises: exercises.map((row) => {
+      if (typeof row !== 'object' || row === null) return row;
+      if ((row as { isCustom?: unknown }).isCustom === 1) return row;
+      const seedId: unknown = (row as { seedId?: unknown }).seedId;
+      const next = typeof seedId === 'string' ? muscles.get(seedId) : undefined;
+      return next === undefined ? row : { ...row, ...next };
+    }),
+  };
+}
 
 /** Renames built-in exercise rows (matched by seedId); other rows and tables are left as they are. */
 function renameBuiltIns(

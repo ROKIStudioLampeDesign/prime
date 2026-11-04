@@ -40,6 +40,40 @@ describe('parseBackup', () => {
     expect(r.ok && r.backup.schemaVersion).toBe(6);
   });
 
+  it('updates built-in muscles in v6 backups, leaving custom exercises alone', () => {
+    const v6 = {
+      ...valid,
+      schemaVersion: 6,
+      tables: {
+        exercises: [
+          {
+            id: 1,
+            seedId: 'crunch',
+            name: 'Crunch',
+            nameNormalized: 'crunch',
+            isCustom: 0,
+            equipment: 'bodyweight',
+            primaryMuscles: ['abs'],
+            secondaryMuscles: [],
+          },
+          {
+            id: 2,
+            name: 'Crunch',
+            nameNormalized: 'crunch',
+            isCustom: 1,
+            primaryMuscles: ['abs'],
+            secondaryMuscles: [],
+          },
+        ],
+      },
+    };
+    const r = parseBackup(JSON.stringify(v6), 7);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.tables.exercises?.[0]).toMatchObject({ secondaryMuscles: ['obliques'] });
+    expect(r.backup.tables.exercises?.[1]).toMatchObject({ secondaryMuscles: [] });
+  });
+
   it('renames the built-in bench in v5 backups, leaving custom exercises alone', () => {
     const exercise = { primaryMuscles: ['chest'], secondaryMuscles: [], equipment: 'barbell' };
     const v5 = {

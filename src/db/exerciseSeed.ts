@@ -93,7 +93,8 @@ export const EXERCISE_SEED: readonly SeedExercise[] = [
     'Soulevé de terre',
     'barbell',
     ['hamstrings', 'glutes', 'lower_back'],
-    ['quads', 'traps', 'upper_back', 'forearms'],
+    // Lats added in schema v7 (see syncBuiltInMuscles): they keep the bar against the legs.
+    ['quads', 'traps', 'upper_back', 'lats', 'forearms'],
   ),
   ex(
     'back-extension',
@@ -207,7 +208,8 @@ export const EXERCISE_SEED: readonly SeedExercise[] = [
   ex('hip-abduction', 'Abducteurs à la machine', 'machine', ['glutes']),
 
   // Core
-  ex('crunch', 'Crunch', 'bodyweight', ['abs']),
+  // Obliques added in schema v7 (see syncBuiltInMuscles).
+  ex('crunch', 'Crunch', 'bodyweight', ['abs'], ['obliques']),
   ex('cable-crunch', 'Crunch à la poulie', 'cable', ['abs'], ['obliques']),
   ex('hanging-leg-raise', 'Relevés de jambes suspendu', 'bodyweight', ['abs'], ['obliques', 'forearms']),
   ex('ab-wheel', 'Roulette abdominale', 'other', ['abs'], ['obliques', 'lats']),

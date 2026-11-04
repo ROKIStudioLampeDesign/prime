@@ -192,6 +192,20 @@ export async function syncBuiltInNames(table: Table<Exercise, number>): Promise<
   });
 }
 
+/**
+ * Built-ins are read-only, so their muscles always come from the seed too: after changing them in
+ * EXERCISE_SEED, a schema upgrade calls this (custom exercises are never touched).
+ */
+export async function syncBuiltInMuscles(table: Table<Exercise, number>): Promise<void> {
+  const seeds = new Map(EXERCISE_SEED.map((e) => [e.seedId, e]));
+  await table.toCollection().modify((exercise) => {
+    const seed = exercise.seedId === undefined ? undefined : seeds.get(exercise.seedId);
+    if (!seed) return;
+    exercise.primaryMuscles = [...seed.primaryMuscles];
+    exercise.secondaryMuscles = [...seed.secondaryMuscles];
+  });
+}
+
 /** Inserts built-in exercises that are not in the table yet (matched by seedId). */
 export async function seedExercises(table: Table<Omit<Exercise, 'id'>, number>): Promise<void> {
   const existing = new Set((await table.toArray()).map((e) => e.seedId).filter(Boolean));
@@ -308,6 +322,23 @@ export class PrimeDB extends Dexie {
         bodyWeights: '++id, &date',
       })
       .upgrade((tx) => syncBuiltInNames(tx.table('exercises')));
+
+    // v7: built-in muscles reviewed against the body map (deadlift + lats, crunch + obliques).
+    this.version(7)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+      })
+      .upgrade((tx) => syncBuiltInMuscles(tx.table('exercises')));
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

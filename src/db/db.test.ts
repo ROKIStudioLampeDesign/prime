@@ -30,7 +30,65 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(7);
+  });
+
+  it('migrates v6 → v7: built-in muscles follow the seed, custom exercises are kept', async () => {
+    const dbName = `prime-migration-v6-${name}`;
+    const v6 = new Dexie(dbName);
+    v6.version(6).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+    });
+    await v6.table('exercises').bulkAdd([
+      {
+        id: 5,
+        seedId: 'deadlift',
+        name: 'Soulevé de terre',
+        nameNormalized: 'souleve de terre',
+        isCustom: 0,
+        primaryMuscles: ['hamstrings', 'glutes', 'lower_back'],
+        secondaryMuscles: ['quads', 'traps', 'upper_back', 'forearms'],
+      },
+      {
+        id: 6,
+        seedId: 'crunch',
+        name: 'Crunch',
+        nameNormalized: 'crunch',
+        isCustom: 0,
+        primaryMuscles: ['abs'],
+        secondaryMuscles: [],
+      },
+      {
+        id: 12,
+        name: 'Crunch',
+        nameNormalized: 'crunch',
+        isCustom: 1,
+        primaryMuscles: ['abs'],
+        secondaryMuscles: [],
+      },
+    ]);
+    v6.close();
+
+    db = new PrimeDB(dbName);
+    expect((await db.exercises.get(5))?.secondaryMuscles).toEqual([
+      'quads',
+      'traps',
+      'upper_back',
+      'lats',
+      'forearms',
+    ]);
+    expect((await db.exercises.get(6))?.secondaryMuscles).toEqual(['obliques']);
+    expect((await db.exercises.get(12))?.secondaryMuscles).toEqual([]);
   });
 
   it('migrates v5 → v6: built-in names follow the seed, ids and custom exercises are kept', async () => {
