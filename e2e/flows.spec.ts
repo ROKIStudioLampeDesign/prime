@@ -124,3 +124,36 @@ test('mark today as a rest day from the home screen, see it in the calendar, the
   await gym.getByRole('button', { name: 'Annuler le jour de repos' }).click();
   await expect(gym.getByRole('link', { name: 'Commencer une séance' })).toBeVisible();
 });
+
+test('long-press a workout in the history to delete it', async ({ page }) => {
+  await page.goto('/gym');
+  await page.getByRole('button', { name: 'Commencer une séance' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Séance libre' }).click();
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await bench.getByLabel('Poids en kg, série 1').fill('50');
+  await bench.getByLabel('Répétitions, série 1').fill('5');
+  await bench.getByRole('button', { name: 'Valider la série 1' }).click();
+  await page.getByRole('button', { name: 'Terminer' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Terminer' }).click();
+  await expect(page).toHaveURL(/\/summary$/);
+
+  await page.goto('/gym/history');
+  const row = page.getByRole('link', { name: /250 kg/ });
+  await row.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(700);
+  await page.mouse.up();
+
+  // The press opens the confirmation instead of the workout.
+  await expect(page).toHaveURL(/\/gym\/history$/);
+  const sheet = page.getByRole('dialog', { name: 'Supprimer la séance ?' });
+  await sheet.getByRole('button', { name: 'Annuler' }).click();
+  await expect(row).toBeVisible();
+
+  await row.click({ button: 'right' });
+  await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
+  await expect(page.getByText('Aucune séance terminée')).toBeVisible();
+});
