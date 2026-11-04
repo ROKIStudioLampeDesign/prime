@@ -3,6 +3,7 @@ import type { LocalDate } from './date';
 import {
   epley1RM,
   latestRecordDate,
+  liftGoalProgress,
   personalRecords,
   recordsBeaten,
   sessionProgression,
@@ -107,5 +108,43 @@ describe('recordsBeaten', () => {
     expect(recordsBeaten({ weightKg: 72.5, reps: 6 }, previous)).toEqual([]);
     expect(recordsBeaten({ weightKg: 0, reps: 50 }, previous)).toEqual([]);
     expect(recordsBeaten({ weightKg: 200, reps: 1 }, {})).toEqual([]);
+  });
+});
+
+describe('liftGoalProgress', () => {
+  it('has no progress without a positive goal', () => {
+    expect(liftGoalProgress({}, undefined)).toBeUndefined();
+    expect(liftGoalProgress({}, 0)).toBeUndefined();
+  });
+
+  it('starts at zero before any lift', () => {
+    expect(liftGoalProgress({}, 120)).toEqual({
+      goalKg: 120,
+      bestKg: 0,
+      ratio: 0,
+      remainingKg: 120,
+      reached: false,
+    });
+  });
+
+  it('counts the heaviest real load, not the estimated 1RM', () => {
+    // 100 × 8 estimates far above 120, but only 100 kg was actually lifted.
+    const progress = liftGoalProgress(personalRecords([set(1, 1, 100, 8), set(2, 2, 90, 1)]), 120);
+    expect(progress).toMatchObject({ bestKg: 100, remainingKg: 20, reached: false });
+    expect(progress?.ratio).toBeCloseTo(100 / 120);
+  });
+
+  it('is reached exactly at the goal and caps past it', () => {
+    expect(liftGoalProgress(personalRecords([set(1, 1, 120, 1)]), 120)).toMatchObject({
+      ratio: 1,
+      remainingKg: 0,
+      reached: true,
+    });
+    expect(liftGoalProgress(personalRecords([set(1, 1, 125, 1)]), 120)).toMatchObject({
+      bestKg: 125,
+      ratio: 1,
+      remainingKg: 0,
+      reached: true,
+    });
   });
 });

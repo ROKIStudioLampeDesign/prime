@@ -134,3 +134,34 @@ export function latestRecordDate(records: PersonalRecords): LocalDate | undefine
   }
   return latest;
 }
+
+export interface LiftGoalProgress {
+  goalKg: number;
+  /** Heaviest load actually lifted (any reps ≥ 1), 0 when none yet. */
+  bestKg: number;
+  /** 0 to 1, how far the best load is towards the goal. */
+  ratio: number;
+  /** Kilograms still missing, 0 once reached. */
+  remainingKg: number;
+  reached: boolean;
+}
+
+/**
+ * Progress towards a one-rep goal (e.g. bench 120 kg × 1). It counts real lifts only, the
+ * heaviest load moved for at least one rep, never the estimated 1RM. Undefined without a goal.
+ */
+export function liftGoalProgress(
+  records: PersonalRecords,
+  goalKg: number | undefined,
+): LiftGoalProgress | undefined {
+  if (goalKg === undefined || !(goalKg > 0)) return undefined;
+  const bestKg = records.weight?.weightKg ?? 0;
+  const reached = bestKg >= goalKg;
+  return {
+    goalKg,
+    bestKg,
+    ratio: Math.min(1, bestKg / goalKg),
+    remainingKg: reached ? 0 : goalKg - bestKg,
+    reached,
+  };
+}

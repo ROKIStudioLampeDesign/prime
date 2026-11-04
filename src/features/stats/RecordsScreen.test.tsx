@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { db } from '../../db/db';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
@@ -15,7 +16,7 @@ async function seededId(seedId: string): Promise<number> {
 
 describe('RecordsScreen', () => {
   afterEach(async () => {
-    await Promise.all([db.workouts.clear(), db.workoutSets.clear()]);
+    await Promise.all([db.workouts.clear(), db.workoutSets.clear(), db.settings.clear()]);
   });
 
   it('says what to do before the first bench set', async () => {
@@ -46,5 +47,41 @@ describe('RecordsScreen', () => {
       `/stats/progress?exercise=${bench}`,
     );
     expect(await axeViolations()).toEqual([]);
+  });
+
+  it('sets a one-rep goal and shows how far the heaviest real lift is', async () => {
+    const user = userEvent.setup();
+    const bench = await seededId(BENCH_SEED_ID);
+    const workoutId = await db.workouts.add({
+      date: '2026-11-02' as LocalDate,
+      status: 'done',
+      startedAt: 1,
+      endedAt: 2,
+    });
+    // 100 × 5 estimates ~117 kg, but the goal counts the 100 kg actually lifted.
+    await db.workoutSets.add({
+      workoutId,
+      exerciseId: bench,
+      order: 0,
+      setNumber: 1,
+      completed: true,
+      weightKg: 100,
+      reps: 5,
+    });
+
+    renderWithRouter(<RecordsScreen />);
+    await user.click(await screen.findByRole('button', { name: 'Me fixer un objectif' }));
+    const sheet = screen.getByRole('dialog', { name: 'Objectif au bench' });
+    await user.type(screen.getByLabelText('Charge visée'), '120');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(await screen.findByText('Encore 20 kg · max 100 kg')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Objectif · 1 rep' }).textContent).toContain('120 kg');
+    expect(sheet.isConnected).toBe(false);
+    expect(await axeViolations()).toEqual([]);
+
+    await user.click(screen.getByRole('button', { name: 'Modifier' }));
+    await user.click(screen.getByRole('button', { name: 'Retirer l’objectif' }));
+    expect(await screen.findByRole('button', { name: 'Me fixer un objectif' })).toBeTruthy();
   });
 });

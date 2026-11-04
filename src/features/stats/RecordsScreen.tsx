@@ -7,6 +7,7 @@ import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { listExercises } from '../../db/exercises';
+import { getBenchGoalKg } from '../../db/liftGoals';
 import { listExerciseHistory } from '../../db/stats';
 import {
   latestRecordDate,
@@ -17,6 +18,7 @@ import {
   type RecordKind,
 } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
+import { BenchGoal } from './BenchGoal';
 import { shortDateLabel, toTime } from './chartUtils';
 import { recordDetail } from './labels';
 import { RecordRow, StatsTabs } from './shared';
@@ -25,27 +27,39 @@ import { RecordRow, StatsTabs } from './shared';
 export function RecordsScreen() {
   const exercises = useLiveQuery(listExercises);
   const history = useLiveQuery(listExerciseHistory);
+  // Wrapped so "no goal" (undefined) is not mistaken for "still loading".
+  const goal = useLiveQuery(async () => ({ kg: await getBenchGoalKg() }));
   const bench = exercises?.find((e) => e.seedId === BENCH_SEED_ID);
   const records = useMemo(() => personalRecords((bench && history?.get(bench.id)) ?? []), [bench, history]);
 
   return (
     <Screen title="Stats">
       <StatsTabs />
-      {exercises === undefined || history === undefined ? (
+      {exercises === undefined || history === undefined || goal === undefined ? (
         <Loading />
       ) : !bench || latestRecordDate(records) === undefined ? (
-        <EmptyState
-          title="Pas encore de record au bench"
-          description="Valide des séries de bench avec des charges : tes records apparaîtront ici."
-        />
+        <>
+          <EmptyState
+            title="Pas encore de record au bench"
+            description="Valide des séries de bench avec des charges : tes records apparaîtront ici."
+          />
+          <BenchGoal records={records} goalKg={goal.kg} />
+        </>
       ) : (
-        <BenchRecords id={bench.id} name={bench.name} records={records} />
+        <BenchRecords id={bench.id} name={bench.name} records={records} goalKg={goal.kg} />
       )}
     </Screen>
   );
 }
 
-function BenchRecords({ id, name, records }: { id: number; name: string; records: PersonalRecords }) {
+interface BenchRecordsProps {
+  id: number;
+  name: string;
+  records: PersonalRecords;
+  goalKg: number | undefined;
+}
+
+function BenchRecords({ id, name, records, goalKg }: BenchRecordsProps) {
   // The estimated 1RM leads; without one (only sets of many reps), the heaviest load does.
   const lead: RecordKind = records.e1rm ? 'e1rm' : 'weight';
   const top = records[lead];
@@ -70,7 +84,9 @@ function BenchRecords({ id, name, records }: { id: number; name: string; records
         </p>
       </section>
 
-      <dl className="mt-2 divide-y divide-line border-b border-line">
+      <BenchGoal records={records} goalKg={goalKg} />
+
+      <dl className="divide-y divide-line border-b border-line">
         {RECORD_KINDS.filter((kind) => kind !== lead).map((kind) => (
           <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
         ))}
