@@ -65,6 +65,23 @@ export async function getLastPerformance(
 }
 
 /**
+ * The performance new sets copy. None for a finished workout (back-filling a past day): its
+ * loads and reps are usually forgotten, so sets start empty instead of guessed.
+ */
+async function previousForPrefill(
+  workout: Workout,
+  exerciseId: number,
+  database: PrimeDB,
+): Promise<PerformedSet[] | undefined> {
+  if (workout.status === 'done') return undefined;
+  return getLastPerformance(
+    exerciseId,
+    { before: workout.startedAt, excludeWorkoutId: workout.id },
+    database,
+  );
+}
+
+/**
  * Adds an exercise at the end of a workout, its sets prefilled from the last performance.
  * Returns false if the exercise is already in the workout.
  */
@@ -80,11 +97,7 @@ export async function addExerciseToWorkout(
     const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
     if (sets.some((s) => s.exerciseId === exerciseId)) return false;
     const order = sets.reduce((max, s) => Math.max(max, s.order + 1), 0);
-    const previous = await getLastPerformance(
-      exerciseId,
-      { before: workout.startedAt, excludeWorkoutId: workoutId },
-      database,
-    );
+    const previous = await previousForPrefill(workout, exerciseId, database);
     // A template's planned sets win; without them, copy the last performance.
     const prefill =
       options.plan && options.plan.length > 0
@@ -151,11 +164,7 @@ export async function addSet(workoutId: number, exerciseId: number, database: Pr
     const current = (await database.workoutSets.where({ exerciseId, workoutId }).toArray()).sort(
       (a, b) => a.setNumber - b.setNumber,
     );
-    const previous = await getLastPerformance(
-      exerciseId,
-      { before: workout.startedAt, excludeWorkoutId: workoutId },
-      database,
-    );
+    const previous = await previousForPrefill(workout, exerciseId, database);
     const next = nextSetValues(current, previous);
     const order =
       current[0]?.order ??

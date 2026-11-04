@@ -307,6 +307,31 @@ describe('workout logging', () => {
   });
 });
 
+describe('back-filled workouts', () => {
+  it('start with empty sets instead of copying the last performance', async () => {
+    const bench = await seededId('bench-press');
+    const live = await startWorkout(undefined, db);
+    await addExerciseToWorkout(live, bench, {}, db);
+    for (const s of await getWorkoutSets(live, db)) {
+      await updateSet(s.id, { weightKg: 80, reps: 5 }, db);
+      await setCompleted(s.id, true, 0, db);
+    }
+    await finishWorkout(live, db);
+
+    const past = await createPastWorkout('2026-10-01' as LocalDate, db);
+    await addExerciseToWorkout(past, bench, {}, db);
+    await addSet(past, bench, db);
+    const sets = await getWorkoutSets(past, db);
+    expect(sets).toHaveLength(4); // default 3 sets + 1 added
+    expect(sets.every((s) => s.weightKg === 0 && s.reps === 0 && !s.completed)).toBe(true);
+
+    // A live workout still copies it.
+    const next = await startWorkout(undefined, db);
+    await addExerciseToWorkout(next, bench, {}, db);
+    expect((await getWorkoutSets(next, db))[0]).toMatchObject({ weightKg: 80, reps: 5 });
+  });
+});
+
 describe('templates', () => {
   it('saves a workout as a template and duplicates templates', async () => {
     const bench = await seededId('bench-press');

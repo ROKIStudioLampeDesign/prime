@@ -52,9 +52,14 @@ export function ExerciseCard({
   isLast,
   restSeconds,
 }: ExerciseCardProps) {
+  // No "last time" hint on a finished workout: back-filled sessions start blank, not guessed.
+  const showPrevious = workout.status !== 'done';
   const previous = useLiveQuery(
-    () => getLastPerformance(exerciseId, { before: workout.startedAt, excludeWorkoutId: workout.id }),
-    [exerciseId, workout.startedAt, workout.id],
+    () =>
+      showPrevious
+        ? getLastPerformance(exerciseId, { before: workout.startedAt, excludeWorkoutId: workout.id })
+        : undefined,
+    [exerciseId, workout.startedAt, workout.id, showPrevious],
   );
   // Records from before this workout only, so the badge means "better than ever before".
   const records = useLiveQuery(
