@@ -105,10 +105,13 @@ Rules:
   immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
   unvalidated sets. Durations and the rest timer are computed from stored timestamps
   (`startedAt`, `restEndsAt`), never by counting interval ticks (timers stop while the phone is locked).
-- **Body map:** geometry lives in `src/features/body/bodyGeometry.ts` (200 × 400 canvas, left half
-  only, mirrored at render). Each view must draw exactly `musclesForView(view)` (tested). Fills come
-  from props, never inline in the path data. Hit areas are ranked by `approxArea` so thin muscles stay
-  tappable; after editing shapes, re-render both views and re-run a hit test on every muscle.
+- **Body map:** the figure is generated data, `src/features/body/bodyArt.json` (typed by
+  `bodyArt.ts`), built by `scripts/body-art` (see its README) from a CC BY-SA 4.0 Commons chart:
+  never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit
+  (`BODY_ART_CREDIT`) under the map. Each view must draw exactly `musclesForView(view)` (tested).
+  Fills come from props, never from the data. Deltoid heads are clip paths of one drawn shape.
+  Hit areas are ranked by `approxArea` so thin muscles stay tappable; after regenerating, render
+  both views and run `e2e/bodyMap.spec.ts` (every muscle tappable). Corps is a lazy route.
 - **Stats & charts:** Stats screens are lazy routes (`lazy` in `router.tsx`) so Recharts stays out of
   the main bundle; keep any new Recharts usage behind a lazy route. Charts use a numeric time X axis
   (`toTime`) so gaps are to scale, `niceTicks` for Y ticks, theme colours via `var(--color-…)`,

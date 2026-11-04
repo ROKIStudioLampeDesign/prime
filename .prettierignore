@@ -4,3 +4,6 @@ node_modules
 package-lock.json
 public/*.png
 .claude
+# Generated body map art (scripts/body-art) and its source data.
+src/features/body/bodyArt.json
+scripts/body-art/*.json

@@ -1,0 +1,4 @@
+node_modules
+manga-*.html
+package.json
+package-lock.json

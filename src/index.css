@@ -35,8 +35,9 @@
   /* The bar under the active tab and sub-tab. */
   --color-indicator: #f4e04d;
   --color-danger: #ff6b5b;
-  /* Body map silhouette, behind the colored muscles. */
+  /* Body map silhouette, behind the colored muscles; tendons and bones a shade lighter. */
   --color-body: #2a2a2a;
+  --color-body-detail: #3a3a3a;
 
   /*
    * Domain bands: Alimentation yellow, Salle cobalt, poids / Corps / secondary figures paper
@@ -104,6 +105,7 @@
     --color-indicator: #000000;
     --color-danger: #a8201a;
     --color-body: #d9d9d9;
+    --color-body-detail: #bdbdbd;
     /* A white band would vanish on the white page. */
     --color-paper: #ededed;
     --color-nutrition-strong: #8a7600;

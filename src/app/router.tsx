@@ -11,7 +11,6 @@ import { MealsScreen } from '../features/nutrition/MealsScreen';
 import { CalendarScreen } from '../features/gym/CalendarScreen';
 import { WorkoutScreen } from '../features/gym/WorkoutScreen';
 import { WorkoutSummaryScreen } from '../features/gym/WorkoutSummaryScreen';
-import { BodyScreen } from '../features/body/BodyScreen';
 
 /**
  * Lazy route for a screen module exporting `name`. Used for rarely visited screens (editors,
@@ -80,7 +79,8 @@ export const router = createBrowserRouter([
       },
       { path: 'gym/workout/:id', element: <WorkoutScreen /> },
       { path: 'gym/workout/:id/summary', element: <WorkoutSummaryScreen /> },
-      { path: 'body', element: <BodyScreen /> },
+      // Lazy: the body map art (~70 kB gzipped) only loads when Corps is opened.
+      { path: 'body', lazy: lazyScreen(() => import('../features/body/BodyScreen'), 'BodyScreen') },
       // Stats screens are lazy-loaded: they carry Recharts, which the rest of the app doesn't need.
       {
         path: 'stats',

@@ -19,6 +19,7 @@ import { BodyMap } from './BodyMap';
 import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
 import { shortAgo } from './labels';
 import { MuscleSheet } from './MuscleSheet';
+import { BODY_ART_CREDIT } from './bodyArt';
 import { RecencyLegend } from './RecencyLegend';
 
 type Mode = 'map' | 'list';
@@ -140,10 +141,15 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
               colors={colors}
               selected={selected}
               onSelect={setSelected}
-              className="mx-auto block aspect-[1/2] w-[min(62vw,240px)] motion-safe:animate-fade-in"
+              className="mx-auto block h-[min(110vw,440px)] w-full motion-safe:animate-fade-in"
             />
             <p className="mt-2 text-center text-xs font-semibold text-muted">
               Touche un muscle pour le détail · glisse pour voir {view === 'front' ? 'le dos' : 'la face'}
+            </p>
+            <p className="mt-1 text-center text-[11px] text-muted">
+              <a href={BODY_ART_CREDIT.href} target="_blank" rel="noreferrer" className="underline">
+                {BODY_ART_CREDIT.text}
+              </a>
             </p>
           </div>
           <div className="mt-3">
