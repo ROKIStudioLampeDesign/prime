@@ -5,21 +5,14 @@ import { Link } from 'react-router';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { SegmentedControl } from '../../components/SegmentedControl';
-import {
-  getBodyMapSettings,
-  listCompletedSetDates,
-  saveBodyMapSettings,
-  type BodyMapSettings,
-} from '../../db/bodyMap';
+import { getBodyMapSettings, listCompletedSetDates, type BodyMapSettings } from '../../db/bodyMap';
 import type { Exercise } from '../../db/db';
 import { listExercises } from '../../db/exercises';
 import { colorForIntensity, muscleRecency, type TrainingRecord } from '../../domain/muscleRecency';
 import { MUSCLE_IDS, MUSCLES, type BodyView, type MuscleId } from '../../domain/muscles';
 import { BodyMap } from './BodyMap';
-import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
 import { shortAgo } from './labels';
 import { MuscleSheet } from './MuscleSheet';
-import { BODY_ART_CREDIT } from './bodyArt';
 import { RecencyLegend } from './RecencyLegend';
 
 type Mode = 'map' | 'list';
@@ -37,21 +30,20 @@ export function BodyScreen() {
       {settings === undefined || sets === undefined || exercises === undefined ? (
         <Loading />
       ) : (
-        <BodyContent initialSettings={settings} sets={sets} exercises={exercises} />
+        <BodyContent settings={settings} sets={sets} exercises={exercises} />
       )}
     </Screen>
   );
 }
 
 interface BodyContentProps {
-  initialSettings: BodyMapSettings;
+  /** Set in Réglages (gear icon); read live, so a change there applies right away. */
+  settings: BodyMapSettings;
   sets: { date: TrainingRecord['date']; exerciseId: number }[];
   exercises: Exercise[];
 }
 
-function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
-  // Local copy so sliders stay smooth; every change is persisted right away.
-  const [settings, setSettings] = useState(initialSettings);
+function BodyContent({ settings, sets, exercises }: BodyContentProps) {
   const [mode, setMode] = useState<Mode>('map');
   const [view, setView] = useState<BodyView>('front');
   const [selected, setSelected] = useState<MuscleId>();
@@ -72,11 +64,6 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
   const colors = Object.fromEntries(
     MUSCLE_IDS.map((m) => [m, colorForIntensity(recency[m].intensity)]),
   ) as Record<MuscleId, string>;
-
-  function updateSettings(next: BodyMapSettings) {
-    setSettings(next);
-    void saveBodyMapSettings(next);
-  }
 
   function onPointerDown(e: PointerEvent) {
     swipeStart.current = { x: e.clientX, y: e.clientY };
@@ -146,11 +133,6 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
             <p className="mt-2 text-center text-xs font-semibold text-muted">
               Touche un muscle pour le détail · glisse pour voir {view === 'front' ? 'le dos' : 'la face'}
             </p>
-            <p className="mt-1 text-center text-[11px] text-muted">
-              <a href={BODY_ART_CREDIT.href} target="_blank" rel="noreferrer" className="underline">
-                {BODY_ART_CREDIT.text}
-              </a>
-            </p>
           </div>
           <div className="mt-3">
             <RecencyLegend thresholds={settings} countSecondary={settings.countSecondary} />
@@ -159,10 +141,6 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
       ) : (
         <MuscleList recency={recency} colors={colors} onSelect={setSelected} />
       )}
-
-      <div className="mt-3">
-        <BodyMapSettingsPanel settings={settings} onChange={updateSettings} />
-      </div>
 
       <MuscleSheet
         muscle={selected}

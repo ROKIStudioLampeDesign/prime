@@ -15,10 +15,11 @@ const MAX_STALE = 60;
  */
 export function BodyMapSettingsPanel({ settings, onChange }: Props) {
   return (
-    <section className="rounded-2xl bg-surface p-4" aria-labelledby="map-settings">
-      <h2 id="map-settings" className="font-semibold">
-        Réglages de la carte
+    <section className="mt-6 border-b border-line pb-4" aria-labelledby="map-settings">
+      <h2 id="map-settings" className="text-[1.375rem] leading-tight headline">
+        Carte du corps
       </h2>
+      <p className="mt-0.5 text-sm text-muted">Couleur des muscles selon leur dernier entraînement.</p>
       <Slider
         label="Rouge jusqu’à"
         value={settings.freshDays}

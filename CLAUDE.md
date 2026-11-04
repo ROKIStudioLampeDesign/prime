@@ -107,8 +107,8 @@ Rules:
   (`startedAt`, `restEndsAt`), never by counting interval ticks (timers stop while the phone is locked).
 - **Body map:** the figure is generated data, `src/features/body/bodyArt.json` (typed by
   `bodyArt.ts`), built by `scripts/body-art` (see its README) from a CC BY-SA 4.0 Commons chart:
-  never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit
-  (`BODY_ART_CREDIT`) under the map. Each view must draw exactly `musclesForView(view)` (tested).
+  never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit in
+  Réglages › Crédits (required by the licence). Each view must draw exactly `musclesForView(view)` (tested).
   Fills come from props, never from the data. Deltoid heads are clip paths of one drawn shape.
   Hit areas are ranked by `approxArea` so thin muscles stay tappable; after regenerating, render
   both views and run `e2e/bodyMap.spec.ts` (every muscle tappable). Corps is a lazy route.

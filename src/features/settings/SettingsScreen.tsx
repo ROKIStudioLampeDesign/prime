@@ -6,10 +6,12 @@ import { ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { SegmentedControl } from '../../components/SegmentedControl';
+import { getBodyMapSettings, saveBodyMapSettings, type BodyMapSettings } from '../../db/bodyMap';
 import { getGoals } from '../../db/goals';
 import { getRestSeconds, REST_OPTIONS, setRestSeconds } from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
 import { formatClock, formatMacro } from '../../lib/format';
+import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
 import { DataSection } from './DataSection';
 
 function goalsSummary(goals: Goals): string {
@@ -48,6 +50,50 @@ function RestTimerSetting() {
   );
 }
 
+/** Body map thresholds and secondary muscles (used by Corps). */
+function BodyMapSetting() {
+  const stored = useLiveQuery(getBodyMapSettings);
+  if (stored === undefined) return <div className="mt-6 h-64" />;
+  return <BodyMapSettingForm initial={stored} />;
+}
+
+function BodyMapSettingForm({ initial }: { initial: BodyMapSettings }) {
+  // Local copy so the sliders stay smooth; every change is saved right away.
+  const [settings, setSettings] = useState(initial);
+  return (
+    <BodyMapSettingsPanel
+      settings={settings}
+      onChange={(next) => {
+        setSettings(next);
+        void saveBodyMapSettings(next);
+      }}
+    />
+  );
+}
+
+/** Credit required by the CC BY-SA 4.0 licence of the body map art (scripts/body-art). */
+function Credits() {
+  return (
+    <section className="mt-6" aria-labelledby="credits">
+      <h2 id="credits" className="text-sm font-extrabold text-muted">
+        Crédits
+      </h2>
+      <p className="mt-1 text-xs text-muted">
+        Carte du corps d’après{' '}
+        <a
+          href="https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg"
+          target="_blank"
+          rel="noreferrer"
+          className="underline"
+        >
+          « Muscles front and back »
+        </a>{' '}
+        (OpenStax, T. Kebert, umimeto.org), licence CC BY-SA 4.0.
+      </p>
+    </section>
+  );
+}
+
 export function SettingsScreen() {
   const goals = useLiveQuery(getGoals);
 
@@ -67,7 +113,11 @@ export function SettingsScreen() {
 
           <RestTimerSetting />
 
+          <BodyMapSetting />
+
           <DataSection />
+
+          <Credits />
         </>
       )}
 

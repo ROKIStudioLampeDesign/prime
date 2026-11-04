@@ -31,12 +31,6 @@ export interface BodyArt {
 
 export const BODY_ART = art as unknown as Readonly<Record<BodyView, BodyArt>>;
 
-/** Credit required by the CC BY-SA licence of the source chart. */
-export const BODY_ART_CREDIT = {
-  text: 'Illustration d’après OpenStax, T. Kebert et umimeto.org (CC BY-SA 4.0)',
-  href: 'https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg',
-};
-
 /**
  * Approximate surface of a path: shoelace formula over its points (Bézier control points included).
  * Good enough to rank shapes by size, which bounding boxes are not for thin crescents.
