@@ -102,8 +102,7 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
 
       {mode === 'map' ? (
         <>
-          <div className="mt-3 flex items-center justify-between gap-3">
-            <p className="text-sm font-extrabold text-muted">Dernier entraînement</p>
+          <div className="mt-3 flex justify-end">
             <div className="w-36">
               <SegmentedControl
                 label="Vue"
@@ -130,12 +129,9 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
               onSelect={setSelected}
               className="mx-auto block h-[min(110vw,440px)] w-full motion-safe:animate-fade-in"
             />
-            <p className="mt-2 text-center text-xs font-semibold text-muted">
-              Touche un muscle pour le détail · glisse pour voir {view === 'front' ? 'le dos' : 'la face'}
-            </p>
           </div>
           <div className="mt-3">
-            <RecencyLegend thresholds={settings} countSecondary={settings.countSecondary} />
+            <RecencyLegend thresholds={settings} />
           </div>
         </>
       ) : (
