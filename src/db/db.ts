@@ -143,10 +143,15 @@ export interface WorkoutSet {
   completedAt?: number;
 }
 
-/** Manual attendance. Days with a workout count as attended regardless. */
+/**
+ * Manual marks for a day: attended (a gym day without a logged workout) or a planned rest day.
+ * The two are exclusive. A day with a workout counts as attended regardless, and is never a rest
+ * day. `rest` is optional and not indexed, so rows written before it existed stay valid.
+ */
 export interface GymDay {
   date: LocalDate;
   attended: boolean;
+  rest?: boolean;
 }
 
 export interface Template {

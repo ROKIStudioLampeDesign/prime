@@ -3,7 +3,7 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useToday } from '../../components/useToday';
 import type { Workout } from '../../db/db';
-import { setGymDay } from '../../db/gymDays';
+import { setGymDay, setRestDay } from '../../db/gymDays';
 import { createPastWorkout } from '../../db/workouts';
 import type { LocalDate } from '../../domain/date';
 import { formatDuration } from '../../lib/format';
@@ -14,10 +14,12 @@ interface DaySheetProps {
   workouts: Workout[];
   /** Manual attendance flag for the day. */
   manual: boolean;
+  /** Rest day mark (ignored when the day has a workout). */
+  rest: boolean;
   onClose: () => void;
 }
 
-export function DaySheet({ date, workouts, manual, onClose }: DaySheetProps) {
+export function DaySheet({ date, workouts, manual, rest, onClose }: DaySheetProps) {
   const navigate = useNavigate();
   const today = useToday();
   const hasWorkout = workouts.length > 0;
@@ -67,6 +69,24 @@ export function DaySheet({ date, workouts, manual, onClose }: DaySheetProps) {
               className="size-6 accent-(--color-accent)"
             />
           </label>
+
+          {!hasWorkout && (
+            <label className="mt-2 flex min-h-12 items-center justify-between gap-3 rounded-xl bg-bg px-4">
+              <span>
+                <span className="block">Jour de repos</span>
+                <span className="block text-xs text-muted">
+                  Pas de salle, tes repas se notent normalement
+                </span>
+              </span>
+              <input
+                type="checkbox"
+                role="switch"
+                checked={rest}
+                onChange={(e) => void setRestDay(date, e.target.checked)}
+                className="size-6 accent-(--color-accent)"
+              />
+            </label>
+          )}
 
           {isPastOrToday && (
             <Button

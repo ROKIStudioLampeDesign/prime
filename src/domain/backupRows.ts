@@ -165,7 +165,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     rpe: optional(finite),
     completedAt: optional(timestamp),
   }),
-  gymDays: shape({ date: localDate, attended: bool }),
+  gymDays: shape({ date: localDate, attended: bool, rest: optional(bool) }),
   templates: shape({
     id,
     name: text,

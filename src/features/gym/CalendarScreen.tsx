@@ -10,7 +10,7 @@ import { useToday } from '../../components/useToday';
 import { listGymDays } from '../../db/gymDays';
 import { listAllWorkouts } from '../../db/workouts';
 import { formatMonthParam, parseMonthParam, shiftMonth, type LocalDate } from '../../domain/date';
-import { attendedDates, monthGrid, sessionsInMonth, weeklyStreak } from '../../domain/gymCalendar';
+import { attendedDates, monthGrid, restDates, sessionsInMonth, weeklyStreak } from '../../domain/gymCalendar';
 import { DaySheet } from './DaySheet';
 import { GymTabs } from './shared';
 import { ActiveOrStart, StartSheet } from './StartSheet';
@@ -51,6 +51,16 @@ export function CalendarScreen() {
       ),
     [workouts, gymDays],
   );
+  const resting = useMemo(
+    () =>
+      workouts &&
+      gymDays &&
+      restDates(
+        workouts.map((w) => w.date),
+        gymDays,
+      ),
+    [workouts, gymDays],
+  );
 
   function goToMonth(delta: number) {
     setParams({ month: formatMonthParam(shiftMonth(shown, delta)) }, { replace: true });
@@ -63,7 +73,7 @@ export function CalendarScreen() {
       <GymTabs />
       <ActiveOrStart onStart={() => setStarting(true)} />
 
-      {attended === undefined || workouts === undefined || gymDays === undefined ? (
+      {attended === undefined || resting === undefined || workouts === undefined || gymDays === undefined ? (
         <Loading />
       ) : (
         <>
@@ -113,6 +123,7 @@ export function CalendarScreen() {
                       key={date}
                       date={date}
                       attended={attended.has(date)}
+                      rest={resting.has(date)}
                       isToday={date === today}
                       isFuture={date > today}
                       onClick={() => setSelectedDay(date)}
@@ -123,7 +134,15 @@ export function CalendarScreen() {
                 )}
             </div>
           </section>
-          <p className="mt-2 px-1 text-xs text-muted">Touche un jour pour voir sa séance ou le marquer.</p>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 bg-gym" aria-hidden="true" /> Séance
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="size-3 bg-fg" aria-hidden="true" /> Repos
+            </span>
+            <span>Touche un jour pour voir sa séance ou le marquer.</span>
+          </div>
         </>
       )}
 
@@ -132,6 +151,7 @@ export function CalendarScreen() {
         date={selectedDay}
         workouts={workouts?.filter((w) => w.date === selectedDay) ?? []}
         manual={gymDays?.find((d) => d.date === selectedDay)?.attended ?? false}
+        rest={selectedDay !== undefined && (resting?.has(selectedDay) ?? false)}
         onClose={() => setSelectedDay(undefined)}
       />
     </Screen>
@@ -151,22 +171,29 @@ function Counter({ label, value, hint }: { label: string; value: string; hint?: 
 interface DayCellProps {
   date: LocalDate;
   attended: boolean;
+  rest: boolean;
   isToday: boolean;
   isFuture: boolean;
   onClick: () => void;
 }
 
-function DayCell({ date, attended, isToday, isFuture, onClick }: DayCellProps) {
+function DayCell({ date, attended, rest, isToday, isFuture, onClick }: DayCellProps) {
   const day = Number(date.slice(8));
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${longDay(date)}${attended ? ', séance' : ''}`}
+      aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
-        attended ? 'bg-gym text-on-gym' : isFuture ? 'text-muted' : 'text-fg active:bg-surface-2'
-      } ${isToday ? 'ring-2 ring-fg ring-inset' : ''}`}
+        attended
+          ? 'bg-gym text-on-gym'
+          : rest
+            ? 'bg-fg text-bg'
+            : isFuture
+              ? 'text-muted'
+              : 'text-fg active:bg-surface-2'
+      } ${isToday ? `ring-2 ring-inset ${rest && !attended ? 'ring-bg' : 'ring-fg'}` : ''}`}
     >
       {day}
     </button>

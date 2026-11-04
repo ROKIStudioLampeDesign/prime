@@ -7,6 +7,7 @@ import { useNow } from '../../components/useNow';
 import { listBodyWeights } from '../../db/bodyWeights';
 import type { Workout } from '../../db/db';
 import { getGoals } from '../../db/goals';
+import { getGymDay, setRestDay } from '../../db/gymDays';
 import { listEntriesForDate } from '../../db/logEntries';
 import { getWorkoutSets, listAllWorkouts } from '../../db/workouts';
 import type { LocalDate } from '../../domain/date';
@@ -164,6 +165,9 @@ function WorkoutLine({ workout, now }: { workout: Workout; now?: number }) {
 const gymBand = `${band} bg-gym text-on-gym`;
 const gymButton =
   'mt-3.5 flex min-h-14 items-center justify-center bg-accent-fill px-5 text-[17px] font-black text-accent-fg [font-stretch:112%] focus-inset active:opacity-80';
+/** Secondary action on the cobalt band: outlined, so the yellow button stays the main one. */
+const gymSecondaryButton =
+  'mt-2.5 flex min-h-12 w-full items-center justify-center border-2 border-on-gym px-5 text-[15px] font-extrabold focus-inset active:opacity-70';
 
 function ActiveWorkoutCard({ workout }: { workout: Workout }) {
   const now = useNow(30_000);
@@ -183,7 +187,9 @@ function ActiveWorkoutCard({ workout }: { workout: Workout }) {
 /** The cobalt band, last so its button stays within thumb reach. */
 export function GymCard({ today }: { today: LocalDate }) {
   const workouts = useLiveQuery(listAllWorkouts);
-  if (!workouts) return <Placeholder label="Salle" className="bleed h-48 bg-gym" />;
+  // `null` (not undefined) when the day has no mark, so loading stays distinguishable.
+  const gymDay = useLiveQuery(async () => (await getGymDay(today)) ?? null, [today]);
+  if (!workouts || gymDay === undefined) return <Placeholder label="Salle" className="bleed h-48 bg-gym" />;
   const state = todayWorkouts(workouts, today);
 
   if (state.kind === 'active') return <ActiveWorkoutCard workout={state.workout} />;
@@ -216,6 +222,23 @@ export function GymCard({ today }: { today: LocalDate }) {
     );
   }
 
+  if (gymDay?.rest === true) {
+    return (
+      <section aria-labelledby="today-gym" className={gymBand}>
+        <h2 id="today-gym" className={bandLabel}>
+          Salle
+        </h2>
+        <p className="mt-1.5 text-[1.875rem] leading-[1.02] headline">Jour de repos</p>
+        <p className="mt-1.5 text-[15px] font-semibold">
+          Tes muscles récupèrent. Continue de noter tes repas.
+        </p>
+        <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, false)}>
+          Annuler le jour de repos
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="today-gym" className={gymBand}>
       <h2 id="today-gym" className={bandLabel}>
@@ -230,6 +253,9 @@ export function GymCard({ today }: { today: LocalDate }) {
       <Link to="/gym?start=1" className={gymButton}>
         Commencer une séance
       </Link>
+      <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, true)}>
+        Jour de repos
+      </button>
     </section>
   );
 }

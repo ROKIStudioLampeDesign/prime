@@ -79,7 +79,10 @@ const valid = {
   workoutSets: [
     { id: 1, workoutId: 1, exerciseId: 1, order: 0, setNumber: 1, weightKg: 60, reps: 8, completed: true },
   ],
-  gymDays: [{ date: '2026-11-01', attended: true }],
+  gymDays: [
+    { date: '2026-11-01', attended: true },
+    { date: '2026-11-02', attended: false, rest: true },
+  ],
   templates: [
     {
       id: 1,

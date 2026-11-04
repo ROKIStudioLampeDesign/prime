@@ -100,3 +100,27 @@ test('a template plans each set and learns from the session done with it', async
   await expect(page.getByLabel('Répétitions, série 1, Bench')).toHaveValue('10');
   await expect(page.getByLabel('Poids en kg, série 2, Bench')).toHaveCount(0);
 });
+
+test('mark today as a rest day from the home screen, see it in the calendar, then undo it', async ({
+  page,
+}) => {
+  await page.goto('/');
+  const gym = page.getByRole('region', { name: 'Salle' });
+  await gym.getByRole('button', { name: 'Jour de repos' }).click();
+  await expect(gym.getByText('Jour de repos', { exact: true })).toBeVisible();
+  await expect(gym.getByRole('link', { name: 'Commencer une séance' })).toBeHidden();
+
+  // The mark survives a reload and shows in the calendar.
+  await page.reload();
+  await expect(gym.getByText('Jour de repos', { exact: true })).toBeVisible();
+  await page.goto('/gym');
+  const todayCell = page.getByRole('button', { name: /, repos$/ });
+  await expect(todayCell).toHaveAttribute('aria-current', 'date');
+  await todayCell.click();
+  await expect(page.getByRole('dialog').getByRole('switch', { name: /Jour de repos/ })).toBeChecked();
+  await page.keyboard.press('Escape');
+
+  await page.goto('/');
+  await gym.getByRole('button', { name: 'Annuler le jour de repos' }).click();
+  await expect(gym.getByRole('link', { name: 'Commencer une séance' })).toBeVisible();
+});

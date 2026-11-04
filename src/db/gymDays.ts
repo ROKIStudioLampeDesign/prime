@@ -6,9 +6,21 @@ export function listGymDays(database: PrimeDB = db): Promise<GymDay[]> {
   return database.gymDays.toArray();
 }
 
-/** Manual attendance for a day (days with a workout count as attended regardless). */
+export function getGymDay(date: LocalDate, database: PrimeDB = db): Promise<GymDay | undefined> {
+  return database.gymDays.get(date);
+}
+
+/**
+ * Manual attendance for a day (days with a workout count as attended regardless). Marking a day
+ * attended clears its rest mark: the two are exclusive.
+ */
 export async function setGymDay(date: LocalDate, attended: boolean, database: PrimeDB = db): Promise<void> {
   await database.gymDays.put({ date, attended });
+}
+
+/** Marks or unmarks a planned rest day. Marking it clears a manual attendance mark. */
+export async function setRestDay(date: LocalDate, rest: boolean, database: PrimeDB = db): Promise<void> {
+  await database.gymDays.put(rest ? { date, attended: false, rest: true } : { date, attended: false });
 }
 
 const REST_SECONDS_KEY = 'restTimerSeconds';

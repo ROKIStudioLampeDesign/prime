@@ -60,6 +60,7 @@ async function fill(db: PrimeDB) {
   await saveGoals({ kcal: 2300, protein: 160 }, db);
   await upsertBodyWeight(d('2026-11-01'), 80.4, db);
   await db.gymDays.put({ date: d('2026-11-01'), attended: true });
+  await db.gymDays.put({ date: d('2026-11-02'), attended: false, rest: true });
   const bench = (await db.exercises.where('seedId').equals('bench-press').first())?.id ?? 0;
   const pushId = await createTemplate(
     { name: 'Push', exercises: [{ exerciseId: bench, targetSets: 3, targetReps: 8 }] },

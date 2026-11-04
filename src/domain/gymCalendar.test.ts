@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import { attendedDates, monthGrid, sessionsInMonth, weekStart, weeklyStreak } from './gymCalendar';
+import { attendedDates, monthGrid, restDates, sessionsInMonth, weekStart, weeklyStreak } from './gymCalendar';
 
 const d = (s: string) => s as LocalDate;
 
@@ -75,5 +75,36 @@ describe('weeklyStreak', () => {
 
   it('counts several sessions in one week once', () => {
     expect(weeklyStreak(new Set([d('2026-11-02'), d('2026-11-03'), d('2026-11-04')]), today)).toBe(1);
+  });
+});
+
+describe('restDates', () => {
+  it('is empty without marks', () => {
+    expect(restDates([], []).size).toBe(0);
+    expect(restDates([d('2026-11-02')], [{ date: d('2026-11-03') }]).size).toBe(0);
+  });
+
+  it('keeps rest days and drops those with a workout', () => {
+    const set = restDates(
+      [d('2026-11-04')],
+      [
+        { date: d('2026-11-03'), rest: true },
+        { date: d('2026-11-04'), rest: true }, // a session was logged anyway
+        { date: d('2026-11-05'), rest: false },
+        { date: d('2026-11-06') },
+      ],
+    );
+    expect([...set]).toEqual(['2026-11-03']);
+  });
+
+  it('never overlaps attended days', () => {
+    const manual = [
+      { date: d('2026-11-03'), attended: false, rest: true },
+      { date: d('2026-11-04'), attended: true },
+    ];
+    const workouts = [d('2026-11-05')];
+    const rest = restDates(workouts, manual);
+    const attended = attendedDates(workouts, manual);
+    expect([...rest].filter((x) => attended.has(x))).toEqual([]);
   });
 });
