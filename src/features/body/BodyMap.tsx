@@ -82,6 +82,7 @@ export function BodyMap({ view, colors, selected, onSelect, className = '' }: Bo
       <g
         aria-hidden="true"
         className="pointer-events-none stroke-surface"
+        fill="none"
         strokeWidth={1.2}
         strokeLinecap="round"
       >
