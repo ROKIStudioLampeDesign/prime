@@ -164,6 +164,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     completed: bool,
     rpe: optional(finite),
     completedAt: optional(timestamp),
+    bodyweight: optional(bool),
   }),
   gymDays: shape({ date: localDate, attended: bool, rest: optional(bool) }),
   templates: shape({

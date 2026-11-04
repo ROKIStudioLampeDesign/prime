@@ -11,7 +11,7 @@ import type { WorkoutSet } from '../../db/db';
 import { getTemplate } from '../../db/templates';
 import { getWorkout, getWorkoutSets } from '../../db/workouts';
 import { workoutStats } from '../../domain/workout';
-import { formatInteger, formatWeight } from '../../lib/format';
+import { formatInteger, setLoadLabel } from '../../lib/format';
 import { SaveTemplateSheet } from './SaveTemplateSheet';
 import { exerciseName, useExercisesById } from './exerciseData';
 import { workoutTitle } from './workoutLabels';
@@ -89,7 +89,7 @@ export function WorkoutSummaryScreen() {
                   <p className="truncate font-extrabold">{exerciseName(exercises, exerciseId)}</p>
                   <p className="text-[13px] font-semibold text-muted tabular-nums">
                     {exSets.length} série{exSets.length > 1 ? 's' : ''}
-                    {best && ` · meilleure : ${formatWeight(best.weightKg)} kg × ${best.reps}`}
+                    {best && ` · meilleure : ${setLoadLabel(best)} × ${best.reps}`}
                   </p>
                 </div>
               </li>

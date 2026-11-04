@@ -21,12 +21,13 @@ import {
   removeExercise,
   removeSet,
   setCompleted,
+  setExerciseBodyweight,
   updateSet,
 } from '../../db/workouts';
 import { getRecordsBefore } from '../../db/stats';
 import { RECORD_LABELS, recordsBeaten, type PersonalRecords, type RecordKind } from '../../domain/strength';
 import { previousForSet, stepWeight, type PerformedSet } from '../../domain/workout';
-import { formatWeight } from '../../lib/format';
+import { formatWeight, setLoadLabel } from '../../lib/format';
 import { musclesLabel } from './exerciseData';
 
 const STEPS = [2.5, 1.25, 0.5];
@@ -197,26 +198,32 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
         >
           {set.setNumber}
         </button>
-        <div className="flex w-[140px] shrink-0 items-center">
-          <StepButton
-            label={`Retirer ${formatWeight(step)} kg, ${label}`}
-            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, -step) })}
-          >
-            <MinusIcon className="size-4" />
-          </StepButton>
-          <NumericInput
-            aria-label={`Poids en kg, ${label}`}
-            value={set.weightKg}
-            onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
-            className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
-          />
-          <StepButton
-            label={`Ajouter ${formatWeight(step)} kg, ${label}`}
-            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, step) })}
-          >
-            <PlusIcon className="size-4" />
-          </StepButton>
-        </div>
+        {set.bodyweight ? (
+          <span className="flex h-11 w-[140px] shrink-0 items-center justify-center bg-surface text-[15px] font-black">
+            Poids du corps
+          </span>
+        ) : (
+          <div className="flex w-[140px] shrink-0 items-center">
+            <StepButton
+              label={`Retirer ${formatWeight(step)} kg, ${label}`}
+              onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, -step) })}
+            >
+              <MinusIcon className="size-4" />
+            </StepButton>
+            <NumericInput
+              aria-label={`Poids en kg, ${label}`}
+              value={set.weightKg}
+              onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
+              className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
+            />
+            <StepButton
+              label={`Ajouter ${formatWeight(step)} kg, ${label}`}
+              onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, step) })}
+            >
+              <PlusIcon className="size-4" />
+            </StepButton>
+          </div>
+        )}
         <NumericInput
           integer
           aria-label={`Répétitions, ${label}`}
@@ -248,7 +255,7 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
               PR
             </span>
           )}
-          {previous && `Dernière fois : ${formatWeight(previous.weightKg)} kg × ${previous.reps}`}
+          {previous && `Dernière fois : ${setLoadLabel(previous)} × ${previous.reps}`}
           {previous && set.rpe !== undefined && ' · '}
           {set.rpe !== undefined && `RPE ${set.rpe}`}
         </p>
@@ -280,12 +287,27 @@ function StepButton({
 
 const RPE_VALUES = [6, 7, 8, 9, 10];
 
-/** Per-set options: RPE and deletion. */
+/** Per-set options: bodyweight (for the whole exercise), RPE and deletion. */
 function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () => void }) {
   return (
     <BottomSheet open={set !== undefined} onClose={onClose} title={set ? `Série ${set.setNumber}` : ''}>
       {set && (
         <>
+          <label className="mb-5 flex min-h-12 items-center justify-between gap-3 border-b border-line">
+            <span>
+              <span className="block font-extrabold">Poids du corps</span>
+              <span className="block text-xs text-muted">
+                Pour toutes les séries de l’exercice, sans charge
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={set.bodyweight === true}
+              onChange={(e) => void setExerciseBodyweight(set.workoutId, set.exerciseId, e.target.checked)}
+              className="size-6 shrink-0 accent-(--color-accent)"
+            />
+          </label>
           <p className="mb-2 text-sm text-muted">Difficulté ressentie (RPE, facultatif)</p>
           <div className="grid grid-cols-6 gap-1.5">
             {RPE_VALUES.map((rpe) => (

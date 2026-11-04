@@ -157,3 +157,31 @@ test('long-press a workout in the history to delete it', async ({ page }) => {
   await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
   await expect(page.getByText('Aucune séance terminée')).toBeVisible();
 });
+
+test('bodyweight exercises skip the load, and any exercise can switch to bodyweight', async ({ page }) => {
+  await page.goto('/gym');
+  await page.getByRole('button', { name: 'Commencer une séance' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Séance libre' }).click();
+
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('dips');
+  await page.getByRole('button', { name: /^Dips/ }).click();
+  const dips = page.getByRole('region', { name: 'Dips' });
+  await expect(dips.getByText('Poids du corps').first()).toBeVisible();
+  await expect(dips.getByLabel('Poids en kg, série 1')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await bench.getByRole('button', { name: 'Options de la série 1' }).click();
+  await page.getByRole('dialog', { name: 'Série 1' });
+  const toggle = page
+    .getByRole('dialog', { name: 'Série 1' })
+    .getByRole('switch', { name: /Poids du corps/ });
+  await toggle.click(); // saved to the database, then reflected back
+  await expect(toggle).toBeChecked();
+  await page.keyboard.press('Escape');
+  await expect(bench.getByLabel(/Poids en kg/)).toHaveCount(0);
+  await expect(bench.getByText('Poids du corps')).toHaveCount(3);
+});

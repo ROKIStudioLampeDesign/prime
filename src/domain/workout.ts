@@ -5,12 +5,15 @@ export interface SetData {
   weightKg: number;
   reps: number;
   completed: boolean;
+  /** Done at bodyweight: no load to enter (weightKg stays 0). */
+  bodyweight?: boolean;
 }
 
 /** Weight and reps of one set, without bookkeeping. */
 export interface SetValues {
   weightKg: number;
   reps: number;
+  bodyweight?: boolean;
 }
 
 export interface PerformedSet extends SetValues {
@@ -44,7 +47,12 @@ export function lastPerformance(
   for (const workout of candidates) {
     const sets = workout.sets
       .filter((s) => s.exerciseId === exerciseId && s.completed)
-      .map(({ setNumber, weightKg, reps }) => ({ setNumber, weightKg, reps }))
+      .map(({ setNumber, weightKg, reps, bodyweight }) => ({
+        setNumber,
+        weightKg,
+        reps,
+        ...(bodyweight && { bodyweight: true }),
+      }))
       .sort((a, b) => a.setNumber - b.setNumber);
     if (sets.length > 0) return sets;
   }
@@ -94,6 +102,20 @@ export function prefillFromPlan(
       reps: p.reps > 0 ? p.reps : (last?.reps ?? fallbackReps),
     };
   });
+}
+
+/**
+ * Whether new sets of an exercise start at bodyweight: like its sets already in the workout,
+ * else like the last performance, else from the exercise's equipment (pompes, tractions…).
+ */
+export function startsAtBodyweight(
+  currentSets: readonly SetValues[],
+  previous: readonly SetValues[] | undefined,
+  equipment: string | undefined,
+): boolean {
+  const reference = currentSets[0] ?? previous?.[0];
+  if (reference) return reference.bodyweight === true;
+  return equipment === 'bodyweight';
 }
 
 /** Default number of sets when an exercise is added without a template. */

@@ -7,6 +7,7 @@ import {
   prefillSets,
   previousForSet,
   restRemaining,
+  startsAtBodyweight,
   stepWeight,
   templateAfterWorkout,
   templateFromSets,
@@ -309,5 +310,42 @@ describe('prefillFromPlan', () => {
       { setNumber: 1, weightKg: 0, reps: 12 },
     ]);
     expect(prefillFromPlan(previous, [])).toEqual([]);
+  });
+});
+
+describe('startsAtBodyweight', () => {
+  const kg = { weightKg: 20, reps: 8 };
+  const bw = { weightKg: 0, reps: 8, bodyweight: true };
+
+  it('follows the sets already in the workout first', () => {
+    expect(startsAtBodyweight([bw], [kg], undefined)).toBe(true);
+    expect(startsAtBodyweight([kg], [bw], 'bodyweight')).toBe(false);
+  });
+
+  it('then the last performance, then the equipment', () => {
+    expect(startsAtBodyweight([], [bw], 'barbell')).toBe(true);
+    expect(startsAtBodyweight([], [kg], 'bodyweight')).toBe(false);
+    expect(startsAtBodyweight([], undefined, 'bodyweight')).toBe(true);
+    expect(startsAtBodyweight([], [], 'barbell')).toBe(false);
+    expect(startsAtBodyweight([], undefined, undefined)).toBe(false);
+  });
+});
+
+describe('lastPerformance with bodyweight sets', () => {
+  it('keeps the bodyweight flag only where it is set', () => {
+    const history = [
+      {
+        workoutId: 1,
+        startedAt: 1,
+        sets: [
+          { exerciseId: 7, setNumber: 1, weightKg: 0, reps: 10, completed: true, bodyweight: true },
+          { exerciseId: 7, setNumber: 2, weightKg: 10, reps: 6, completed: true },
+        ],
+      },
+    ];
+    expect(lastPerformance(history, 7)).toEqual([
+      { setNumber: 1, weightKg: 0, reps: 10, bodyweight: true },
+      { setNumber: 2, weightKg: 10, reps: 6 },
+    ]);
   });
 });

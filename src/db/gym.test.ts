@@ -19,6 +19,7 @@ import {
   removeSet,
   saveWorkoutAsTemplate,
   setCompleted,
+  setExerciseBodyweight,
   startWorkout,
   updateSet,
 } from './workouts';
@@ -304,6 +305,42 @@ describe('workout logging', () => {
 
     const past = await createPastWorkout('2026-10-15' as LocalDate, db);
     expect(await getWorkout(past, db)).toMatchObject({ date: '2026-10-15', status: 'done' });
+  });
+});
+
+describe('bodyweight sets', () => {
+  it('start at bodyweight for bodyweight exercises, switch per exercise and carry over', async () => {
+    const pullUp = await seededId('pull-up');
+    const bench = await seededId('bench-press');
+    const id = await startWorkout(undefined, db);
+    await addExerciseToWorkout(id, pullUp, {}, db);
+    await addExerciseToWorkout(id, bench, {}, db);
+    const sets = await getWorkoutSets(id, db);
+    expect(sets.filter((s) => s.exerciseId === pullUp).every((s) => s.bodyweight === true)).toBe(true);
+    expect(sets.filter((s) => s.exerciseId === bench).some((s) => s.bodyweight)).toBe(false);
+
+    // Switching the bench clears its loads; a new set follows the exercise's mode.
+    const firstBench = sets.find((s) => s.exerciseId === bench);
+    if (!firstBench) throw new Error('missing bench set');
+    await updateSet(firstBench.id, { weightKg: 60, reps: 8 }, db);
+    await setExerciseBodyweight(id, bench, true, db);
+    await addSet(id, bench, db);
+    const benchSets = (await getWorkoutSets(id, db)).filter((s) => s.exerciseId === bench);
+    expect(benchSets).toHaveLength(4);
+    expect(benchSets.every((s) => s.bodyweight === true && s.weightKg === 0)).toBe(true);
+
+    // Back to kg for the pull-ups (the load stays 0 until typed), then finish.
+    await setExerciseBodyweight(id, pullUp, false, db);
+    const pullUps = (await getWorkoutSets(id, db)).filter((s) => s.exerciseId === pullUp);
+    expect(pullUps.every((s) => s.bodyweight === undefined)).toBe(true);
+    for (const s of benchSets) await setCompleted(s.id, true, 0, db);
+    await finishWorkout(id, db);
+
+    // The next session copies the bodyweight mode from the last performance.
+    const next = await startWorkout(undefined, db);
+    await addExerciseToWorkout(next, bench, {}, db);
+    const nextSets = await getWorkoutSets(next, db);
+    expect(nextSets.every((s) => s.bodyweight === true)).toBe(true);
   });
 });
 
