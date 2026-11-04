@@ -158,11 +158,41 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
   );
 }
 
-/** Creates an already-finished workout on a past (or any) day, to back-fill history. */
-export async function createPastWorkout(date: LocalDate, database: PrimeDB = db): Promise<number> {
-  // Noon avoids landing on another day around DST changes; duration is unknown.
-  const startedAt = fromLocalDate(date).getTime() + 12 * 3_600_000;
-  return database.workouts.add({ date, status: 'done', startedAt });
+/**
+ * Creates an already-finished workout on a past (or any) day, to back-fill history. From a
+ * template it gets the template's exercises and set counts, but every load and rep is left
+ * empty: old sessions are usually not remembered. The template itself is never updated.
+ */
+export async function createPastWorkout(
+  date: LocalDate,
+  templateId?: number,
+  database: PrimeDB = db,
+): Promise<number> {
+  return database.transaction(
+    'rw',
+    [database.workouts, database.workoutSets, database.templates, database.exercises],
+    async () => {
+      const template = templateId !== undefined ? await database.templates.get(templateId) : undefined;
+      // Noon avoids landing on another day around DST changes; duration is unknown.
+      const startedAt = fromLocalDate(date).getTime() + 12 * 3_600_000;
+      const id = await database.workouts.add({
+        date,
+        status: 'done',
+        startedAt,
+        ...(template && { name: template.name, templateId: template.id }),
+      });
+      for (const te of template?.exercises ?? []) {
+        // No plan or target reps: only the number of sets is kept.
+        await addExerciseToWorkout(
+          id,
+          te.exerciseId,
+          { setCount: te.sets && te.sets.length > 0 ? te.sets.length : te.targetSets },
+          database,
+        );
+      }
+      return id;
+    },
+  );
 }
 
 export async function addSet(workoutId: number, exerciseId: number, database: PrimeDB = db): Promise<void> {

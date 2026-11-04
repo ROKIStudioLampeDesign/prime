@@ -1,9 +1,11 @@
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Link, useNavigate } from 'react-router';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useToday } from '../../components/useToday';
 import type { Workout } from '../../db/db';
 import { setGymDay, setRestDay } from '../../db/gymDays';
+import { listTemplates } from '../../db/templates';
 import { createPastWorkout } from '../../db/workouts';
 import type { LocalDate } from '../../domain/date';
 import { formatDuration } from '../../lib/format';
@@ -25,6 +27,13 @@ export function DaySheet({ date, workouts, manual, rest, onClose }: DaySheetProp
   const hasWorkout = workouts.length > 0;
   const attended = hasWorkout || manual;
   const isPastOrToday = date !== undefined && date <= today;
+  const templates = useLiveQuery(listTemplates);
+
+  async function logWorkout(day: LocalDate, templateId?: number) {
+    const id = await createPastWorkout(day, templateId);
+    onClose();
+    void navigate(`/gym/workout/${id}`);
+  }
 
   return (
     <BottomSheet open={date !== undefined} onClose={onClose} title={date ? longDay(date) : ''}>
@@ -89,17 +98,35 @@ export function DaySheet({ date, workouts, manual, rest, onClose }: DaySheetProp
           )}
 
           {isPastOrToday && (
-            <Button
-              variant="secondary"
-              className="mt-3 w-full"
-              onClick={async () => {
-                const id = await createPastWorkout(date);
-                onClose();
-                void navigate(`/gym/workout/${id}`);
-              }}
-            >
-              Noter une séance ce jour-là
-            </Button>
+            <>
+              <Button variant="secondary" className="mt-3 w-full" onClick={() => void logWorkout(date)}>
+                Noter une séance ce jour-là
+              </Button>
+              {templates !== undefined && templates.length > 0 && (
+                <>
+                  <h3 className="mt-5 text-sm font-semibold text-muted">Depuis un modèle</h3>
+                  <p className="mb-2 text-xs text-muted">
+                    Les exercices et les séries, poids et reps à remplir.
+                  </p>
+                  <ul className="divide-y divide-line border-y border-line">
+                    {templates.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => void logWorkout(date, t.id)}
+                          className="flex min-h-12 w-full items-center justify-between gap-3 text-left active:bg-surface-2"
+                        >
+                          <span className="truncate font-semibold">{t.name}</span>
+                          <span className="shrink-0 text-sm text-muted">
+                            {t.exercises.length} exercice{t.exercises.length > 1 ? 's' : ''}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </>
           )}
         </>
       )}

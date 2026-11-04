@@ -185,3 +185,26 @@ test('bodyweight exercises skip the load, and any exercise can switch to bodywei
   await expect(bench.getByLabel(/Poids en kg/)).toHaveCount(0);
   await expect(bench.getByText('Poids du corps')).toHaveCount(3);
 });
+
+test('log a day from a template: its exercises and sets, loads and reps left empty', async ({ page }) => {
+  await page.goto('/gym/templates/new');
+  await page.getByLabel('Nom du modèle').fill('Push');
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  await page.getByLabel('Poids en kg, série 1, Bench').fill('60');
+  await page.getByLabel('Répétitions, série 1, Bench').fill('8');
+  await page.getByRole('button', { name: 'Créer le modèle' }).click();
+  await expect(page).toHaveURL(/\/gym\/templates$/);
+
+  await page.goto('/gym');
+  await page.locator('[aria-current="date"]').click();
+  await page.getByRole('dialog').getByRole('button', { name: /^Push/ }).click();
+  await expect(page).toHaveURL(/\/gym\/workout\/\d+$/);
+
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await expect(bench.getByLabel(/Poids en kg, série/)).not.toHaveCount(0);
+  for (const input of await bench.getByLabel(/Poids en kg, série/).all()) await expect(input).toHaveValue('');
+  for (const input of await bench.getByLabel(/Répétitions, série/).all()) await expect(input).toHaveValue('');
+  await expect(bench.getByText(/Dernière fois/)).toHaveCount(0);
+});

@@ -102,7 +102,7 @@ async function fill(db: PrimeDB) {
   await createTemplate({ name: 'Libre', exercises: [{ exerciseId: customId, targetSets: 2 }] }, db);
 
   // A back-filled workout, and an active one from a template with name, notes, RPE and rest timer.
-  await createPastWorkout(d('2026-10-30'), db);
+  await createPastWorkout(d('2026-10-30'), undefined, db);
   const activeId = await startWorkout(pushId, db);
   await updateWorkoutMeta(activeId, { notes: 'Épaule un peu raide' }, db);
   const activeSet = await db.workoutSets.where('workoutId').equals(activeId).first();

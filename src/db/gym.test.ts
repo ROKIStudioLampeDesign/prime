@@ -303,7 +303,7 @@ describe('workout logging', () => {
     expect(await db.workoutSets.where('workoutId').equals(id).count()).toBe(0);
     expect(await getWorkout(id, db)).toBeUndefined();
 
-    const past = await createPastWorkout('2026-10-15' as LocalDate, db);
+    const past = await createPastWorkout('2026-10-15' as LocalDate, undefined, db);
     expect(await getWorkout(past, db)).toMatchObject({ date: '2026-10-15', status: 'done' });
   });
 });
@@ -355,12 +355,37 @@ describe('back-filled workouts', () => {
     }
     await finishWorkout(live, db);
 
-    const past = await createPastWorkout('2026-10-01' as LocalDate, db);
+    const past = await createPastWorkout('2026-10-01' as LocalDate, undefined, db);
     await addExerciseToWorkout(past, bench, {}, db);
     await addSet(past, bench, db);
     const sets = await getWorkoutSets(past, db);
     expect(sets).toHaveLength(4); // default 3 sets + 1 added
     expect(sets.every((s) => s.weightKg === 0 && s.reps === 0 && !s.completed)).toBe(true);
+
+    // From a template: its exercises and set counts, every load and rep empty.
+    const templateId = await createTemplate(
+      {
+        name: 'Push',
+        exercises: [
+          {
+            exerciseId: bench,
+            targetSets: 2,
+            targetReps: 8,
+            sets: [
+              { weightKg: 60, reps: 8 },
+              { weightKg: 60, reps: 8 },
+            ],
+          },
+        ],
+      },
+      db,
+    );
+    const fromTemplate = await createPastWorkout('2026-10-02' as LocalDate, templateId, db);
+    expect(await getWorkout(fromTemplate, db)).toMatchObject({ name: 'Push', templateId, status: 'done' });
+    const planned = await getWorkoutSets(fromTemplate, db);
+    expect(planned).toHaveLength(2);
+    expect(planned.every((s) => s.exerciseId === bench && s.weightKg === 0 && s.reps === 0)).toBe(true);
+    expect((await getTemplate(templateId, db))?.exercises[0]?.sets?.[0]).toEqual({ weightKg: 60, reps: 8 });
 
     // A live workout still copies it.
     const next = await startWorkout(undefined, db);
