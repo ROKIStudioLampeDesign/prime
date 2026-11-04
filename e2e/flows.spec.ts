@@ -72,3 +72,31 @@ test('log a workout set, see the rest timer and finish with a summary', async ({
   await page.goto('/');
   await expect(page.getByRole('region', { name: 'Salle' }).getByText(/1 série · 480 kg/)).toBeVisible();
 });
+
+test('a template plans each set and learns from the session done with it', async ({ page }) => {
+  await page.goto('/gym/templates/new');
+  await page.getByLabel('Nom du modèle').fill('Push');
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  await page.getByLabel('Poids en kg, série 1, Bench').fill('60');
+  await page.getByLabel('Répétitions, série 1, Bench').fill('8');
+  await page.getByRole('button', { name: 'Créer le modèle' }).click();
+  await expect(page).toHaveURL(/\/gym\/templates$/);
+
+  await page.getByRole('link', { name: /Push/ }).click();
+  await page.getByRole('button', { name: 'Commencer cette séance' }).click();
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await expect(bench.getByLabel('Poids en kg, série 1')).toHaveValue('60');
+  await bench.getByLabel('Répétitions, série 1').fill('10');
+  await bench.getByRole('button', { name: 'Valider la série 1' }).click();
+  await page.getByRole('button', { name: 'Terminer' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Terminer' }).click();
+  await expect(page.getByText(/Modèle « Push » mis à jour/)).toBeVisible();
+
+  // Only the validated set is kept, with the reps actually done.
+  await page.goto('/gym/templates');
+  await page.getByRole('link', { name: /Push/ }).click();
+  await expect(page.getByLabel('Répétitions, série 1, Bench')).toHaveValue('10');
+  await expect(page.getByLabel('Poids en kg, série 2, Bench')).toHaveCount(0);
+});

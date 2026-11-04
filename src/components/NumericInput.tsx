@@ -19,14 +19,20 @@ const display = (value: number) => (value === 0 ? '' : String(value).replace('.'
  * refreshes never overwrite what is being typed (e.g. "62," before the decimals). 0 shows as
  * an empty field with a "0" placeholder.
  */
-export function NumericInput({ value, onCommit, integer = false, ...props }: NumericInputProps) {
+export function NumericInput({
+  value,
+  onCommit,
+  integer = false,
+  placeholder = '0',
+  ...props
+}: NumericInputProps) {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
       {...props}
       inputMode={integer ? 'numeric' : 'decimal'}
       autoComplete="off"
-      placeholder="0"
+      placeholder={placeholder}
       value={draft ?? display(value)}
       onFocus={(e) => {
         setDraft(display(value));

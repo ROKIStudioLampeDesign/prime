@@ -20,8 +20,14 @@ import {
 } from '../../db/templates';
 import { getActiveWorkout, startWorkout } from '../../db/workouts';
 import { moveItem } from '../../domain/meal';
+import type { TemplateExercise, TemplateSet } from '../../domain/workout';
 import { ExerciseList } from './ExerciseList';
 import { exerciseName, musclesLabel, useExercisesById } from './exerciseData';
+
+const setInput =
+  'h-11 w-full min-w-0 bg-bg text-center text-lg font-black tabular-nums outline-none placeholder:text-muted focus:ring-2 focus:ring-accent focus:ring-inset';
+const setButton =
+  'flex min-h-11 items-center justify-center gap-1.5 border-2 border-line text-sm font-extrabold active:bg-surface-2 disabled:opacity-30';
 
 /** /gym/templates/new and /gym/templates/:id */
 export function TemplateFormScreen() {
@@ -56,14 +62,20 @@ export function TemplateFormScreen() {
 interface Row {
   uid: string;
   exerciseId: number;
-  targetSets: number;
-  /** 0 = no target. */
-  targetReps: number;
+  /** One entry per set; 0 kg or 0 reps = "as last time". */
+  sets: TemplateSet[];
 }
 
 let nextUid = 0;
 const newUid = () => `tpl-${++nextUid}`;
 const MAX_SETS = 10;
+const EMPTY_SET: TemplateSet = { weightKg: 0, reps: 0 };
+
+/** Templates saved before per-set plans only have a set count and target reps. */
+const planOf = (e: TemplateExercise): TemplateSet[] =>
+  e.sets && e.sets.length > 0
+    ? e.sets
+    : Array.from({ length: e.targetSets }, () => ({ weightKg: 0, reps: e.targetReps ?? 0 }));
 
 function TemplateForm({ template, exercises }: { template?: Template; exercises: Map<number, Exercise> }) {
   const navigate = useNavigate();
@@ -71,12 +83,7 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
   const [name, setName] = useState(template?.name ?? '');
   const [rows, setRows] = useState<Row[]>(
     () =>
-      template?.exercises.map((e) => ({
-        uid: newUid(),
-        exerciseId: e.exerciseId,
-        targetSets: e.targetSets,
-        targetReps: e.targetReps ?? 0,
-      })) ?? [],
+      template?.exercises.map((e) => ({ uid: newUid(), exerciseId: e.exerciseId, sets: planOf(e) })) ?? [],
   );
   const [picking, setPicking] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -88,11 +95,15 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
 
   const input = () => ({
     name,
-    exercises: rows.map((r) => ({
-      exerciseId: r.exerciseId,
-      targetSets: r.targetSets,
-      ...(r.targetReps > 0 && { targetReps: r.targetReps }),
-    })),
+    exercises: rows.map((r) => {
+      const lastReps = r.sets.at(-1)?.reps ?? 0;
+      return {
+        exerciseId: r.exerciseId,
+        targetSets: r.sets.length,
+        ...(lastReps > 0 && { targetReps: lastReps }),
+        sets: r.sets,
+      };
+    }),
   });
 
   async function save(): Promise<number | undefined> {
@@ -113,7 +124,10 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
           disabledIds={new Set(rows.map((r) => r.exerciseId))}
           disabledHint="Déjà ajouté"
           onSelect={(e) => {
-            setRows((rs) => [...rs, { uid: newUid(), exerciseId: e.id, targetSets: 3, targetReps: 0 }]);
+            setRows((rs) => [
+              ...rs,
+              { uid: newUid(), exerciseId: e.id, sets: [EMPTY_SET, EMPTY_SET, EMPTY_SET] },
+            ]);
             setPicking(false);
           }}
         />
@@ -121,8 +135,10 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
     );
   }
 
-  const update = (uid: string, changes: Partial<Row>) =>
-    setRows((rs) => rs.map((r) => (r.uid === uid ? { ...r, ...changes } : r)));
+  const setSets = (uid: string, change: (sets: TemplateSet[]) => TemplateSet[]) =>
+    setRows((rs) => rs.map((r) => (r.uid === uid ? { ...r, sets: change(r.sets) } : r)));
+  const updateSet = (uid: string, index: number, changes: Partial<TemplateSet>) =>
+    setSets(uid, (sets) => sets.map((s, i) => (i === index ? { ...s, ...changes } : s)));
 
   return (
     <Screen title={template ? 'Modifier le modèle' : 'Nouveau modèle'} back backFallback="/gym/templates">
@@ -143,9 +159,14 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
         />
 
         <section aria-labelledby="tpl-exercises">
-          <h2 id="tpl-exercises" className="mb-2 font-semibold">
+          <h2 id="tpl-exercises" className="text-[1.375rem] leading-tight headline">
             Exercices
           </h2>
+          <p className="mt-1 mb-3 text-sm font-semibold text-muted">
+            Les séries de chaque exercice, avec leur charge et leurs répétitions. Une case vide reprend ta
+            dernière séance. À la fin d’une séance faite avec les mêmes exercices, le modèle se met à jour
+            tout seul.
+          </p>
           {rows.length === 0 ? (
             <EmptyState title="Aucun exercice" description="Ajoute les exercices de cette séance type." />
           ) : (
@@ -189,37 +210,55 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
                         <TrashIcon className="size-5" />
                       </button>
                     </div>
-                    <div className="mt-2 flex items-center gap-3 pl-1">
-                      <span className="text-sm text-muted">Séries</span>
-                      <div className="flex items-center rounded-xl bg-bg">
-                        <button
-                          type="button"
-                          aria-label={`Une série de moins, ${label}`}
-                          disabled={row.targetSets <= 1}
-                          className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
-                          onClick={() => update(row.uid, { targetSets: row.targetSets - 1 })}
-                        >
-                          <MinusIcon className="size-4" />
-                        </button>
-                        <span className="w-6 text-center font-semibold tabular-nums">{row.targetSets}</span>
-                        <button
-                          type="button"
-                          aria-label={`Une série de plus, ${label}`}
-                          disabled={row.targetSets >= MAX_SETS}
-                          className="flex size-11 items-center justify-center text-muted disabled:opacity-30"
-                          onClick={() => update(row.uid, { targetSets: row.targetSets + 1 })}
-                        >
-                          <PlusIcon className="size-4" />
-                        </button>
-                      </div>
-                      <span className="ml-auto text-sm text-muted">Reps</span>
-                      <NumericInput
-                        integer
-                        aria-label={`Répétitions visées, ${label}`}
-                        value={row.targetReps}
-                        onCommit={(targetReps) => update(row.uid, { targetReps })}
-                        className="h-11 w-16 rounded-xl bg-bg text-center text-base font-semibold tabular-nums outline-none focus:ring-2 focus:ring-accent"
-                      />
+                    <div
+                      aria-hidden="true"
+                      className="mt-3 grid grid-cols-[2.75rem_1fr_1fr] gap-2 text-xs font-extrabold text-muted"
+                    >
+                      <span className="text-center">Série</span>
+                      <span className="text-center">kg</span>
+                      <span className="text-center">Reps</span>
+                    </div>
+                    <ol className="mt-1 flex flex-col gap-1">
+                      {row.sets.map((set, i) => (
+                        <li key={i} className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-2">
+                          <span className="text-center text-[17px] font-black tabular-nums">{i + 1}</span>
+                          <NumericInput
+                            aria-label={`Poids en kg, série ${i + 1}, ${label}`}
+                            placeholder="—"
+                            value={set.weightKg}
+                            onCommit={(weightKg) => updateSet(row.uid, i, { weightKg })}
+                            className={setInput}
+                          />
+                          <NumericInput
+                            integer
+                            aria-label={`Répétitions, série ${i + 1}, ${label}`}
+                            placeholder="—"
+                            value={set.reps}
+                            onCommit={(reps) => updateSet(row.uid, i, { reps })}
+                            className={setInput}
+                          />
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        aria-label={`Retirer la dernière série, ${label}`}
+                        disabled={row.sets.length <= 1}
+                        className={setButton}
+                        onClick={() => setSets(row.uid, (sets) => sets.slice(0, -1))}
+                      >
+                        <MinusIcon className="size-4" strokeWidth={2.8} /> Série
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Ajouter une série, ${label}`}
+                        disabled={row.sets.length >= MAX_SETS}
+                        className={setButton}
+                        onClick={() => setSets(row.uid, (sets) => [...sets, sets.at(-1) ?? EMPTY_SET])}
+                      >
+                        <PlusIcon className="size-4" strokeWidth={2.8} /> Série
+                      </button>
                     </div>
                   </li>
                 );

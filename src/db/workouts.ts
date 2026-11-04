@@ -5,7 +5,10 @@ import {
   lastPerformance,
   nextSetValues,
   prefillSets,
+  prefillFromPlan,
+  templateAfterWorkout,
   templateFromSets,
+  type TemplateSet,
   workoutStats,
   type PerformedSet,
   type WorkoutHistoryItem,
@@ -68,7 +71,7 @@ export async function getLastPerformance(
 export async function addExerciseToWorkout(
   workoutId: number,
   exerciseId: number,
-  options: { setCount?: number; targetReps?: number } = {},
+  options: { setCount?: number; targetReps?: number; plan?: readonly TemplateSet[] } = {},
   database: PrimeDB = db,
 ): Promise<boolean> {
   return database.transaction('rw', [database.workouts, database.workoutSets], async () => {
@@ -82,9 +85,13 @@ export async function addExerciseToWorkout(
       { before: workout.startedAt, excludeWorkoutId: workoutId },
       database,
     );
-    const count = options.setCount ?? defaultSetCount(previous);
+    // A template's planned sets win; without them, copy the last performance.
+    const prefill =
+      options.plan && options.plan.length > 0
+        ? prefillFromPlan(previous, options.plan, options.targetReps)
+        : prefillSets(previous, options.setCount ?? defaultSetCount(previous), options.targetReps);
     await database.workoutSets.bulkAdd(
-      prefillSets(previous, count, options.targetReps).map((p) => ({
+      prefill.map((p) => ({
         workoutId,
         exerciseId,
         order,
@@ -121,7 +128,7 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
         await addExerciseToWorkout(
           id,
           te.exerciseId,
-          { setCount: te.targetSets, targetReps: te.targetReps },
+          { setCount: te.targetSets, targetReps: te.targetReps, plan: te.sets },
           database,
         );
       }
@@ -255,14 +262,35 @@ export async function removeExercise(
   });
 }
 
-/** Ends the active workout: unvalidated (placeholder) sets are dropped. */
+/**
+ * Ends the active workout: unvalidated (placeholder) sets are dropped. A workout started from a
+ * template whose exercises were kept updates that template with the sets just done (count, loads,
+ * reps), so the next session starts from them.
+ */
 export async function finishWorkout(workoutId: number, database: PrimeDB = db): Promise<void> {
-  await database.transaction('rw', [database.workouts, database.workoutSets], async () => {
-    const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
-    await database.workoutSets.bulkDelete(sets.filter((s) => !s.completed).map((s) => s.id));
-    await applyExerciseOrder(workoutId, await exerciseOrder(workoutId, database), database);
-    await database.workouts.update(workoutId, { status: 'done', endedAt: Date.now(), restEndsAt: undefined });
-  });
+  await database.transaction(
+    'rw',
+    [database.workouts, database.workoutSets, database.templates],
+    async () => {
+      const workout = await database.workouts.get(workoutId);
+      const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
+      const completed = sets.filter((s) => s.completed);
+      await database.workoutSets.bulkDelete(sets.filter((s) => !s.completed).map((s) => s.id));
+      await applyExerciseOrder(workoutId, await exerciseOrder(workoutId, database), database);
+      const now = Date.now();
+      await database.workouts.update(workoutId, { status: 'done', endedAt: now, restEndsAt: undefined });
+
+      const template =
+        workout?.templateId === undefined ? undefined : await database.templates.get(workout.templateId);
+      if (!template) return;
+      const exercises = templateAfterWorkout(
+        template.exercises,
+        sets.map((s) => s.exerciseId),
+        completed,
+      );
+      if (exercises) await database.templates.update(template.id, { exercises, updatedAt: now });
+    },
+  );
 }
 
 export async function updateWorkoutMeta(

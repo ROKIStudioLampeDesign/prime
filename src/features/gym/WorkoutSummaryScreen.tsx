@@ -8,6 +8,7 @@ import { CheckIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import type { WorkoutSet } from '../../db/db';
+import { getTemplate } from '../../db/templates';
 import { getWorkout, getWorkoutSets } from '../../db/workouts';
 import { workoutStats } from '../../domain/workout';
 import { formatInteger, formatWeight } from '../../lib/format';
@@ -25,6 +26,11 @@ export function WorkoutSummaryScreen() {
   const workout = useLiveQuery(async () => (await getWorkout(workoutId)) ?? null, [workoutId]);
   const sets = useLiveQuery(() => getWorkoutSets(workoutId), [workoutId]);
   const exercises = useExercisesById();
+  const templateId = workout ? workout.templateId : undefined;
+  const template = useLiveQuery(
+    async () => (templateId === undefined ? undefined : getTemplate(templateId)),
+    [templateId],
+  );
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -65,6 +71,13 @@ export function WorkoutSummaryScreen() {
           <Tile label="Exercices" value={String(stats.exercises)} />
         </dl>
       </section>
+
+      {/* finishWorkout stamps the template with the workout's end time when it updated it. */}
+      {template && workout.endedAt !== undefined && template.updatedAt >= workout.endedAt && (
+        <p role="status" className="mt-3 text-sm font-semibold text-muted">
+          Modèle « {template.name} » mis à jour : ta prochaine séance reprendra ces séries.
+        </p>
+      )}
 
       {byExercise.size > 0 && (
         <ul className="mt-2 divide-y divide-line border-b border-line">

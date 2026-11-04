@@ -76,6 +76,26 @@ export function prefillSets(
   });
 }
 
+/**
+ * Initial values for a template's planned sets: the planned load and reps of each set, falling
+ * back to the same set of the previous performance where the plan has 0 (then `fallbackReps`).
+ */
+export function prefillFromPlan(
+  previous: readonly PerformedSet[] | undefined,
+  plan: readonly TemplateSet[],
+  fallbackReps = 0,
+): PerformedSet[] {
+  return plan.map((p, i) => {
+    const setNumber = i + 1;
+    const last = previousForSet(previous, setNumber);
+    return {
+      setNumber,
+      weightKg: p.weightKg > 0 ? p.weightKg : (last?.weightKg ?? 0),
+      reps: p.reps > 0 ? p.reps : (last?.reps ?? fallbackReps),
+    };
+  });
+}
+
 /** Default number of sets when an exercise is added without a template. */
 export function defaultSetCount(previous: readonly PerformedSet[] | undefined): number {
   return previous && previous.length > 0 ? previous.length : 3;
@@ -141,20 +161,34 @@ export function restRemaining(endsAt: number, now: number): number {
   return Math.max(0, Math.ceil((endsAt - now) / 1000));
 }
 
+/** One planned set of a template exercise; 0 kg or 0 reps means "as last time". */
+export type TemplateSet = SetValues;
+
 export interface TemplateExercise {
   exerciseId: number;
   targetSets: number;
   targetReps?: number;
+  /** Planned sets in order (as many as `targetSets`). Absent from templates saved before them. */
+  sets?: TemplateSet[];
 }
 
-/**
- * Template exercises from a workout's sets, in exercise order: one entry per exercise with its
- * number of sets and the reps of its last set as the target.
- */
-export function templateFromSets(
-  sets: readonly (Pick<SetData, 'exerciseId' | 'setNumber' | 'reps'> & { order: number })[],
-): TemplateExercise[] {
-  const byExercise = new Map<number, { order: number; sets: { setNumber: number; reps: number }[] }>();
+type DoneSet = Pick<SetData, 'exerciseId' | 'setNumber' | 'weightKg' | 'reps'>;
+
+/** A template entry copying an exercise's sets: count, loads and reps (last reps as the target). */
+function entryFromSets(exerciseId: number, sets: readonly DoneSet[]): TemplateExercise {
+  const sorted = [...sets].sort((a, b) => a.setNumber - b.setNumber);
+  const last = sorted.at(-1);
+  return {
+    exerciseId,
+    targetSets: sorted.length,
+    ...(last && last.reps > 0 && { targetReps: last.reps }),
+    sets: sorted.map(({ weightKg, reps }) => ({ weightKg, reps })),
+  };
+}
+
+/** Template exercises from a workout's sets, in exercise order, with every set's load and reps. */
+export function templateFromSets(sets: readonly (DoneSet & { order: number })[]): TemplateExercise[] {
+  const byExercise = new Map<number, { order: number; sets: DoneSet[] }>();
   for (const s of sets) {
     const entry = byExercise.get(s.exerciseId) ?? { order: s.order, sets: [] };
     entry.order = Math.min(entry.order, s.order);
@@ -163,12 +197,25 @@ export function templateFromSets(
   }
   return [...byExercise.entries()]
     .sort(([, a], [, b]) => a.order - b.order)
-    .map(([exerciseId, { sets: exSets }]) => {
-      const last = [...exSets].sort((a, b) => a.setNumber - b.setNumber).at(-1);
-      return {
-        exerciseId,
-        targetSets: exSets.length,
-        ...(last && last.reps > 0 && { targetReps: last.reps }),
-      };
-    });
+    .map(([exerciseId, { sets: exSets }]) => entryFromSets(exerciseId, exSets));
+}
+
+/**
+ * The template once a workout started from it is finished: each exercise takes the sets just
+ * validated (count, loads, reps), so the next session starts from them. Undefined when the
+ * workout's exercises are not the template's (one added or removed): the template stays as it
+ * is. An exercise with no validated set keeps its previous plan; the template's order is kept.
+ */
+export function templateAfterWorkout(
+  template: readonly TemplateExercise[],
+  workoutExerciseIds: readonly number[],
+  completedSets: readonly DoneSet[],
+): TemplateExercise[] | undefined {
+  const planned = new Set(template.map((t) => t.exerciseId));
+  const done = new Set(workoutExerciseIds);
+  if (planned.size !== done.size || [...done].some((id) => !planned.has(id))) return undefined;
+  return template.map((t) => {
+    const sets = completedSets.filter((s) => s.exerciseId === t.exerciseId);
+    return sets.length === 0 ? t : entryFromSets(t.exerciseId, sets);
+  });
 }

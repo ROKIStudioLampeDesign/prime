@@ -3,10 +3,12 @@ import {
   defaultSetCount,
   lastPerformance,
   nextSetValues,
+  prefillFromPlan,
   prefillSets,
   previousForSet,
   restRemaining,
   stepWeight,
+  templateAfterWorkout,
   templateFromSets,
   workoutStats,
   workoutVolume,
@@ -195,18 +197,117 @@ describe('restRemaining', () => {
 });
 
 describe('templateFromSets', () => {
-  it('keeps exercise order, set count and last reps', () => {
+  it('keeps exercise order, set count, last reps and every set', () => {
     expect(
       templateFromSets([
-        { exerciseId: SQUAT, order: 1, setNumber: 1, reps: 5 },
-        { exerciseId: BENCH, order: 0, setNumber: 2, reps: 6 },
-        { exerciseId: BENCH, order: 0, setNumber: 1, reps: 8 },
-        { exerciseId: SQUAT, order: 1, setNumber: 2, reps: 0 },
+        { exerciseId: SQUAT, order: 1, setNumber: 1, weightKg: 100, reps: 5 },
+        { exerciseId: BENCH, order: 0, setNumber: 2, weightKg: 62.5, reps: 6 },
+        { exerciseId: BENCH, order: 0, setNumber: 1, weightKg: 60, reps: 8 },
+        { exerciseId: SQUAT, order: 1, setNumber: 2, weightKg: 100, reps: 0 },
       ]),
     ).toEqual([
-      { exerciseId: BENCH, targetSets: 2, targetReps: 6 },
-      { exerciseId: SQUAT, targetSets: 2 },
+      {
+        exerciseId: BENCH,
+        targetSets: 2,
+        targetReps: 6,
+        sets: [
+          { weightKg: 60, reps: 8 },
+          { weightKg: 62.5, reps: 6 },
+        ],
+      },
+      {
+        exerciseId: SQUAT,
+        targetSets: 2,
+        sets: [
+          { weightKg: 100, reps: 5 },
+          { weightKg: 100, reps: 0 },
+        ],
+      },
     ]);
     expect(templateFromSets([])).toEqual([]);
+  });
+});
+
+describe('templateAfterWorkout', () => {
+  const template = [
+    { exerciseId: BENCH, targetSets: 3, targetReps: 8 },
+    {
+      exerciseId: SQUAT,
+      targetSets: 2,
+      sets: [
+        { weightKg: 100, reps: 5 },
+        { weightKg: 100, reps: 5 },
+      ],
+    },
+  ];
+
+  it('copies the validated sets of each exercise, in the template order', () => {
+    const done = [
+      { exerciseId: SQUAT, setNumber: 1, weightKg: 105, reps: 5 },
+      { exerciseId: BENCH, setNumber: 2, weightKg: 62.5, reps: 7 },
+      { exerciseId: BENCH, setNumber: 1, weightKg: 62.5, reps: 8 },
+    ];
+    expect(templateAfterWorkout(template, [SQUAT, BENCH], done)).toEqual([
+      {
+        exerciseId: BENCH,
+        targetSets: 2,
+        targetReps: 7,
+        sets: [
+          { weightKg: 62.5, reps: 8 },
+          { weightKg: 62.5, reps: 7 },
+        ],
+      },
+      { exerciseId: SQUAT, targetSets: 1, targetReps: 5, sets: [{ weightKg: 105, reps: 5 }] },
+    ]);
+  });
+
+  it('keeps the plan of an exercise with no validated set', () => {
+    const done = [{ exerciseId: BENCH, setNumber: 1, weightKg: 60, reps: 8 }];
+    expect(templateAfterWorkout(template, [BENCH, SQUAT], done)?.[1]).toBe(template[1]);
+  });
+
+  it('leaves the template alone when exercises were added or removed', () => {
+    const done = [{ exerciseId: BENCH, setNumber: 1, weightKg: 60, reps: 8 }];
+    expect(templateAfterWorkout(template, [BENCH], done)).toBeUndefined();
+    expect(templateAfterWorkout(template, [BENCH, SQUAT, 99], done)).toBeUndefined();
+    expect(templateAfterWorkout(template, [BENCH, 99], done)).toBeUndefined();
+    expect(templateAfterWorkout([], [], [])).toEqual([]);
+  });
+});
+
+describe('prefillFromPlan', () => {
+  const previous = [
+    { setNumber: 1, weightKg: 70, reps: 6 },
+    { setNumber: 2, weightKg: 72.5, reps: 5 },
+  ];
+
+  it('uses the planned load and reps of each set', () => {
+    expect(
+      prefillFromPlan(previous, [
+        { weightKg: 60, reps: 10 },
+        { weightKg: 65, reps: 8 },
+      ]),
+    ).toEqual([
+      { setNumber: 1, weightKg: 60, reps: 10 },
+      { setNumber: 2, weightKg: 65, reps: 8 },
+    ]);
+  });
+
+  it('falls back to last time where the plan has 0, then to the fallback reps', () => {
+    expect(
+      prefillFromPlan(previous, [
+        { weightKg: 0, reps: 0 },
+        { weightKg: 0, reps: 9 },
+        { weightKg: 50, reps: 0 },
+      ]),
+    ).toEqual([
+      { setNumber: 1, weightKg: 70, reps: 6 },
+      { setNumber: 2, weightKg: 72.5, reps: 9 },
+      { setNumber: 3, weightKg: 50, reps: 5 },
+    ]);
+    expect(prefillFromPlan(undefined, [{ weightKg: 0, reps: 0 }], 12)).toEqual([
+      { setNumber: 1, weightKg: 0, reps: 12 },
+    ]);
+    expect(prefillFromPlan(previous, [])).toEqual([]);
   });
 });

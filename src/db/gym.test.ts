@@ -224,6 +224,69 @@ describe('workout logging', () => {
     ]);
   });
 
+  it('updates its template at the end, then starts the next session from those sets', async () => {
+    const bench = await seededId('bench-press');
+    const row = await seededId('barbell-row');
+    const templateId = await createTemplate(
+      {
+        name: 'Push',
+        exercises: [
+          { exerciseId: bench, targetSets: 2, targetReps: 8 },
+          { exerciseId: row, targetSets: 1 },
+        ],
+      },
+      db,
+    );
+    const first = await startWorkout(templateId, db);
+    const sets = await getWorkoutSets(first, db);
+    const [b1, b2, r1] = sets;
+    if (!b1 || !b2 || !r1) throw new Error('missing sets');
+    await updateSet(b1.id, { weightKg: 60, reps: 10 }, db);
+    await updateSet(b2.id, { weightKg: 62.5, reps: 8 }, db);
+    await setCompleted(b1.id, true, 0, db);
+    await setCompleted(b2.id, true, 0, db);
+    await addSet(first, bench, db); // a third set, validated
+    const third = (await getWorkoutSets(first, db)).find((s) => s.exerciseId === bench && s.setNumber === 3);
+    if (!third) throw new Error('missing third set');
+    await updateSet(third.id, { weightKg: 62.5, reps: 6 }, db);
+    await setCompleted(third.id, true, 0, db);
+    await finishWorkout(first, db); // the row was skipped: its plan stays
+
+    expect((await getTemplate(templateId, db))?.exercises).toEqual([
+      {
+        exerciseId: bench,
+        targetSets: 3,
+        targetReps: 6,
+        sets: [
+          { weightKg: 60, reps: 10 },
+          { weightKg: 62.5, reps: 8 },
+          { weightKg: 62.5, reps: 6 },
+        ],
+      },
+      { exerciseId: row, targetSets: 1 },
+    ]);
+
+    const next = await startWorkout(templateId, db);
+    const prefilled = await getWorkoutSets(next, db);
+    expect(prefilled.filter((s) => s.exerciseId === bench).map((s) => [s.weightKg, s.reps])).toEqual([
+      [60, 10],
+      [62.5, 8],
+      [62.5, 6],
+    ]);
+  });
+
+  it('leaves its template alone when an exercise was added', async () => {
+    const bench = await seededId('bench-press');
+    const squat = await seededId('back-squat');
+    const plan = [{ exerciseId: bench, targetSets: 1, targetReps: 8 }];
+    const templateId = await createTemplate({ name: 'Push', exercises: plan }, db);
+    const id = await startWorkout(templateId, db);
+    await addExerciseToWorkout(id, squat, {}, db);
+    for (const s of await getWorkoutSets(id, db)) await setCompleted(s.id, true, 0, db);
+    await finishWorkout(id, db);
+    expect((await getTemplate(templateId, db))?.exercises).toEqual(plan);
+  });
+
   it('removes exercises, deletes workouts and back-fills past days', async () => {
     const bench = await seededId('bench-press');
     const squat = await seededId('back-squat');
