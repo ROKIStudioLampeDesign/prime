@@ -6,12 +6,12 @@ interface Props {
   onChange: (settings: BodyMapSettings) => void;
 }
 
-const MAX_GREEN = 29;
-const MAX_RED = 60;
+const MAX_FRESH = 29;
+const MAX_STALE = 60;
 
 /**
  * Thresholds and secondary-muscle toggle. Moving one slider past the other pushes it along, so
- * green < red always holds.
+ * fresh < stale always holds.
  */
 export function BodyMapSettingsPanel({ settings, onChange }: Props) {
   return (
@@ -20,27 +20,29 @@ export function BodyMapSettingsPanel({ settings, onChange }: Props) {
         Réglages de la carte
       </h2>
       <Slider
-        label="Vert jusqu’à"
-        value={settings.greenDays}
+        label="Rouge jusqu’à"
+        value={settings.freshDays}
         min={0}
-        max={MAX_GREEN}
-        onChange={(greenDays) =>
-          onChange({ ...settings, greenDays, redDays: Math.max(settings.redDays, greenDays + 1) })
+        max={MAX_FRESH}
+        onChange={(freshDays) =>
+          onChange({ ...settings, freshDays, staleDays: Math.max(settings.staleDays, freshDays + 1) })
         }
       />
       <Slider
-        label="Rouge à partir de"
-        value={settings.redDays}
+        label="Vert à partir de"
+        value={settings.staleDays}
         min={1}
-        max={MAX_RED}
-        onChange={(redDays) =>
-          onChange({ ...settings, redDays, greenDays: Math.min(settings.greenDays, redDays - 1) })
+        max={MAX_STALE}
+        onChange={(staleDays) =>
+          onChange({ ...settings, staleDays, freshDays: Math.min(settings.freshDays, staleDays - 1) })
         }
       />
       <label className="mt-4 flex min-h-11 items-center justify-between gap-3">
         <span>
           <span className="block">Compter les muscles secondaires</span>
-          <span className="block text-xs text-muted">Ex. : les triceps au développé couché</span>
+          <span className="block text-xs text-muted">
+            Ex. : les triceps au bench. Ils comptent moitié moins qu’un muscle principal.
+          </span>
         </span>
         <input
           type="checkbox"

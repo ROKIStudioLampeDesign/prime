@@ -1,11 +1,17 @@
 import { colorFor, NEUTRAL_COLOR, type RecencyThresholds } from '../../domain/muscleRecency';
 
 /**
- * Gradient bar from 0 days to a bit past `redDays`, sampled from the same `colorFor` as the map,
+ * Gradient bar from 0 days to a bit past `staleDays`, sampled from the same `colorFor` as the map,
  * with markers at both thresholds.
  */
-export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds }) {
-  const max = Math.max(thresholds.redDays + 2, Math.ceil(thresholds.redDays * 1.25));
+export function RecencyLegend({
+  thresholds,
+  countSecondary,
+}: {
+  thresholds: RecencyThresholds;
+  countSecondary: boolean;
+}) {
+  const max = Math.max(thresholds.staleDays + 2, Math.ceil(thresholds.staleDays * 1.25));
   const steps = 24;
   const stops = Array.from({ length: steps + 1 }, (_, i) => {
     const days = (i / steps) * max;
@@ -17,8 +23,8 @@ export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds })
     <figure className="bg-surface p-3" aria-label="Légende des couleurs">
       <div className="relative mx-2 mt-1 mb-6">
         <div className="h-3" style={{ background: `linear-gradient(to right, ${stops.join(', ')})` }} />
-        <Marker left={pos(thresholds.greenDays)} label={`≤ ${thresholds.greenDays} j`} />
-        <Marker left={pos(thresholds.redDays)} label={`≥ ${thresholds.redDays} j`} />
+        <Marker left={pos(thresholds.freshDays)} label={`≤ ${thresholds.freshDays} j`} />
+        <Marker left={pos(thresholds.staleDays)} label={`≥ ${thresholds.staleDays} j`} />
       </div>
       <figcaption className="flex items-center justify-between gap-2 text-xs font-semibold text-muted">
         <span>Entraîné récemment → pas depuis longtemps</span>
@@ -27,6 +33,9 @@ export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds })
           Jamais
         </span>
       </figcaption>
+      {countSecondary && (
+        <p className="mt-1.5 text-xs text-muted">Un muscle secondaire compte moitié : il reste plus vert.</p>
+      )}
     </figure>
   );
 }

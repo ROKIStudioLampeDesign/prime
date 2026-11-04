@@ -13,26 +13,36 @@ export const DEFAULT_BODY_MAP_SETTINGS: Readonly<BodyMapSettings> = {
 
 const KEY = 'bodyMap';
 
+/** Shape stored before the colours were inverted (green was "fresh"): same numbers, old names. */
+interface LegacyThresholds {
+  greenDays?: unknown;
+  redDays?: unknown;
+}
+
 /** Stored settings, falling back to defaults for missing or invalid values. */
 export async function getBodyMapSettings(database: PrimeDB = db): Promise<BodyMapSettings> {
-  const stored = (await database.settings.get(KEY))?.value as Partial<BodyMapSettings> | undefined;
-  const merged = { ...DEFAULT_BODY_MAP_SETTINGS, ...stored };
-  const thresholds = validateThresholds(merged) ? merged : DEFAULT_THRESHOLDS;
+  const stored = (await database.settings.get(KEY))?.value as
+    (Partial<BodyMapSettings> & LegacyThresholds) | undefined;
+  const candidate = {
+    freshDays: stored?.freshDays ?? stored?.greenDays ?? DEFAULT_THRESHOLDS.freshDays,
+    staleDays: stored?.staleDays ?? stored?.redDays ?? DEFAULT_THRESHOLDS.staleDays,
+  } as RecencyThresholds;
+  const thresholds = validateThresholds(candidate) ? candidate : DEFAULT_THRESHOLDS;
   return {
-    greenDays: thresholds.greenDays,
-    redDays: thresholds.redDays,
-    countSecondary: typeof merged.countSecondary === 'boolean' ? merged.countSecondary : true,
+    freshDays: thresholds.freshDays,
+    staleDays: thresholds.staleDays,
+    countSecondary: typeof stored?.countSecondary === 'boolean' ? stored.countSecondary : true,
   };
 }
 
 /** Saves the settings; invalid thresholds (green ≥ red…) are rejected. */
 export async function saveBodyMapSettings(settings: BodyMapSettings, database: PrimeDB = db): Promise<void> {
-  if (!validateThresholds(settings)) throw new Error('greenDays must be an integer ≥ 0 and < redDays');
+  if (!validateThresholds(settings)) throw new Error('freshDays must be an integer ≥ 0 and < staleDays');
   await database.settings.put({
     key: KEY,
     value: {
-      greenDays: settings.greenDays,
-      redDays: settings.redDays,
+      freshDays: settings.freshDays,
+      staleDays: settings.staleDays,
       countSecondary: settings.countSecondary,
     },
     updatedAt: Date.now(),

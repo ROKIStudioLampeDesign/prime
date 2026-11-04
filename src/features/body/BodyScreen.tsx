@@ -13,7 +13,7 @@ import {
 } from '../../db/bodyMap';
 import type { Exercise } from '../../db/db';
 import { listExercises } from '../../db/exercises';
-import { colorFor, muscleRecency, type TrainingRecord } from '../../domain/muscleRecency';
+import { colorForIntensity, muscleRecency, type TrainingRecord } from '../../domain/muscleRecency';
 import { MUSCLE_IDS, MUSCLES, type BodyView, type MuscleId } from '../../domain/muscles';
 import { BodyMap } from './BodyMap';
 import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
@@ -67,9 +67,9 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
     [sets, exercisesById],
   );
   const options = { countSecondary: settings.countSecondary };
-  const recency = muscleRecency(records, today, options);
+  const recency = muscleRecency(records, today, options, settings);
   const colors = Object.fromEntries(
-    MUSCLE_IDS.map((m) => [m, colorFor(recency[m].days, settings)]),
+    MUSCLE_IDS.map((m) => [m, colorForIntensity(recency[m].intensity)]),
   ) as Record<MuscleId, string>;
 
   function updateSettings(next: BodyMapSettings) {
@@ -147,7 +147,7 @@ function BodyContent({ initialSettings, sets, exercises }: BodyContentProps) {
             </p>
           </div>
           <div className="mt-3">
-            <RecencyLegend thresholds={settings} />
+            <RecencyLegend thresholds={settings} countSecondary={settings.countSecondary} />
           </div>
         </>
       ) : (

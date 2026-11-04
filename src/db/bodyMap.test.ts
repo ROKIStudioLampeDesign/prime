@@ -19,14 +19,14 @@ afterEach(async () => {
 
 describe('body map settings', () => {
   it('defaults to 2 / 10 days and counting secondary muscles', async () => {
-    expect(await getBodyMapSettings(db)).toEqual({ greenDays: 2, redDays: 10, countSecondary: true });
+    expect(await getBodyMapSettings(db)).toEqual({ freshDays: 2, staleDays: 10, countSecondary: true });
   });
 
-  it('persists valid settings and rejects green ≥ red', async () => {
-    await saveBodyMapSettings({ greenDays: 3, redDays: 14, countSecondary: false }, db);
-    expect(await getBodyMapSettings(db)).toEqual({ greenDays: 3, redDays: 14, countSecondary: false });
+  it('persists valid settings and rejects fresh ≥ stale', async () => {
+    await saveBodyMapSettings({ freshDays: 3, staleDays: 14, countSecondary: false }, db);
+    expect(await getBodyMapSettings(db)).toEqual({ freshDays: 3, staleDays: 14, countSecondary: false });
     await expect(
-      saveBodyMapSettings({ greenDays: 5, redDays: 5, countSecondary: true }, db),
+      saveBodyMapSettings({ freshDays: 5, staleDays: 5, countSecondary: true }, db),
     ).rejects.toThrow();
   });
 
@@ -37,6 +37,15 @@ describe('body map settings', () => {
       updatedAt: 0,
     });
     expect(await getBodyMapSettings(db)).toEqual(DEFAULT_BODY_MAP_SETTINGS);
+  });
+
+  it('reads settings saved under the old green/red names (same numbers)', async () => {
+    await db.settings.put({
+      key: 'bodyMap',
+      value: { greenDays: 3, redDays: 12, countSecondary: false },
+      updatedAt: 0,
+    });
+    expect(await getBodyMapSettings(db)).toEqual({ freshDays: 3, staleDays: 12, countSecondary: false });
   });
 });
 
