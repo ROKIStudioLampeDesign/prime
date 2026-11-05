@@ -177,15 +177,13 @@ export function StreaksCard({ today }: { today: LocalDate }) {
               unit={calories.days > 1 ? 'jours' : 'jour'}
               className="mt-1.5 leading-[0.9]"
             />
-            <p
-              className={`mt-1.5 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
-            >
-              {calories.today === 'over'
-                ? 'Objectif dépassé aujourd’hui.'
-                : calories.today === 'ok'
-                  ? 'Aujourd’hui compte déjà.'
-                  : 'Note tes repas du jour.'}
-            </p>
+            {calories.today !== 'ok' && (
+              <p
+                className={`mt-1.5 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
+              >
+                {calories.today === 'over' ? 'Objectif dépassé aujourd’hui.' : 'Note tes repas du jour.'}
+              </p>
+            )}
           </>
         ) : (
           <p className="mt-1.5 text-sm font-semibold text-muted">Fixe un objectif calories dans Réglages.</p>
