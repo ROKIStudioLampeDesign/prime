@@ -146,7 +146,6 @@ export function CalendarScreen() {
             <span className="flex items-center gap-1.5">
               <span className="size-3 bg-fg" aria-hidden="true" /> Repos
             </span>
-            <span>Touche un jour pour voir sa séance ou le marquer.</span>
           </div>
         </>
       )}
