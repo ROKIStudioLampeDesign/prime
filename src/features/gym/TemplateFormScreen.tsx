@@ -64,6 +64,8 @@ interface Row {
   exerciseId: number;
   /** One entry per set; 0 kg or 0 reps = "as last time". */
   sets: TemplateSet[];
+  /** No load for this exercise: its kg column is replaced by "Poids du corps". */
+  bodyweight: boolean;
 }
 
 let nextUid = 0;
@@ -77,13 +79,22 @@ const planOf = (e: TemplateExercise): TemplateSet[] =>
     ? e.sets
     : Array.from({ length: e.targetSets }, () => ({ weightKg: 0, reps: e.targetReps ?? 0 }));
 
+/** Explicit choice when saved; otherwise what the session would start with (the equipment). */
+const bodyweightOf = (e: TemplateExercise, exercise: Exercise | undefined): boolean =>
+  e.bodyweight ?? exercise?.equipment === 'bodyweight';
+
 function TemplateForm({ template, exercises }: { template?: Template; exercises: Map<number, Exercise> }) {
   const navigate = useNavigate();
   const goBack = useGoBack('/gym/templates');
   const [name, setName] = useState(template?.name ?? '');
   const [rows, setRows] = useState<Row[]>(
     () =>
-      template?.exercises.map((e) => ({ uid: newUid(), exerciseId: e.exerciseId, sets: planOf(e) })) ?? [],
+      template?.exercises.map((e) => ({
+        uid: newUid(),
+        exerciseId: e.exerciseId,
+        sets: planOf(e),
+        bodyweight: bodyweightOf(e, exercises.get(e.exerciseId)),
+      })) ?? [],
   );
   const [picking, setPicking] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -101,7 +112,8 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
         exerciseId: r.exerciseId,
         targetSets: r.sets.length,
         ...(lastReps > 0 && { targetReps: lastReps }),
-        sets: r.sets,
+        sets: r.bodyweight ? r.sets.map((set) => ({ ...set, weightKg: 0 })) : r.sets,
+        bodyweight: r.bodyweight,
       };
     }),
   });
@@ -126,7 +138,12 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
           onSelect={(e) => {
             setRows((rs) => [
               ...rs,
-              { uid: newUid(), exerciseId: e.id, sets: [EMPTY_SET, EMPTY_SET, EMPTY_SET] },
+              {
+                uid: newUid(),
+                exerciseId: e.id,
+                sets: [EMPTY_SET, EMPTY_SET, EMPTY_SET],
+                bodyweight: e.equipment === 'bodyweight',
+              },
             ]);
             setPicking(false);
           }}
@@ -210,25 +227,50 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
                         <TrashIcon className="size-5" />
                       </button>
                     </div>
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="button"
+                        aria-pressed={row.bodyweight}
+                        aria-label={`Poids du corps, ${label}`}
+                        onClick={() =>
+                          setRows((rs) =>
+                            rs.map((r) => (r.uid === row.uid ? { ...r, bodyweight: !r.bodyweight } : r)),
+                          )
+                        }
+                        className={`flex h-11 items-center px-3 text-xs font-extrabold ${
+                          row.bodyweight
+                            ? 'bg-fg text-bg'
+                            : 'border-2 border-line text-fg active:bg-surface-2'
+                        }`}
+                      >
+                        Poids du corps
+                      </button>
+                    </div>
                     <div
                       aria-hidden="true"
-                      className="mt-3 grid grid-cols-[2.75rem_1fr_1fr] gap-2 text-xs font-extrabold text-muted"
+                      className="mt-2 grid grid-cols-[2.75rem_1fr_1fr] gap-2 text-xs font-extrabold text-muted"
                     >
                       <span className="text-center">Série</span>
-                      <span className="text-center">kg</span>
+                      <span className="text-center">{row.bodyweight ? 'Charge' : 'kg'}</span>
                       <span className="text-center">Reps</span>
                     </div>
                     <ol className="mt-1 flex flex-col gap-1">
                       {row.sets.map((set, i) => (
                         <li key={i} className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-2">
                           <span className="text-center text-[17px] font-black tabular-nums">{i + 1}</span>
-                          <NumericInput
-                            aria-label={`Poids en kg, série ${i + 1}, ${label}`}
-                            placeholder="—"
-                            value={set.weightKg}
-                            onCommit={(weightKg) => updateSet(row.uid, i, { weightKg })}
-                            className={setInput}
-                          />
+                          {row.bodyweight ? (
+                            <span className="flex h-11 items-center justify-center bg-bg text-sm font-black">
+                              Poids du corps
+                            </span>
+                          ) : (
+                            <NumericInput
+                              aria-label={`Poids en kg, série ${i + 1}, ${label}`}
+                              placeholder="—"
+                              value={set.weightKg}
+                              onCommit={(weightKg) => updateSet(row.uid, i, { weightKg })}
+                              className={setInput}
+                            />
+                          )}
                           <NumericInput
                             integer
                             aria-label={`Répétitions, série ${i + 1}, ${label}`}

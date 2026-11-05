@@ -349,3 +349,34 @@ describe('lastPerformance with bodyweight sets', () => {
     ]);
   });
 });
+
+describe('templates and bodyweight', () => {
+  const bw = (setNumber: number, reps: number) => ({
+    exerciseId: 7,
+    setNumber,
+    weightKg: 0,
+    reps,
+    bodyweight: true,
+  });
+
+  it('learns bodyweight only when every set of the exercise was at bodyweight', () => {
+    const plan = [
+      {
+        exerciseId: 7,
+        targetSets: 2,
+        sets: [
+          { weightKg: 10, reps: 12 },
+          { weightKg: 10, reps: 12 },
+        ],
+      },
+    ];
+    expect(templateAfterWorkout(plan, [7], [bw(1, 15), bw(2, 14)])?.[0]).toMatchObject({ bodyweight: true });
+    const mixed = [bw(1, 15), { exerciseId: 7, setNumber: 2, weightKg: 10, reps: 12 }];
+    expect(templateAfterWorkout(plan, [7], mixed)?.[0]?.bodyweight).toBeUndefined();
+  });
+
+  it('keeps bodyweight when a workout is saved as a template', () => {
+    const [entry] = templateFromSets([{ ...bw(1, 20), order: 0 }]);
+    expect(entry).toMatchObject({ exerciseId: 7, bodyweight: true, sets: [{ weightKg: 0, reps: 20 }] });
+  });
+});

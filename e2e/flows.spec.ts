@@ -214,3 +214,22 @@ test('log a day from a template: its exercises and sets, loads and reps left emp
   for (const input of await bench.getByLabel(/Répétitions, série/).all()) await expect(input).toHaveValue('');
   await expect(bench.getByText(/Dernière fois/)).toHaveCount(0);
 });
+
+test('a template can plan an exercise at bodyweight', async ({ page }) => {
+  await page.goto('/gym/templates/new');
+  await page.getByLabel('Nom du modèle').fill('Abdos');
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  await page.getByRole('button', { name: 'Poids du corps, Bench', pressed: false }).click();
+  await expect(page.getByLabel('Poids en kg, série 1, Bench')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Créer le modèle' }).click();
+  await expect(page).toHaveURL(/\/gym\/templates$/);
+
+  await page.getByRole('link', { name: /Abdos/ }).click();
+  await expect(page.getByRole('button', { name: 'Poids du corps, Bench', pressed: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Commencer cette séance' }).click();
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await expect(bench.getByRole('button', { name: 'Poids du corps', pressed: true })).toBeVisible();
+  await expect(bench.getByLabel(/Poids en kg/)).toHaveCount(0);
+});

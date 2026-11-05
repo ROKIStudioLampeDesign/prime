@@ -178,6 +178,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
         sets: optional(
           arrayOf(shape({ weightKg: nonNegative, reps: (v) => Number.isInteger(v) && (v as number) >= 0 })),
         ),
+        bodyweight: optional(bool),
       }),
     ),
     ...timestamps,

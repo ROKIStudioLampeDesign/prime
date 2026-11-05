@@ -309,6 +309,26 @@ describe('workout logging', () => {
 });
 
 describe('bodyweight sets', () => {
+  it('follows the template: bodyweight on, or kg even for a bodyweight exercise', async () => {
+    const crunch = await seededId('crunch');
+    const bench = await seededId('bench-press');
+    const templateId = await createTemplate(
+      {
+        name: 'Abdos',
+        exercises: [
+          { exerciseId: crunch, targetSets: 1, sets: [{ weightKg: 10, reps: 15 }], bodyweight: false },
+          { exerciseId: bench, targetSets: 1, sets: [{ weightKg: 0, reps: 8 }], bodyweight: true },
+        ],
+      },
+      db,
+    );
+    const id = await startWorkout(templateId, db);
+    const sets = await getWorkoutSets(id, db);
+    expect(sets.find((s) => s.exerciseId === crunch)).toMatchObject({ weightKg: 10 });
+    expect(sets.find((s) => s.exerciseId === crunch)?.bodyweight).toBeUndefined();
+    expect(sets.find((s) => s.exerciseId === bench)).toMatchObject({ bodyweight: true, weightKg: 0 });
+  });
+
   it('start at bodyweight for bodyweight exercises, switch per exercise and carry over', async () => {
     const pullUp = await seededId('pull-up');
     const bench = await seededId('bench-press');

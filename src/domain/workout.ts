@@ -192,19 +192,26 @@ export interface TemplateExercise {
   targetReps?: number;
   /** Planned sets in order (as many as `targetSets`). Absent from templates saved before them. */
   sets?: TemplateSet[];
+  /**
+   * Done at bodyweight (no load). Set explicitly from the template form; learned (true only) from
+   * a finished session. Absent: the session follows the last performance, then the equipment.
+   */
+  bodyweight?: boolean;
 }
 
-type DoneSet = Pick<SetData, 'exerciseId' | 'setNumber' | 'weightKg' | 'reps'>;
+type DoneSet = Pick<SetData, 'exerciseId' | 'setNumber' | 'weightKg' | 'reps' | 'bodyweight'>;
 
 /** A template entry copying an exercise's sets: count, loads and reps (last reps as the target). */
 function entryFromSets(exerciseId: number, sets: readonly DoneSet[]): TemplateExercise {
   const sorted = [...sets].sort((a, b) => a.setNumber - b.setNumber);
   const last = sorted.at(-1);
+  const bodyweight = sorted.length > 0 && sorted.every((s) => s.bodyweight === true);
   return {
     exerciseId,
     targetSets: sorted.length,
     ...(last && last.reps > 0 && { targetReps: last.reps }),
     sets: sorted.map(({ weightKg, reps }) => ({ weightKg, reps })),
+    ...(bodyweight && { bodyweight: true }),
   };
 }
 
