@@ -28,7 +28,7 @@ import {
  * shared by protéines and poids, then Salle cobalt. Text on yellow and paper is ink (secondary
  * ink/72); text on cobalt is on-gym.
  */
-const band = 'bleed block py-5 focus-inset @container';
+const band = 'bleed block py-3.5 focus-inset @container';
 const bandLabel = 'text-sm font-extrabold';
 const cellLabel = 'text-[13px] font-extrabold';
 
@@ -79,14 +79,12 @@ export function NutritionCard({ today }: { today: LocalDate }) {
         Calories du jour
         <ForwardIcon className="size-5" />
       </h2>
-      <BigNumber
-        value={formatMacro('kcal', data.totals.kcal)}
-        maxRem={8.5}
-        className="mt-1.5 leading-[0.82]"
-      />
-      <p className={`mt-2.5 font-bold tabular-nums ${kcal?.bad ? 'text-danger-ink' : ''}`}>{caption}</p>
+      <BigNumber value={formatMacro('kcal', data.totals.kcal)} maxRem={5} className="mt-1 leading-[0.82]" />
+      <p className={`mt-1.5 text-[15px] font-bold tabular-nums ${kcal?.bad ? 'text-danger-ink' : ''}`}>
+        {caption}
+      </p>
       {kcal && (
-        <div className="mt-3 [&>div]:h-3.5">
+        <div className="mt-2 [&>div]:h-2.5">
           <ProgressBar ratio={kcal.ratio} tone={kcal.bad ? 'danger-ink' : 'ink'} />
         </div>
       )}
@@ -103,15 +101,15 @@ export function ProteinCard({ today }: { today: LocalDate }) {
   return (
     <Link
       to="/nutrition"
-      className="@container block border-r-2 border-ink py-4 pr-4 focus-inset active:opacity-70"
+      className="@container block border-r-2 border-ink py-3 pr-4 focus-inset active:opacity-70"
     >
       <h2 className={cellLabel}>Protéines</h2>
       <BigNumber
         value={formatMacro('protein', data.totals.protein)}
-        maxRem={3.25}
-        className="mt-1.5 leading-[0.9]"
+        maxRem={2.5}
+        className="mt-1 leading-[0.9]"
       />
-      <p className="mt-1.5 text-sm font-bold text-ink/72 tabular-nums">
+      <p className="mt-1 text-sm font-bold text-ink/72 tabular-nums">
         {goal === undefined ? 'g' : `sur ${formatMacro('protein', goal)} g`}
       </p>
     </Link>
@@ -125,23 +123,17 @@ export function WeightCard({ today }: { today: LocalDate }) {
   const { latest, isToday, daysAgo, change } = todayWeight(entries, today);
 
   return (
-    <Link to="/stats" className="@container block py-4 pl-4 focus-inset active:opacity-70">
+    <Link to="/stats" className="@container block py-3 pl-4 focus-inset active:opacity-70">
       <h2 className={cellLabel}>Poids</h2>
       {latest && daysAgo !== undefined ? (
         <>
-          <BigNumber
-            value={formatWeight(latest.kg)}
-            maxRem={3.25}
-            unit="kg"
-            className="mt-1.5 leading-[0.9]"
-          />
-          {change && (
-            <p className="mt-1.5 text-sm font-bold text-ink/72 tabular-nums">
-              {formatSignedBodyWeight(change.kg)} en {change.days} jours
-            </p>
-          )}
-          <p className="mt-1 text-[13px] font-semibold text-ink/72">
-            {isToday ? 'Pesée du jour enregistrée.' : `Dernière pesée ${agoLabel(daysAgo)}.`}
+          <BigNumber value={formatWeight(latest.kg)} maxRem={2.5} unit="kg" className="mt-1 leading-[0.9]" />
+          <p className="mt-1 truncate text-sm font-bold text-ink/72 tabular-nums">
+            {change
+              ? `${formatSignedBodyWeight(change.kg)} en ${change.days} jours`
+              : isToday
+                ? 'Pesée du jour'
+                : `Pesée ${agoLabel(daysAgo)}`}
           </p>
         </>
       ) : (
@@ -164,7 +156,7 @@ export function StreaksCard({ today }: { today: LocalDate }) {
     <section aria-label="Séries" className="bleed grid grid-cols-2 border-b border-line">
       <Link
         to="/nutrition"
-        className="@container block border-r border-line py-4 pr-4 focus-inset active:opacity-70"
+        className="@container block border-r border-line py-3 pr-4 focus-inset active:opacity-70"
       >
         <h2 className={cellLabel}>
           {calories ? `Sous ${formatMacro('kcal', calories.goal)} kcal` : 'Calories'}
@@ -173,13 +165,13 @@ export function StreaksCard({ today }: { today: LocalDate }) {
           <>
             <BigNumber
               value={String(calories.days)}
-              maxRem={3.25}
+              maxRem={2.5}
               unit={calories.days > 1 ? 'jours' : 'jour'}
-              className="mt-1.5 leading-[0.9]"
+              className="mt-1 leading-[0.9]"
             />
             {calories.today !== 'ok' && (
               <p
-                className={`mt-1.5 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
+                className={`mt-1 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
               >
                 {calories.today === 'over' ? 'Objectif dépassé aujourd’hui.' : 'Note tes repas du jour.'}
               </p>
@@ -189,15 +181,15 @@ export function StreaksCard({ today }: { today: LocalDate }) {
           <p className="mt-1.5 text-sm font-semibold text-muted">Fixe un objectif calories dans Réglages.</p>
         )}
       </Link>
-      <Link to="/gym" className="@container block py-4 pl-4 focus-inset active:opacity-70">
+      <Link to="/gym" className="@container block py-3 pl-4 focus-inset active:opacity-70">
         <h2 className={cellLabel}>Semaines à {week.target} séances</h2>
         <BigNumber
           value={String(week.weeks)}
-          maxRem={3.25}
+          maxRem={2.5}
           unit={week.weeks > 1 ? 'semaines' : 'semaine'}
-          className="mt-1.5 leading-[0.9]"
+          className="mt-1 leading-[0.9]"
         />
-        <p className="mt-1.5 text-[13px] font-semibold text-muted tabular-nums">
+        <p className="mt-1 text-[13px] font-semibold text-muted tabular-nums">
           {Math.min(week.thisWeek, 7)} / {week.target} cette semaine
         </p>
       </Link>
@@ -219,17 +211,17 @@ function WorkoutLine({ workout, now }: { workout: Workout; now?: number }) {
 
 const gymBand = `${band} bg-gym text-on-gym`;
 const gymButton =
-  'mt-3.5 flex min-h-14 items-center justify-center bg-accent-fill px-5 text-[17px] font-black text-accent-fg [font-stretch:112%] focus-inset active:opacity-80';
+  'mt-3 flex min-h-12 items-center justify-center bg-accent-fill px-4 text-base font-black text-accent-fg [font-stretch:112%] focus-inset active:opacity-80';
 /** Secondary action on the cobalt band: outlined, so the yellow button stays the main one. */
 const gymSecondaryButton =
-  'mt-2.5 flex min-h-12 w-full items-center justify-center border-2 border-on-gym px-5 text-[15px] font-extrabold focus-inset active:opacity-70';
+  'mt-3 flex min-h-12 items-center justify-center border-2 border-on-gym px-4 text-[15px] font-extrabold focus-inset active:opacity-70';
 
 function ActiveWorkoutCard({ workout }: { workout: Workout }) {
   const now = useNow(30_000);
   return (
     <Link to={`/gym/workout/${workout.id}`} className={`${gymBand} active:opacity-90`}>
       <h2 className={bandLabel}>Salle</h2>
-      <p className="mt-1.5 flex items-center gap-2.5 text-[1.875rem] leading-tight headline">
+      <p className="mt-1.5 flex items-center gap-2.5 text-[1.5rem] leading-tight headline">
         <span className="size-3 shrink-0 animate-pulse bg-on-gym" aria-hidden="true" />
         <span className="truncate">{workout.name ?? 'Séance en cours'}</span>
       </p>
@@ -260,7 +252,7 @@ export function GymCard({ today }: { today: LocalDate }) {
             <li key={w.id} className="border-t-2 border-on-gym">
               <Link
                 to={`/gym/workout/${w.id}/summary`}
-                className="flex min-h-16 items-center gap-2 py-2 focus-inset active:opacity-70"
+                className="flex min-h-14 items-center gap-2 py-1.5 focus-inset active:opacity-70"
               >
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-xl leading-tight headline">
@@ -283,11 +275,15 @@ export function GymCard({ today }: { today: LocalDate }) {
         <h2 id="today-gym" className={bandLabel}>
           Salle
         </h2>
-        <p className="mt-1.5 text-[1.875rem] leading-[1.02] headline">Jour de repos</p>
+        <p className="mt-1.5 text-[1.5rem] leading-[1.05] headline">Jour de repos</p>
         <p className="mt-1.5 text-[15px] font-semibold">
           Tes muscles récupèrent. Continue de noter tes repas.
         </p>
-        <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, false)}>
+        <button
+          type="button"
+          className={`${gymSecondaryButton} w-full`}
+          onClick={() => void setRestDay(today, false)}
+        >
           Annuler le jour de repos
         </button>
       </section>
@@ -299,18 +295,20 @@ export function GymCard({ today }: { today: LocalDate }) {
       <h2 id="today-gym" className={bandLabel}>
         Salle
       </h2>
-      <p className="mt-1.5 text-[1.875rem] leading-[1.02] headline">Pas de séance aujourd’hui</p>
+      <p className="mt-1.5 text-[1.5rem] leading-[1.05] headline">Pas de séance aujourd’hui</p>
       <p className="mt-1.5 text-[15px] font-semibold">
         {state.last
           ? `Dernière séance ${agoLabel(state.last.daysAgo)}.`
           : 'Ta première séance apparaîtra ici.'}
       </p>
-      <Link to="/gym?start=1" className={gymButton}>
-        Commencer une séance
-      </Link>
-      <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, true)}>
-        Jour de repos
-      </button>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <Link to="/gym?start=1" className={gymButton}>
+          Commencer une séance
+        </Link>
+        <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, true)}>
+          Jour de repos
+        </button>
+      </div>
     </section>
   );
 }
