@@ -164,6 +164,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     completed: bool,
     rpe: optional(finite),
     completedAt: optional(timestamp),
+    // Legacy flag from short-lived builds (bodyweight is now simply 0 kg): accepted, ignored.
     bodyweight: optional(bool),
   }),
   gymDays: shape({ date: localDate, attended: bool, rest: optional(bool) }),
@@ -178,6 +179,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
         sets: optional(
           arrayOf(shape({ weightKg: nonNegative, reps: (v) => Number.isInteger(v) && (v as number) >= 0 })),
         ),
+        // Legacy flag, see workoutSets.
         bodyweight: optional(bool),
       }),
     ),

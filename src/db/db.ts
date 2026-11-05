@@ -141,11 +141,6 @@ export interface WorkoutSet {
   completed: boolean;
   rpe?: number;
   completedAt?: number;
-  /**
-   * Done at bodyweight (no load entered, weightKg 0). Optional and not indexed: no schema
-   * version needed, older rows stay valid.
-   */
-  bodyweight?: boolean;
 }
 
 /**

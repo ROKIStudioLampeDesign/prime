@@ -62,10 +62,8 @@ export function TemplateFormScreen() {
 interface Row {
   uid: string;
   exerciseId: number;
-  /** One entry per set; 0 kg or 0 reps = "as last time". */
+  /** One entry per set: 0 kg with reps = bodyweight; an empty set = "as last time". */
   sets: TemplateSet[];
-  /** No load for this exercise: its kg column is replaced by "Poids du corps". */
-  bodyweight: boolean;
 }
 
 let nextUid = 0;
@@ -79,22 +77,13 @@ const planOf = (e: TemplateExercise): TemplateSet[] =>
     ? e.sets
     : Array.from({ length: e.targetSets }, () => ({ weightKg: 0, reps: e.targetReps ?? 0 }));
 
-/** Explicit choice when saved; otherwise what the session would start with (the equipment). */
-const bodyweightOf = (e: TemplateExercise, exercise: Exercise | undefined): boolean =>
-  e.bodyweight ?? exercise?.equipment === 'bodyweight';
-
 function TemplateForm({ template, exercises }: { template?: Template; exercises: Map<number, Exercise> }) {
   const navigate = useNavigate();
   const goBack = useGoBack('/gym/templates');
   const [name, setName] = useState(template?.name ?? '');
   const [rows, setRows] = useState<Row[]>(
     () =>
-      template?.exercises.map((e) => ({
-        uid: newUid(),
-        exerciseId: e.exerciseId,
-        sets: planOf(e),
-        bodyweight: bodyweightOf(e, exercises.get(e.exerciseId)),
-      })) ?? [],
+      template?.exercises.map((e) => ({ uid: newUid(), exerciseId: e.exerciseId, sets: planOf(e) })) ?? [],
   );
   const [picking, setPicking] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -112,8 +101,7 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
         exerciseId: r.exerciseId,
         targetSets: r.sets.length,
         ...(lastReps > 0 && { targetReps: lastReps }),
-        sets: r.bodyweight ? r.sets.map((set) => ({ ...set, weightKg: 0 })) : r.sets,
-        bodyweight: r.bodyweight,
+        sets: r.sets,
       };
     }),
   });
@@ -138,12 +126,7 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
           onSelect={(e) => {
             setRows((rs) => [
               ...rs,
-              {
-                uid: newUid(),
-                exerciseId: e.id,
-                sets: [EMPTY_SET, EMPTY_SET, EMPTY_SET],
-                bodyweight: e.equipment === 'bodyweight',
-              },
+              { uid: newUid(), exerciseId: e.id, sets: [EMPTY_SET, EMPTY_SET, EMPTY_SET] },
             ]);
             setPicking(false);
           }}
@@ -180,9 +163,9 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
             Exercices
           </h2>
           <p className="mt-1 mb-3 text-sm font-semibold text-muted">
-            Les séries de chaque exercice, avec leur charge et leurs répétitions. Une case vide reprend ta
-            dernière séance. À la fin d’une séance faite avec les mêmes exercices, le modèle se met à jour
-            tout seul.
+            Les séries de chaque exercice, avec leur charge et leurs répétitions. Une charge vide ou à 0 avec
+            des reps = poids du corps ; une série vide reprend ta dernière séance. À la fin d’une séance faite
+            avec les mêmes exercices, le modèle se met à jour tout seul.
           </p>
           {rows.length === 0 ? (
             <EmptyState title="Aucun exercice" description="Ajoute les exercices de cette séance type." />
@@ -227,50 +210,25 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
                         <TrashIcon className="size-5" />
                       </button>
                     </div>
-                    <div className="mt-2 flex justify-end">
-                      <button
-                        type="button"
-                        aria-pressed={row.bodyweight}
-                        aria-label={`Poids du corps, ${label}`}
-                        onClick={() =>
-                          setRows((rs) =>
-                            rs.map((r) => (r.uid === row.uid ? { ...r, bodyweight: !r.bodyweight } : r)),
-                          )
-                        }
-                        className={`flex h-11 items-center px-3 text-xs font-extrabold ${
-                          row.bodyweight
-                            ? 'bg-fg text-bg'
-                            : 'border-2 border-line text-fg active:bg-surface-2'
-                        }`}
-                      >
-                        Poids du corps
-                      </button>
-                    </div>
                     <div
                       aria-hidden="true"
-                      className="mt-2 grid grid-cols-[2.75rem_1fr_1fr] gap-2 text-xs font-extrabold text-muted"
+                      className="mt-3 grid grid-cols-[2.75rem_1fr_1fr] gap-2 text-xs font-extrabold text-muted"
                     >
                       <span className="text-center">Série</span>
-                      <span className="text-center">{row.bodyweight ? 'Charge' : 'kg'}</span>
+                      <span className="text-center">kg</span>
                       <span className="text-center">Reps</span>
                     </div>
                     <ol className="mt-1 flex flex-col gap-1">
                       {row.sets.map((set, i) => (
                         <li key={i} className="grid grid-cols-[2.75rem_1fr_1fr] items-center gap-2">
                           <span className="text-center text-[17px] font-black tabular-nums">{i + 1}</span>
-                          {row.bodyweight ? (
-                            <span className="flex h-11 items-center justify-center bg-bg text-sm font-black">
-                              Poids du corps
-                            </span>
-                          ) : (
-                            <NumericInput
-                              aria-label={`Poids en kg, série ${i + 1}, ${label}`}
-                              placeholder="—"
-                              value={set.weightKg}
-                              onCommit={(weightKg) => updateSet(row.uid, i, { weightKg })}
-                              className={setInput}
-                            />
-                          )}
+                          <NumericInput
+                            aria-label={`Poids en kg, série ${i + 1}, ${label}`}
+                            placeholder={set.reps > 0 ? 'PDC' : '—'}
+                            value={set.weightKg}
+                            onCommit={(weightKg) => updateSet(row.uid, i, { weightKg })}
+                            className={setInput}
+                          />
                           <NumericInput
                             integer
                             aria-label={`Répétitions, série ${i + 1}, ${label}`}

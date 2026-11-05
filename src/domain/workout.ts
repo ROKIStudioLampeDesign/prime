@@ -5,15 +5,12 @@ export interface SetData {
   weightKg: number;
   reps: number;
   completed: boolean;
-  /** Done at bodyweight: no load to enter (weightKg stays 0). */
-  bodyweight?: boolean;
 }
 
-/** Weight and reps of one set, without bookkeeping. */
+/** Weight and reps of one set, without bookkeeping. 0 kg = bodyweight (PDC). */
 export interface SetValues {
   weightKg: number;
   reps: number;
-  bodyweight?: boolean;
 }
 
 export interface PerformedSet extends SetValues {
@@ -47,12 +44,7 @@ export function lastPerformance(
   for (const workout of candidates) {
     const sets = workout.sets
       .filter((s) => s.exerciseId === exerciseId && s.completed)
-      .map(({ setNumber, weightKg, reps, bodyweight }) => ({
-        setNumber,
-        weightKg,
-        reps,
-        ...(bodyweight && { bodyweight: true }),
-      }))
+      .map(({ setNumber, weightKg, reps }) => ({ setNumber, weightKg, reps }))
       .sort((a, b) => a.setNumber - b.setNumber);
     if (sets.length > 0) return sets;
   }
@@ -85,8 +77,9 @@ export function prefillSets(
 }
 
 /**
- * Initial values for a template's planned sets: the planned load and reps of each set, falling
- * back to the same set of the previous performance where the plan has 0 (then `fallbackReps`).
+ * Initial values for a template's planned sets: the planned load and reps of each set. A set
+ * planned with reps but no load is at bodyweight (0 kg). A set left entirely empty takes the same
+ * set of the previous performance (then `fallbackReps`); empty reps alone also fall back.
  */
 export function prefillFromPlan(
   previous: readonly PerformedSet[] | undefined,
@@ -98,24 +91,10 @@ export function prefillFromPlan(
     const last = previousForSet(previous, setNumber);
     return {
       setNumber,
-      weightKg: p.weightKg > 0 ? p.weightKg : (last?.weightKg ?? 0),
+      weightKg: p.weightKg > 0 || p.reps > 0 ? p.weightKg : (last?.weightKg ?? 0),
       reps: p.reps > 0 ? p.reps : (last?.reps ?? fallbackReps),
     };
   });
-}
-
-/**
- * Whether new sets of an exercise start at bodyweight: like its sets already in the workout,
- * else like the last performance, else from the exercise's equipment (pompes, tractions…).
- */
-export function startsAtBodyweight(
-  currentSets: readonly SetValues[],
-  previous: readonly SetValues[] | undefined,
-  equipment: string | undefined,
-): boolean {
-  const reference = currentSets[0] ?? previous?.[0];
-  if (reference) return reference.bodyweight === true;
-  return equipment === 'bodyweight';
 }
 
 /** Default number of sets when an exercise is added without a template. */
@@ -183,7 +162,10 @@ export function restRemaining(endsAt: number, now: number): number {
   return Math.max(0, Math.ceil((endsAt - now) / 1000));
 }
 
-/** One planned set of a template exercise; 0 kg or 0 reps means "as last time". */
+/**
+ * One planned set of a template exercise. 0 kg with reps = bodyweight; an entirely empty set
+ * (0 kg and 0 reps) means "as last time".
+ */
 export type TemplateSet = SetValues;
 
 export interface TemplateExercise {
@@ -192,26 +174,19 @@ export interface TemplateExercise {
   targetReps?: number;
   /** Planned sets in order (as many as `targetSets`). Absent from templates saved before them. */
   sets?: TemplateSet[];
-  /**
-   * Done at bodyweight (no load). Set explicitly from the template form; learned (true only) from
-   * a finished session. Absent: the session follows the last performance, then the equipment.
-   */
-  bodyweight?: boolean;
 }
 
-type DoneSet = Pick<SetData, 'exerciseId' | 'setNumber' | 'weightKg' | 'reps' | 'bodyweight'>;
+type DoneSet = Pick<SetData, 'exerciseId' | 'setNumber' | 'weightKg' | 'reps'>;
 
 /** A template entry copying an exercise's sets: count, loads and reps (last reps as the target). */
 function entryFromSets(exerciseId: number, sets: readonly DoneSet[]): TemplateExercise {
   const sorted = [...sets].sort((a, b) => a.setNumber - b.setNumber);
   const last = sorted.at(-1);
-  const bodyweight = sorted.length > 0 && sorted.every((s) => s.bodyweight === true);
   return {
     exerciseId,
     targetSets: sorted.length,
     ...(last && last.reps > 0 && { targetReps: last.reps }),
     sets: sorted.map(({ weightKg, reps }) => ({ weightKg, reps })),
-    ...(bodyweight && { bodyweight: true }),
   };
 }
 

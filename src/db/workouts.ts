@@ -6,7 +6,6 @@ import {
   nextSetValues,
   prefillSets,
   prefillFromPlan,
-  startsAtBodyweight,
   templateAfterWorkout,
   templateFromSets,
   type TemplateSet,
@@ -93,8 +92,6 @@ export async function addExerciseToWorkout(
     setCount?: number;
     targetReps?: number;
     plan?: readonly TemplateSet[];
-    /** From a template: forces the mode; otherwise it follows the last performance. */
-    bodyweight?: boolean;
   } = {},
   database: PrimeDB = db,
 ): Promise<boolean> {
@@ -113,18 +110,15 @@ export async function addExerciseToWorkout(
         options.plan && options.plan.length > 0
           ? prefillFromPlan(previous, options.plan, options.targetReps)
           : prefillSets(previous, options.setCount ?? defaultSetCount(previous), options.targetReps);
-      const exercise = await database.exercises.get(exerciseId);
-      const bodyweight = options.bodyweight ?? startsAtBodyweight([], previous, exercise?.equipment);
       await database.workoutSets.bulkAdd(
         prefill.map((p) => ({
           workoutId,
           exerciseId,
           order,
           setNumber: p.setNumber,
-          weightKg: bodyweight ? 0 : p.weightKg,
+          weightKg: p.weightKg,
           reps: p.reps,
           completed: false,
-          ...(bodyweight && { bodyweight: true }),
         })),
       );
       return true;
@@ -155,7 +149,7 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
         await addExerciseToWorkout(
           id,
           te.exerciseId,
-          { setCount: te.targetSets, targetReps: te.targetReps, plan: te.sets, bodyweight: te.bodyweight },
+          { setCount: te.targetSets, targetReps: te.targetReps, plan: te.sets },
           database,
         );
       }
@@ -192,10 +186,7 @@ export async function createPastWorkout(
         await addExerciseToWorkout(
           id,
           te.exerciseId,
-          {
-            setCount: te.sets && te.sets.length > 0 ? te.sets.length : te.targetSets,
-            bodyweight: te.bodyweight,
-          },
+          { setCount: te.sets && te.sets.length > 0 ? te.sets.length : te.targetSets },
           database,
         );
       }
@@ -216,8 +207,6 @@ export async function addSet(workoutId: number, exerciseId: number, database: Pr
       );
       const previous = await previousForPrefill(workout, exerciseId, database);
       const next = nextSetValues(current, previous);
-      const exercise = current.length === 0 ? await database.exercises.get(exerciseId) : undefined;
-      const bodyweight = startsAtBodyweight(current, previous, exercise?.equipment);
       const order =
         current[0]?.order ??
         (await database.workoutSets.where('workoutId').equals(workoutId).toArray()).reduce(
@@ -229,10 +218,9 @@ export async function addSet(workoutId: number, exerciseId: number, database: Pr
         exerciseId,
         order,
         setNumber: next.setNumber,
-        weightKg: bodyweight ? 0 : next.weightKg,
+        weightKg: next.weightKg,
         reps: next.reps,
         completed: false,
-        ...(bodyweight && { bodyweight: true }),
       });
     },
   );
@@ -249,18 +237,6 @@ export async function removeSet(setId: number, database: PrimeDB = db): Promise<
     ).sort((a, b) => a.setNumber - b.setNumber);
     await Promise.all(rest.map((s, i) => database.workoutSets.update(s.id, { setNumber: i + 1 })));
   });
-}
-
-/** Switches every set of an exercise in a workout to bodyweight (load cleared) or back to kg. */
-export async function setExerciseBodyweight(
-  workoutId: number,
-  exerciseId: number,
-  bodyweight: boolean,
-  database: PrimeDB = db,
-): Promise<void> {
-  await database.workoutSets
-    .where({ exerciseId, workoutId })
-    .modify(bodyweight ? { bodyweight: true, weightKg: 0 } : { bodyweight: undefined });
 }
 
 export async function updateSet(

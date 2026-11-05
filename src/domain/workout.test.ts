@@ -7,7 +7,6 @@ import {
   prefillSets,
   previousForSet,
   restRemaining,
-  startsAtBodyweight,
   stepWeight,
   templateAfterWorkout,
   templateFromSets,
@@ -294,7 +293,7 @@ describe('prefillFromPlan', () => {
     ]);
   });
 
-  it('falls back to last time where the plan has 0, then to the fallback reps', () => {
+  it('falls back to last time for an empty set or empty reps; 0 kg with reps is bodyweight', () => {
     expect(
       prefillFromPlan(previous, [
         { weightKg: 0, reps: 0 },
@@ -303,7 +302,7 @@ describe('prefillFromPlan', () => {
       ]),
     ).toEqual([
       { setNumber: 1, weightKg: 70, reps: 6 },
-      { setNumber: 2, weightKg: 72.5, reps: 9 },
+      { setNumber: 2, weightKg: 0, reps: 9 },
       { setNumber: 3, weightKg: 50, reps: 5 },
     ]);
     expect(prefillFromPlan(undefined, [{ weightKg: 0, reps: 0 }], 12)).toEqual([
@@ -313,70 +312,18 @@ describe('prefillFromPlan', () => {
   });
 });
 
-describe('startsAtBodyweight', () => {
-  const kg = { weightKg: 20, reps: 8 };
-  const bw = { weightKg: 0, reps: 8, bodyweight: true };
+describe('prefillFromPlan and bodyweight', () => {
+  const previous = [{ setNumber: 1, weightKg: 40, reps: 10 }];
 
-  it('follows the sets already in the workout first', () => {
-    expect(startsAtBodyweight([bw], [kg], undefined)).toBe(true);
-    expect(startsAtBodyweight([kg], [bw], 'bodyweight')).toBe(false);
-  });
-
-  it('then the last performance, then the equipment', () => {
-    expect(startsAtBodyweight([], [bw], 'barbell')).toBe(true);
-    expect(startsAtBodyweight([], [kg], 'bodyweight')).toBe(false);
-    expect(startsAtBodyweight([], undefined, 'bodyweight')).toBe(true);
-    expect(startsAtBodyweight([], [], 'barbell')).toBe(false);
-    expect(startsAtBodyweight([], undefined, undefined)).toBe(false);
-  });
-});
-
-describe('lastPerformance with bodyweight sets', () => {
-  it('keeps the bodyweight flag only where it is set', () => {
-    const history = [
-      {
-        workoutId: 1,
-        startedAt: 1,
-        sets: [
-          { exerciseId: 7, setNumber: 1, weightKg: 0, reps: 10, completed: true, bodyweight: true },
-          { exerciseId: 7, setNumber: 2, weightKg: 10, reps: 6, completed: true },
-        ],
-      },
-    ];
-    expect(lastPerformance(history, 7)).toEqual([
-      { setNumber: 1, weightKg: 0, reps: 10, bodyweight: true },
-      { setNumber: 2, weightKg: 10, reps: 6 },
+  it('keeps 0 kg when the plan gives reps (bodyweight), falls back only for an empty set', () => {
+    expect(prefillFromPlan(previous, [{ weightKg: 0, reps: 15 }])).toEqual([
+      { setNumber: 1, weightKg: 0, reps: 15 },
     ]);
-  });
-});
-
-describe('templates and bodyweight', () => {
-  const bw = (setNumber: number, reps: number) => ({
-    exerciseId: 7,
-    setNumber,
-    weightKg: 0,
-    reps,
-    bodyweight: true,
-  });
-
-  it('learns bodyweight only when every set of the exercise was at bodyweight', () => {
-    const plan = [
-      {
-        exerciseId: 7,
-        targetSets: 2,
-        sets: [
-          { weightKg: 10, reps: 12 },
-          { weightKg: 10, reps: 12 },
-        ],
-      },
-    ];
-    expect(templateAfterWorkout(plan, [7], [bw(1, 15), bw(2, 14)])?.[0]).toMatchObject({ bodyweight: true });
-    const mixed = [bw(1, 15), { exerciseId: 7, setNumber: 2, weightKg: 10, reps: 12 }];
-    expect(templateAfterWorkout(plan, [7], mixed)?.[0]?.bodyweight).toBeUndefined();
-  });
-
-  it('keeps bodyweight when a workout is saved as a template', () => {
-    const [entry] = templateFromSets([{ ...bw(1, 20), order: 0 }]);
-    expect(entry).toMatchObject({ exerciseId: 7, bodyweight: true, sets: [{ weightKg: 0, reps: 20 }] });
+    expect(prefillFromPlan(previous, [{ weightKg: 0, reps: 0 }])).toEqual([
+      { setNumber: 1, weightKg: 40, reps: 10 },
+    ]);
+    expect(prefillFromPlan(previous, [{ weightKg: 50, reps: 0 }])).toEqual([
+      { setNumber: 1, weightKg: 50, reps: 10 },
+    ]);
   });
 });

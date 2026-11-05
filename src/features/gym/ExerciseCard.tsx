@@ -21,7 +21,6 @@ import {
   removeExercise,
   removeSet,
   setCompleted,
-  setExerciseBodyweight,
   updateSet,
 } from '../../db/workouts';
 import { getRecordsBefore } from '../../db/stats';
@@ -73,8 +72,6 @@ export function ExerciseCard({
   const name = exercise?.name ?? 'Exercice inconnu';
   const menuSet = sets.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
-  // One mode for the whole exercise: switched from the header (or a set's menu).
-  const bodyweight = sets.length > 0 && sets.every((s) => s.bodyweight === true);
 
   function cycleStep() {
     const i = STEPS.indexOf(step);
@@ -124,29 +121,15 @@ export function ExerciseCard({
 
       <div className="mt-3 flex items-center gap-1.5 pl-1 text-xs font-extrabold text-muted">
         <span className="w-11 text-center">Série</span>
-        {bodyweight ? (
-          <span className="w-[140px] text-center">Charge</span>
-        ) : (
-          <button
-            type="button"
-            onClick={cycleStep}
-            aria-label={`Pas des boutons de poids : ${formatWeight(step)} kg. Changer`}
-            className="flex h-11 w-[140px] items-center justify-center gap-1 normal-case active:bg-surface"
-          >
-            kg <span className="bg-surface px-1.5 py-0.5 text-fg tabular-nums">±{formatWeight(step)}</span>
-          </button>
-        )}
-        <span className="w-14 text-center">Reps</span>
         <button
           type="button"
-          aria-pressed={bodyweight}
-          onClick={() => void setExerciseBodyweight(workout.id, exerciseId, !bodyweight)}
-          className={`ml-auto flex h-11 shrink-0 items-center px-2 text-[11px] font-extrabold ${
-            bodyweight ? 'bg-fg text-bg' : 'border-2 border-line text-fg active:bg-surface'
-          }`}
+          onClick={cycleStep}
+          aria-label={`Pas des boutons de poids : ${formatWeight(step)} kg. Changer`}
+          className="flex h-8 w-[140px] items-center justify-center gap-1 normal-case active:bg-surface"
         >
-          Poids du corps
+          kg <span className="bg-surface px-1.5 py-0.5 text-fg tabular-nums">±{formatWeight(step)}</span>
         </button>
+        <span className="w-14 text-center">Reps</span>
       </div>
 
       <ol className="mt-1 flex flex-col gap-1">
@@ -214,32 +197,28 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
         >
           {set.setNumber}
         </button>
-        {set.bodyweight ? (
-          <span className="flex h-11 w-[140px] shrink-0 items-center justify-center bg-surface text-[15px] font-black">
-            Poids du corps
-          </span>
-        ) : (
-          <div className="flex w-[140px] shrink-0 items-center">
-            <StepButton
-              label={`Retirer ${formatWeight(step)} kg, ${label}`}
-              onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, -step) })}
-            >
-              <MinusIcon className="size-4" />
-            </StepButton>
-            <NumericInput
-              aria-label={`Poids en kg, ${label}`}
-              value={set.weightKg}
-              onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
-              className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
-            />
-            <StepButton
-              label={`Ajouter ${formatWeight(step)} kg, ${label}`}
-              onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, step) })}
-            >
-              <PlusIcon className="size-4" />
-            </StepButton>
-          </div>
-        )}
+        <div className="flex w-[140px] shrink-0 items-center">
+          <StepButton
+            label={`Retirer ${formatWeight(step)} kg, ${label}`}
+            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, -step) })}
+          >
+            <MinusIcon className="size-4" />
+          </StepButton>
+          {/* 0 kg = poids du corps: the empty field reads "PDC". */}
+          <NumericInput
+            aria-label={`Poids en kg, ${label}`}
+            placeholder="PDC"
+            value={set.weightKg}
+            onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
+            className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
+          />
+          <StepButton
+            label={`Ajouter ${formatWeight(step)} kg, ${label}`}
+            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, step) })}
+          >
+            <PlusIcon className="size-4" />
+          </StepButton>
+        </div>
         <NumericInput
           integer
           aria-label={`Répétitions, ${label}`}
@@ -303,27 +282,12 @@ function StepButton({
 
 const RPE_VALUES = [6, 7, 8, 9, 10];
 
-/** Per-set options: bodyweight (for the whole exercise), RPE and deletion. */
+/** Per-set options: RPE and deletion. */
 function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () => void }) {
   return (
     <BottomSheet open={set !== undefined} onClose={onClose} title={set ? `Série ${set.setNumber}` : ''}>
       {set && (
         <>
-          <label className="mb-5 flex min-h-12 items-center justify-between gap-3 border-b border-line">
-            <span>
-              <span className="block font-extrabold">Poids du corps</span>
-              <span className="block text-xs text-muted">
-                Pour toutes les séries de l’exercice, sans charge
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              role="switch"
-              checked={set.bodyweight === true}
-              onChange={(e) => void setExerciseBodyweight(set.workoutId, set.exerciseId, e.target.checked)}
-              className="size-6 shrink-0 accent-(--color-accent)"
-            />
-          </label>
           <p className="mb-2 text-sm text-muted">Difficulté ressentie (RPE, facultatif)</p>
           <div className="grid grid-cols-6 gap-1.5">
             {RPE_VALUES.map((rpe) => (

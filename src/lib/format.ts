@@ -24,9 +24,9 @@ export function formatWeight(kg: number): string {
   return weight.format(kg);
 }
 
-/** Load of a set for display: "62,5 kg", or "PDC" (poids du corps) for a bodyweight set. */
-export function setLoadLabel(set: { weightKg: number; bodyweight?: boolean }): string {
-  return set.bodyweight ? 'PDC' : `${formatWeight(set.weightKg)} kg`;
+/** Load of a set for display: "62,5 kg", or "PDC" (poids du corps) at 0 kg. */
+export function setLoadLabel(set: { weightKg: number }): string {
+  return set.weightKg > 0 ? `${formatWeight(set.weightKg)} kg` : 'PDC';
 }
 
 /** Body weight to 0.1 kg, a scale's precision: "72,4 kg". */

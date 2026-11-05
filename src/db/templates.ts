@@ -18,12 +18,11 @@ export function getTemplate(id: number, database: PrimeDB = db): Promise<Templat
 
 const clean = (input: TemplateInput) => ({
   name: input.name.trim(),
-  exercises: input.exercises.map(({ exerciseId, targetSets, targetReps, sets, bodyweight }) => ({
+  exercises: input.exercises.map(({ exerciseId, targetSets, targetReps, sets }) => ({
     exerciseId,
     targetSets,
     ...(targetReps !== undefined && { targetReps }),
     ...(sets && { sets: sets.map(({ weightKg, reps }) => ({ weightKg, reps })) }),
-    ...(bodyweight !== undefined && { bodyweight }),
   })),
 });
 
