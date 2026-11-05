@@ -209,7 +209,7 @@ function WorkoutLine({ workout, now }: { workout: Workout; now?: number }) {
   return <p className="text-[15px] font-semibold tabular-nums">{parts.filter(Boolean).join(' · ')}</p>;
 }
 
-const gymBand = `${band} bg-gym text-on-gym`;
+const gymBand = `${band} flex-1 bg-gym text-on-gym`;
 const gymButton =
   'mt-3 flex min-h-12 items-center justify-center bg-accent-fill px-4 text-base font-black text-accent-fg [font-stretch:112%] focus-inset active:opacity-80';
 /** Secondary action on the cobalt band: outlined, so the yellow button stays the main one. */
@@ -236,7 +236,8 @@ export function GymCard({ today }: { today: LocalDate }) {
   const workouts = useLiveQuery(listAllWorkouts);
   // `null` (not undefined) when the day has no mark, so loading stays distinguishable.
   const gymDay = useLiveQuery(async () => (await getGymDay(today)) ?? null, [today]);
-  if (!workouts || gymDay === undefined) return <Placeholder label="Salle" className="bleed h-48 bg-gym" />;
+  if (!workouts || gymDay === undefined)
+    return <Placeholder label="Salle" className="bleed h-48 flex-1 bg-gym" />;
   const state = todayWorkouts(workouts, today);
 
   if (state.kind === 'active') return <ActiveWorkoutCard workout={state.workout} />;

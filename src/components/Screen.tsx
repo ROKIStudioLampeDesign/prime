@@ -15,6 +15,8 @@ interface ScreenProps {
   onBack?: () => void;
   /** Extra header buttons, shown before the gear. */
   actions?: ReactNode;
+  /** Content stretches to the tab bar (its last child can grow with `flex-1`), no bottom gap. */
+  fill?: boolean;
   children: ReactNode;
 }
 
@@ -35,6 +37,7 @@ export function Screen({
   backFallback = '/',
   onBack,
   actions,
+  fill = false,
   children,
 }: ScreenProps) {
   const goBack = useGoBack(backFallback);
@@ -75,7 +78,9 @@ export function Screen({
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-lg px-safe pb-6">{children}</main>
+      <main className={`mx-auto w-full max-w-lg px-safe ${fill ? 'flex flex-1 flex-col' : 'pb-6'}`}>
+        {children}
+      </main>
     </>
   );
 }

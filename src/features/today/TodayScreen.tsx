@@ -11,7 +11,7 @@ export function TodayScreen() {
   const today = useToday();
 
   return (
-    <Screen title="Aujourd'hui" subtitle={format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })}>
+    <Screen title="Aujourd'hui" subtitle={format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })} fill>
       <BackupReminder />
       {/* Full-width bands, no gaps: energy, then protein and weight sharing a paper row, then gym. */}
       <NutritionCard today={today} />
@@ -20,7 +20,7 @@ export function TodayScreen() {
         <WeightCard today={today} />
       </div>
       <StreaksCard today={today} />
-      {/* Last: its "Commencer une séance" button stays within thumb reach. */}
+      {/* Last, and grows to the tab bar: its "Commencer une séance" button stays within thumb reach. */}
       <GymCard today={today} />
     </Screen>
   );
