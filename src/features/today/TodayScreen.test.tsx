@@ -45,6 +45,6 @@ describe('TodayScreen', () => {
     expect(screen.getByText('sur 2 000 kcal · reste 1 300')).toBeTruthy();
     expect(screen.getByRole('link', { name: /Protéines/ }).textContent).toBe('Protéines14sur 150 g');
     expect(await screen.findByText('79,4')).toBeTruthy();
-    expect(screen.getByText('Pesée du jour enregistrée.')).toBeTruthy();
+    expect(screen.getByText('Pesée du jour')).toBeTruthy();
   });
 });
