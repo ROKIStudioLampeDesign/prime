@@ -73,6 +73,8 @@ export function ExerciseCard({
   const name = exercise?.name ?? 'Exercice inconnu';
   const menuSet = sets.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
+  // One mode for the whole exercise: switched from the header (or a set's menu).
+  const bodyweight = sets.length > 0 && sets.every((s) => s.bodyweight === true);
 
   function cycleStep() {
     const i = STEPS.indexOf(step);
@@ -122,15 +124,29 @@ export function ExerciseCard({
 
       <div className="mt-3 flex items-center gap-1.5 pl-1 text-xs font-extrabold text-muted">
         <span className="w-11 text-center">Série</span>
+        {bodyweight ? (
+          <span className="w-[140px] text-center">Charge</span>
+        ) : (
+          <button
+            type="button"
+            onClick={cycleStep}
+            aria-label={`Pas des boutons de poids : ${formatWeight(step)} kg. Changer`}
+            className="flex h-11 w-[140px] items-center justify-center gap-1 normal-case active:bg-surface"
+          >
+            kg <span className="bg-surface px-1.5 py-0.5 text-fg tabular-nums">±{formatWeight(step)}</span>
+          </button>
+        )}
+        <span className="w-14 text-center">Reps</span>
         <button
           type="button"
-          onClick={cycleStep}
-          aria-label={`Pas des boutons de poids : ${formatWeight(step)} kg. Changer`}
-          className="flex h-8 w-[140px] items-center justify-center gap-1 normal-case active:bg-surface"
+          aria-pressed={bodyweight}
+          onClick={() => void setExerciseBodyweight(workout.id, exerciseId, !bodyweight)}
+          className={`ml-auto flex h-11 shrink-0 items-center px-2 text-[11px] font-extrabold ${
+            bodyweight ? 'bg-fg text-bg' : 'border-2 border-line text-fg active:bg-surface'
+          }`}
         >
-          kg <span className="bg-surface px-1.5 py-0.5 text-fg tabular-nums">±{formatWeight(step)}</span>
+          Poids du corps
         </button>
-        <span className="w-14 text-center">Reps</span>
       </div>
 
       <ol className="mt-1 flex flex-col gap-1">

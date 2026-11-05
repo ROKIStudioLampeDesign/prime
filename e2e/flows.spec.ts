@@ -183,7 +183,13 @@ test('bodyweight exercises skip the load, and any exercise can switch to bodywei
   await expect(toggle).toBeChecked();
   await page.keyboard.press('Escape');
   await expect(bench.getByLabel(/Poids en kg/)).toHaveCount(0);
-  await expect(bench.getByText('Poids du corps')).toHaveCount(3);
+  await expect(bench.getByRole('button', { name: 'Poids du corps', pressed: true })).toBeVisible();
+
+  // The exercise header switches back to kg in one tap (e.g. weighted ab work).
+  const dipsToggle = dips.getByRole('button', { name: 'Poids du corps', pressed: true });
+  await dipsToggle.click();
+  await expect(dips.getByRole('button', { name: 'Poids du corps', pressed: false })).toBeVisible();
+  await expect(dips.getByLabel('Poids en kg, série 1')).toBeVisible();
 });
 
 test('log a day from a template: its exercises and sets, loads and reps left empty', async ({ page }) => {
