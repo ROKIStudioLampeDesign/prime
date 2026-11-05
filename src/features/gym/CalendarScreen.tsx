@@ -69,9 +69,10 @@ export function CalendarScreen() {
   }
 
   const monthLabel = format(new Date(year, month - 1, 1), 'MMMM yyyy', { locale: fr });
+  const weeks = monthGrid(year, month);
 
   return (
-    <Screen title="Salle">
+    <Screen title="Salle" fit>
       <GymTabs />
       <ActiveOrStart onStart={() => setStarting(true)} />
 
@@ -83,7 +84,7 @@ export function CalendarScreen() {
         <Loading />
       ) : (
         <>
-          <dl className="mt-4 grid grid-cols-2 gap-2">
+          <dl className="mt-3 grid shrink-0 grid-cols-2 gap-2">
             <Counter
               label="Série en cours"
               value={`${weekStreak(attended, today, weeklyTarget).weeks} sem.`}
@@ -94,8 +95,8 @@ export function CalendarScreen() {
             />
           </dl>
 
-          <section className="mt-4 rounded-2xl bg-surface p-3" aria-label="Calendrier">
-            <div className="mb-2 flex items-center">
+          <section className="mt-3 flex min-h-0 flex-1 flex-col bg-surface p-3" aria-label="Calendrier">
+            <div className="mb-1 flex shrink-0 items-center">
               <button
                 type="button"
                 aria-label="Mois précédent"
@@ -114,13 +115,19 @@ export function CalendarScreen() {
                 <ForwardIcon />
               </button>
             </div>
-            <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted" aria-hidden="true">
+            <div
+              className="grid shrink-0 grid-cols-7 gap-1 text-center text-xs text-muted"
+              aria-hidden="true"
+            >
               {WEEKDAYS.map((d, i) => (
                 <span key={i}>{d}</span>
               ))}
             </div>
-            <div className="mt-1 grid grid-cols-7 gap-1">
-              {monthGrid(year, month)
+            <div
+              className="mt-1 grid min-h-0 flex-1 grid-cols-7 gap-1"
+              style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(2.75rem, 1fr))` }}
+            >
+              {weeks
                 .flat()
                 .map((date, i) =>
                   date ? (
@@ -139,14 +146,6 @@ export function CalendarScreen() {
                 )}
             </div>
           </section>
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-muted">
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 bg-gym" aria-hidden="true" /> Séance
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 bg-fg" aria-hidden="true" /> Repos
-            </span>
-          </div>
         </>
       )}
 
@@ -164,7 +163,7 @@ export function CalendarScreen() {
 
 function Counter({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="bg-gym p-4 text-on-gym">
+    <div className="bg-gym px-4 py-3 text-on-gym">
       <dt className="text-xs font-bold">{label}</dt>
       <dd className="mt-1 text-3xl leading-none numeral">{value}</dd>
       {hint && <dd className="mt-1 text-xs leading-tight font-bold">{hint}</dd>}
@@ -189,7 +188,7 @@ function DayCell({ date, attended, rest, isToday, isFuture, onClick }: DayCellPr
       onClick={onClick}
       aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : ''}`}
       aria-current={isToday ? 'date' : undefined}
-      className={`flex aspect-square min-h-11 items-center justify-center rounded-xl text-sm font-semibold tabular-nums ${
+      className={`flex h-full min-h-11 items-center justify-center text-sm font-semibold tabular-nums ${
         attended
           ? 'bg-gym text-on-gym'
           : rest

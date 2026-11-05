@@ -99,7 +99,7 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
         </div>
       </div>
       <div
-        className="mt-2 min-h-0 flex-1 touch-pan-y py-2 select-none"
+        className="relative mt-2 min-h-64 flex-1 touch-pan-y select-none"
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => (swipeStart.current = null)}
@@ -110,7 +110,7 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
           colors={colors}
           selected={selected}
           onSelect={setSelected}
-          className="mx-auto block h-full w-full motion-safe:animate-fade-in"
+          className="absolute inset-0 block size-full py-2 motion-safe:animate-fade-in"
         />
       </div>
       <div className="mt-2">

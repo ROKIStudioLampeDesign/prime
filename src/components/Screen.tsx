@@ -18,8 +18,9 @@ interface ScreenProps {
   /** Content stretches to the tab bar (its last child can grow with `flex-1`), no bottom gap. */
   fill?: boolean;
   /**
-   * The screen is exactly the viewport height (no page scroll): main is a column and a child with
-   * `min-h-0 flex-1` takes the remaining space.
+   * The screen fills the viewport height without scrolling: main is a column and a child with
+   * `min-h-0 flex-1` takes the remaining space. On a screen too short for the content, the page
+   * grows and scrolls instead of hiding anything behind the tab bar.
    */
   fit?: boolean;
   children: ReactNode;
@@ -97,7 +98,7 @@ export function Screen({
   );
   if (fit) {
     return (
-      <div className="flex h-[calc(100dvh-var(--spacing-tabbar)-env(safe-area-inset-bottom))] flex-col">
+      <div className="flex min-h-[calc(100dvh-var(--spacing-tabbar)-env(safe-area-inset-bottom))] flex-col">
         {content}
       </div>
     );
