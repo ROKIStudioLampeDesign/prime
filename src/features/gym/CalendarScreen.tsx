@@ -87,7 +87,6 @@ export function CalendarScreen() {
             <Counter
               label="Série en cours"
               value={`${weekStreak(attended, today, weeklyTarget).weeks} sem.`}
-              hint={`semaines d’affilée avec au moins ${weeklyTarget} séances`}
             />
             <Counter
               label={`Séances en ${format(new Date(year, month - 1, 1), 'MMMM', { locale: fr })}`}
