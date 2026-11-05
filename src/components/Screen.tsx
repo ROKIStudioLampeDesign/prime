@@ -42,7 +42,7 @@ export function Screen({
 }: ScreenProps) {
   const goBack = useGoBack(backFallback);
 
-  return (
+  const content = (
     <>
       <header className="sticky top-0 z-10 bg-bg pt-safe px-safe">
         <div
@@ -78,9 +78,21 @@ export function Screen({
           )}
         </div>
       </header>
-      <main className={`mx-auto w-full max-w-lg px-safe ${fill ? 'flex flex-1 flex-col' : 'pb-6'}`}>
+      <main
+        className={
+          fill ? 'mx-auto flex w-full max-w-lg flex-1 flex-col px-safe' : 'mx-auto max-w-lg px-safe pb-6'
+        }
+      >
         {children}
       </main>
     </>
+  );
+  if (!fill) return content;
+  // Only this screen becomes a full-height column (the app layout stays a plain block: iOS Safari
+  // misplaces the fixed tab bar and sticky headers of long pages inside a flex column).
+  return (
+    <div className="flex min-h-[calc(100dvh-var(--spacing-tabbar)-env(safe-area-inset-bottom))] flex-col">
+      {content}
+    </div>
   );
 }

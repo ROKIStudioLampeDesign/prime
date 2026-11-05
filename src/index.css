@@ -119,6 +119,8 @@
     color-scheme: dark light;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    /* iOS scrolls the root, not body: without this the rubber-band bounce drags the fixed tab bar. */
+    overscroll-behavior-y: none;
   }
   body {
     @apply bg-bg font-sans text-fg antialiased;
