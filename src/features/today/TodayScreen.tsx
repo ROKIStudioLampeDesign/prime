@@ -13,14 +13,15 @@ export function TodayScreen() {
   return (
     <Screen title="Aujourd'hui" subtitle={format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })} fill>
       <BackupReminder />
-      {/* Full-width bands, no gaps: energy, then protein and weight sharing a paper row, then gym. */}
+      {/* Full-width bands, no gaps, sharing the screen height: energy (largest), protein and weight,
+          streaks, then gym. */}
       <NutritionCard today={today} />
-      <div className="bleed grid grid-cols-2 bg-paper text-ink">
+      <div className="bleed grid grow-[2] grid-cols-2 bg-paper text-ink">
         <ProteinCard today={today} />
         <WeightCard today={today} />
       </div>
       <StreaksCard today={today} />
-      {/* Last, and grows to the tab bar: its "Commencer une séance" button stays within thumb reach. */}
+      {/* Last: its "Commencer une séance" button stays within thumb reach. */}
       <GymCard today={today} />
     </Screen>
   );
