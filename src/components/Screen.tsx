@@ -17,6 +17,11 @@ interface ScreenProps {
   actions?: ReactNode;
   /** Content stretches to the tab bar (its last child can grow with `flex-1`), no bottom gap. */
   fill?: boolean;
+  /**
+   * The screen is exactly the viewport height (no page scroll): main is a column and a child with
+   * `min-h-0 flex-1` takes the remaining space.
+   */
+  fit?: boolean;
   children: ReactNode;
 }
 
@@ -38,6 +43,7 @@ export function Screen({
   onBack,
   actions,
   fill = false,
+  fit = false,
   children,
 }: ScreenProps) {
   const goBack = useGoBack(backFallback);
@@ -80,13 +86,22 @@ export function Screen({
       </header>
       <main
         className={
-          fill ? 'mx-auto flex w-full max-w-lg flex-1 flex-col px-safe' : 'mx-auto max-w-lg px-safe pb-6'
+          fill || fit
+            ? `mx-auto flex w-full max-w-lg flex-1 flex-col px-safe ${fit ? 'min-h-0 pb-3' : ''}`
+            : 'mx-auto max-w-lg px-safe pb-6'
         }
       >
         {children}
       </main>
     </>
   );
+  if (fit) {
+    return (
+      <div className="flex h-[calc(100dvh-var(--spacing-tabbar)-env(safe-area-inset-bottom))] flex-col">
+        {content}
+      </div>
+    );
+  }
   if (!fill) return content;
   // Only this screen becomes a full-height column (the app layout stays a plain block: iOS Safari
   // misplaces the fixed tab bar and sticky headers of long pages inside a flex column).
