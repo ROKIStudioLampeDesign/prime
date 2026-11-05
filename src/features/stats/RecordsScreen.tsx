@@ -14,10 +14,12 @@ import {
   personalRecords,
   RECORD_KINDS,
   RECORD_LABELS,
+  type HistorySet,
   type PersonalRecords,
   type RecordKind,
 } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
+import { BenchBadges } from './BenchBadges';
 import { BenchGoal } from './BenchGoal';
 import { shortDateLabel, toTime } from './chartUtils';
 import { recordDetail } from './labels';
@@ -46,7 +48,13 @@ export function RecordsScreen() {
           <BenchGoal records={records} goalKg={goal.kg} />
         </>
       ) : (
-        <BenchRecords id={bench.id} name={bench.name} records={records} goalKg={goal.kg} />
+        <BenchRecords
+          id={bench.id}
+          name={bench.name}
+          records={records}
+          goalKg={goal.kg}
+          history={history.get(bench.id) ?? []}
+        />
       )}
     </Screen>
   );
@@ -57,9 +65,10 @@ interface BenchRecordsProps {
   name: string;
   records: PersonalRecords;
   goalKg: number | undefined;
+  history: readonly HistorySet[];
 }
 
-function BenchRecords({ id, name, records, goalKg }: BenchRecordsProps) {
+function BenchRecords({ id, name, records, goalKg, history }: BenchRecordsProps) {
   // The estimated 1RM leads; without one (only sets of many reps), the heaviest load does.
   const lead: RecordKind = records.e1rm ? 'e1rm' : 'weight';
   const top = records[lead];
@@ -85,6 +94,7 @@ function BenchRecords({ id, name, records, goalKg }: BenchRecordsProps) {
       </section>
 
       <BenchGoal records={records} goalKg={goalKg} />
+      <BenchBadges bestKg={records.weight?.weightKg ?? 0} history={history} />
 
       <dl className="divide-y divide-line border-b border-line">
         {RECORD_KINDS.filter((kind) => kind !== lead).map((kind) => (

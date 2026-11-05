@@ -1,11 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useNow } from '../../components/useNow';
+import { getBenchBestKg } from '../../db/stats';
 import { listTemplates } from '../../db/templates';
-import { getActiveWorkout, getWorkoutSets, startWorkout } from '../../db/workouts';
-import { formatDuration } from '../../lib/format';
+import { getActiveWorkout, getWorkoutSets, startPrBenchWorkout, startWorkout } from '../../db/workouts';
+import { parseDecimal } from '../../domain/number';
+import { defaultPrTarget, prBenchPlan } from '../../domain/streaks';
+import { TextField } from '../../components/TextField';
+import { formatDuration, formatWeight } from '../../lib/format';
 import { workoutTitle } from './workoutLabels';
 
 /** Resume card while a workout is active, else the start button. */
@@ -50,11 +55,18 @@ export function StartSheet({ open, onClose }: { open: boolean; onClose: () => vo
     void navigate(`/gym/workout/${id}`);
   }
 
+  async function startPr(targetKg: number) {
+    const id = await startPrBenchWorkout(targetKg);
+    onClose();
+    void navigate(`/gym/workout/${id}`);
+  }
+
   return (
     <BottomSheet open={open} onClose={onClose} title="Commencer une séance">
       <Button className="w-full" onClick={() => void start()}>
         Séance libre
       </Button>
+      {open && <PrBenchStart onStart={(kg) => void startPr(kg)} />}
       <h3 className="mt-5 mb-2 text-sm font-semibold text-muted">Depuis un modèle</h3>
       {templates === undefined ? null : templates.length === 0 ? (
         <p className="text-sm text-muted">
@@ -82,5 +94,57 @@ export function StartSheet({ open, onClose }: { open: boolean; onClose: () => vo
         </ul>
       )}
     </BottomSheet>
+  );
+}
+
+const MAX_PR_KG = 400;
+
+/** "Séance PR bench": a target load (best + 2.5 kg by default), then a warm-up ramp and a single. */
+function PrBenchStart({ onStart }: { onStart: (targetKg: number) => void }) {
+  const best = useLiveQuery(getBenchBestKg);
+  const [text, setText] = useState<string>();
+  const [expanded, setExpanded] = useState(false);
+  if (best === undefined) return <div className="mt-2 h-12" />;
+
+  const value = text ?? formatWeight(defaultPrTarget(best));
+  const parsed = parseDecimal(value);
+  const target = parsed !== undefined && parsed >= 20 && parsed <= MAX_PR_KG ? parsed : undefined;
+
+  if (!expanded) {
+    return (
+      <Button variant="secondary" className="mt-2 w-full" onClick={() => setExpanded(true)}>
+        Séance PR bench
+      </Button>
+    );
+  }
+  return (
+    <form
+      className="mt-3 border-y border-line py-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (target !== undefined) onStart(target);
+      }}
+    >
+      <TextField
+        label="Charge visée pour 1 rep"
+        suffix="kg"
+        inputMode="decimal"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => setText(e.target.value)}
+        error={target === undefined ? `Entre 20 et ${MAX_PR_KG} kg` : undefined}
+        hint={
+          target !== undefined
+            ? `Échauffement : ${prBenchPlan(target)
+                .slice(0, -1)
+                .map((s) => `${formatWeight(s.weightKg)} × ${s.reps}`)
+                .join(', ')}${best > 0 ? ` · record : ${formatWeight(best)} kg` : ''}`
+            : undefined
+        }
+      />
+      <Button type="submit" className="mt-3 w-full" disabled={target === undefined}>
+        Lancer la tentative
+      </Button>
+    </form>
   );
 }

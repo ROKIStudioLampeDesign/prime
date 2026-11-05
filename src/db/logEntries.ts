@@ -1,6 +1,7 @@
 import type { LocalDate } from '../domain/date';
 import { servingGrams, type MealSummary, type Serving } from '../domain/meal';
 import { computeMacros, type MealSlot } from '../domain/nutrition';
+import type { DayKcal } from '../domain/streaks';
 import {
   db,
   type Food,
@@ -13,6 +14,18 @@ import {
 
 export function listEntriesForDate(date: LocalDate, database: PrimeDB = db): Promise<LogEntry[]> {
   return database.logEntries.where('date').equals(date).sortBy('createdAt');
+}
+
+/** Calories and number of entries per logged day (days without entries are absent). */
+export async function listDailyKcal(database: PrimeDB = db): Promise<Map<LocalDate, DayKcal>> {
+  const out = new Map<LocalDate, DayKcal>();
+  await database.logEntries.each((e) => {
+    const day = out.get(e.date) ?? { kcal: 0, entries: 0 };
+    day.kcal += e.macros.kcal;
+    day.entries += 1;
+    out.set(e.date, day);
+  });
+  return out;
 }
 
 export function getEntry(id: number, database: PrimeDB = db): Promise<LogEntry | undefined> {

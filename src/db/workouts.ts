@@ -1,5 +1,6 @@
 import { fromLocalDate, todayLocalDate, type LocalDate } from '../domain/date';
 import { moveItem } from '../domain/meal';
+import { prBenchPlan } from '../domain/streaks';
 import {
   defaultSetCount,
   lastPerformance,
@@ -15,6 +16,7 @@ import {
   type WorkoutStats,
 } from '../domain/workout';
 import { db, type PrimeDB, type Workout, type WorkoutSet } from './db';
+import { BENCH_SEED_ID } from './exerciseSeed';
 import { createTemplate } from './templates';
 
 export function getWorkout(id: number, database: PrimeDB = db): Promise<Workout | undefined> {
@@ -153,6 +155,32 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
           database,
         );
       }
+      return id;
+    },
+  );
+}
+
+/**
+ * Starts a bench PR session: the bench with a warm-up ramp and one single at `targetKg`
+ * (`prBenchPlan`). If a workout is already active, returns it unchanged.
+ */
+export async function startPrBenchWorkout(targetKg: number, database: PrimeDB = db): Promise<number> {
+  return database.transaction(
+    'rw',
+    [database.workouts, database.workoutSets, database.templates, database.exercises],
+    async () => {
+      const active = await getActiveWorkout(database);
+      if (active) return active.id;
+      const bench = await database.exercises.where('seedId').equals(BENCH_SEED_ID).first();
+      if (!bench) throw new Error('Built-in bench missing');
+      const now = Date.now();
+      const id = await database.workouts.add({
+        date: todayLocalDate(new Date(now)),
+        status: 'active',
+        startedAt: now,
+        name: 'PR bench',
+      });
+      await addExerciseToWorkout(id, bench.id, { plan: prBenchPlan(targetKg) }, database);
       return id;
     },
   );

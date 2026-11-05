@@ -35,3 +35,17 @@ export async function getRestSeconds(): Promise<number> {
 export async function setRestSeconds(seconds: number): Promise<void> {
   await setSetting(REST_SECONDS_KEY, seconds);
 }
+
+const WEEKLY_TARGET_KEY = 'weeklyGymTarget';
+/** Gym days per Monday–Sunday week for the weekly streak. */
+export const DEFAULT_WEEKLY_TARGET = 5;
+export const WEEKLY_TARGET_OPTIONS = [2, 3, 4, 5, 6, 7] as const;
+
+export async function getWeeklyTarget(): Promise<number> {
+  const value = await getSetting<unknown>(WEEKLY_TARGET_KEY);
+  return typeof value === 'number' && value >= 1 && value <= 7 ? value : DEFAULT_WEEKLY_TARGET;
+}
+
+export async function setWeeklyTarget(days: number): Promise<void> {
+  await setSetting(WEEKLY_TARGET_KEY, days);
+}

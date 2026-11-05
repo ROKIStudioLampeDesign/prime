@@ -12,6 +12,7 @@ import { getTemplate } from '../../db/templates';
 import { getWorkout, getWorkoutSets } from '../../db/workouts';
 import { workoutStats } from '../../domain/workout';
 import { formatInteger, setLoadLabel } from '../../lib/format';
+import { BenchResult } from './BenchResult';
 import { SaveTemplateSheet } from './SaveTemplateSheet';
 import { exerciseName, useExercisesById } from './exerciseData';
 import { workoutTitle } from './workoutLabels';
@@ -71,6 +72,8 @@ export function WorkoutSummaryScreen() {
           <Tile label="Exercices" value={String(stats.exercises)} />
         </dl>
       </section>
+
+      <BenchResult workout={workout} sets={sets} exercises={exercises} />
 
       {/* finishWorkout stamps the template with the workout's end time when it updated it. */}
       {template && workout.endedAt !== undefined && template.updatedAt >= workout.endedAt && (

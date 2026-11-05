@@ -9,6 +9,7 @@ import type { Workout } from '../../db/db';
 import { getGoals } from '../../db/goals';
 import { getGymDay, setRestDay } from '../../db/gymDays';
 import { listEntriesForDate } from '../../db/logEntries';
+import { getStreaks } from '../../db/streaks';
 import { getWorkoutSets, listAllWorkouts } from '../../db/workouts';
 import type { LocalDate } from '../../domain/date';
 import { GOAL_KINDS, goalProgress, sumMacros } from '../../domain/nutrition';
@@ -147,6 +148,62 @@ export function WeightCard({ today }: { today: LocalDate }) {
         <p className="mt-1.5 text-sm font-bold text-ink/72">Aucune pesée pour l’instant.</p>
       )}
     </Link>
+  );
+}
+
+/**
+ * The streaks row: days in a row at or under the calorie goal, and weeks in a row with the
+ * weekly number of gym days (set in Réglages).
+ */
+export function StreaksCard({ today }: { today: LocalDate }) {
+  const streaks = useLiveQuery(() => getStreaks(today), [today]);
+  if (!streaks) return <Placeholder label="Séries" className="h-32 border-b border-line" />;
+  const { calories, week } = streaks;
+
+  return (
+    <section aria-label="Séries" className="bleed grid grid-cols-2 border-b border-line">
+      <Link
+        to="/nutrition"
+        className="@container block border-r border-line py-4 pr-4 focus-inset active:opacity-70"
+      >
+        <h2 className={cellLabel}>
+          {calories ? `Sous ${formatMacro('kcal', calories.goal)} kcal` : 'Calories'}
+        </h2>
+        {calories ? (
+          <>
+            <BigNumber
+              value={String(calories.days)}
+              maxRem={3.25}
+              unit={calories.days > 1 ? 'jours' : 'jour'}
+              className="mt-1.5 leading-[0.9]"
+            />
+            <p
+              className={`mt-1.5 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
+            >
+              {calories.today === 'over'
+                ? 'Objectif dépassé aujourd’hui.'
+                : calories.today === 'ok'
+                  ? 'Aujourd’hui compte déjà.'
+                  : 'Note tes repas du jour.'}
+            </p>
+          </>
+        ) : (
+          <p className="mt-1.5 text-sm font-semibold text-muted">Fixe un objectif calories dans Réglages.</p>
+        )}
+      </Link>
+      <Link to="/gym" className="@container block py-4 pl-4 focus-inset active:opacity-70">
+        <h2 className={cellLabel}>Semaines à {week.target} séances</h2>
+        <BigNumber
+          value={String(week.weeks)}
+          maxRem={3.25}
+          unit={week.weeks > 1 ? 'semaines' : 'semaine'}
+          className="mt-1.5 leading-[0.9]"
+        />
+        <p className="mt-1.5 text-[13px] font-semibold text-muted tabular-nums">
+          {Math.min(week.thisWeek, 7)} / {week.target} cette semaine
+        </p>
+      </Link>
+    </section>
   );
 }
 

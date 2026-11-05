@@ -199,3 +199,33 @@ test('log a day from a template: its exercises and sets, loads and reps left emp
   for (const input of await bench.getByLabel(/Répétitions, série/).all()) await expect(input).toHaveValue('');
   await expect(bench.getByText(/Dernière fois/)).toHaveCount(0);
 });
+
+test('a bench PR session warms up, then a new record unlocks its badge', async ({ page }) => {
+  await page.goto('/gym');
+  await page.getByRole('button', { name: 'Commencer une séance' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Commencer une séance' });
+  await sheet.getByRole('button', { name: 'Séance PR bench' }).click();
+  await sheet.getByLabel('Charge visée pour 1 rep').fill('60');
+  await sheet.getByRole('button', { name: 'Lancer la tentative' }).click();
+  await expect(page).toHaveURL(/\/gym\/workout\/\d+$/);
+
+  const bench = page.getByRole('region', { name: 'Bench' });
+  await expect(bench.getByLabel('Poids en kg, série 1')).toHaveValue('20');
+  await expect(bench.getByLabel('Poids en kg, série 6')).toHaveValue('60');
+  await bench.getByRole('button', { name: 'Valider la série 6' }).click();
+  await page.getByRole('button', { name: 'Terminer' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Terminer' }).click();
+
+  const result = page.getByRole('region', { name: 'Résultat au bench' });
+  await expect(result.getByText('Record battu')).toBeVisible();
+  await expect(result.getByRole('img', { name: 'Badge bench 60 kg, débloqué' })).toBeVisible();
+
+  await page.goto('/stats/records');
+  await expect(page.getByRole('img', { name: 'Badge bench 60 kg, débloqué' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Badge bench 70 kg, à débloquer' })).toBeVisible();
+
+  await page.goto('/');
+  const streaks = page.getByRole('region', { name: 'Séries' });
+  await expect(streaks.getByText('Semaines à 5 séances')).toBeVisible();
+  await expect(streaks.getByText('1 / 5 cette semaine')).toBeVisible();
+});

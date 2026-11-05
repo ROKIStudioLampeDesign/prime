@@ -8,7 +8,14 @@ import { Screen } from '../../components/Screen';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { getBodyMapSettings, saveBodyMapSettings, type BodyMapSettings } from '../../db/bodyMap';
 import { getGoals } from '../../db/goals';
-import { getRestSeconds, REST_OPTIONS, setRestSeconds } from '../../db/gymDays';
+import {
+  getRestSeconds,
+  getWeeklyTarget,
+  REST_OPTIONS,
+  setRestSeconds,
+  setWeeklyTarget,
+  WEEKLY_TARGET_OPTIONS,
+} from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
 import { formatClock, formatMacro } from '../../lib/format';
 import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
@@ -43,6 +50,33 @@ function RestTimerSetting() {
             value={String(seconds)}
             onChange={(v) => void setRestSeconds(Number(v))}
             tone="gym"
+          />
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** Gym days per week for the weekly streak (home screen and calendar). */
+function WeeklyTargetSetting() {
+  const target = useLiveQuery(getWeeklyTarget);
+  return (
+    <section className="mt-6 border-b border-line pb-4" aria-labelledby="weekly-target">
+      <h2 id="weekly-target" className="text-[1.375rem] leading-tight headline">
+        Séances par semaine
+      </h2>
+      <p className="mt-0.5 text-sm text-muted">
+        Ta série de semaines compte celles avec au moins autant de jours de salle (lundi → dimanche).
+      </p>
+      {target === undefined ? (
+        <div className="mt-3 h-11" />
+      ) : (
+        <div className="mt-3">
+          <SegmentedControl
+            label="Séances par semaine"
+            options={WEEKLY_TARGET_OPTIONS.map((n) => ({ value: String(n), label: String(n) }))}
+            value={String(target)}
+            onChange={(v) => void setWeeklyTarget(Number(v))}
           />
         </div>
       )}
@@ -112,6 +146,8 @@ export function SettingsScreen() {
           </section>
 
           <RestTimerSetting />
+
+          <WeeklyTargetSetting />
 
           <BodyMapSetting />
 

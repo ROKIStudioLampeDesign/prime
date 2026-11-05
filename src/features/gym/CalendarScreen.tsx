@@ -7,10 +7,11 @@ import { BackIcon, ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { iconButton, Screen } from '../../components/Screen';
 import { useToday } from '../../components/useToday';
-import { listGymDays } from '../../db/gymDays';
+import { getWeeklyTarget, listGymDays } from '../../db/gymDays';
 import { listAllWorkouts } from '../../db/workouts';
 import { formatMonthParam, parseMonthParam, shiftMonth, type LocalDate } from '../../domain/date';
-import { attendedDates, monthGrid, restDates, sessionsInMonth, weeklyStreak } from '../../domain/gymCalendar';
+import { attendedDates, monthGrid, restDates, sessionsInMonth } from '../../domain/gymCalendar';
+import { weekStreak } from '../../domain/streaks';
 import { DaySheet } from './DaySheet';
 import { GymTabs } from './shared';
 import { ActiveOrStart, StartSheet } from './StartSheet';
@@ -26,6 +27,7 @@ export function CalendarScreen() {
   const { year, month } = shown;
   const workouts = useLiveQuery(listAllWorkouts);
   const gymDays = useLiveQuery(listGymDays);
+  const weeklyTarget = useLiveQuery(getWeeklyTarget);
   const [selectedDay, setSelectedDay] = useState<LocalDate>();
   // In the URL so "Commencer une séance" on the home screen can open the sheet directly.
   const starting = params.get('start') === '1';
@@ -73,15 +75,19 @@ export function CalendarScreen() {
       <GymTabs />
       <ActiveOrStart onStart={() => setStarting(true)} />
 
-      {attended === undefined || resting === undefined || workouts === undefined || gymDays === undefined ? (
+      {attended === undefined ||
+      resting === undefined ||
+      workouts === undefined ||
+      gymDays === undefined ||
+      weeklyTarget === undefined ? (
         <Loading />
       ) : (
         <>
           <dl className="mt-4 grid grid-cols-2 gap-2">
             <Counter
               label="Série en cours"
-              value={`${weeklyStreak(attended, today)} sem.`}
-              hint="semaines d’affilée avec au moins une séance"
+              value={`${weekStreak(attended, today, weeklyTarget).weeks} sem.`}
+              hint={`semaines d’affilée avec au moins ${weeklyTarget} séances`}
             />
             <Counter
               label={`Séances en ${format(new Date(year, month - 1, 1), 'MMMM', { locale: fr })}`}
