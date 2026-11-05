@@ -218,11 +218,11 @@ test('a bench PR session warms up, then a new record unlocks its badge', async (
 
   const result = page.getByRole('region', { name: 'Résultat au bench' });
   await expect(result.getByText('Record battu')).toBeVisible();
-  await expect(result.getByRole('img', { name: 'Badge bench 60 kg, débloqué' })).toBeVisible();
+  await expect(result.getByRole('img', { name: 'Badge bench 60 kg, Bronze I, débloqué' })).toBeVisible();
 
   await page.goto('/stats/records');
-  await expect(page.getByRole('img', { name: 'Badge bench 60 kg, débloqué' })).toBeVisible();
-  await expect(page.getByRole('img', { name: 'Badge bench 70 kg, à débloquer' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Badge bench 60 kg, Bronze I, débloqué' })).toBeVisible();
+  await expect(page.getByRole('img', { name: 'Badge bench 70 kg, Bronze II, à débloquer' })).toBeVisible();
 
   await page.goto('/');
   const streaks = page.getByRole('region', { name: 'Séries' });

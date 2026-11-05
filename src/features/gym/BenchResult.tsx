@@ -3,7 +3,7 @@ import { BenchBadge } from '../../components/BenchBadge';
 import type { Exercise, Workout, WorkoutSet } from '../../db/db';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { getRecordsBefore } from '../../db/stats';
-import { benchBadgesCrossed } from '../../domain/streaks';
+import { benchBadgesCrossed, benchRankLabel } from '../../domain/streaks';
 import { formatWeight } from '../../lib/format';
 
 interface BenchResultProps {
@@ -46,11 +46,12 @@ export function BenchResult({ workout, sets, exercises }: BenchResultProps) {
       </p>
       {badges.length > 0 && (
         <div className="mt-3">
-          <p className="text-sm font-extrabold">{badges.length > 1 ? 'Nouveaux badges' : 'Nouveau badge'}</p>
+          <p className="text-sm font-extrabold">{badges.length > 1 ? 'Nouveaux rangs' : 'Nouveau rang'}</p>
           <ul className="mt-2 flex flex-wrap gap-3">
             {badges.map((kg) => (
-              <li key={kg}>
-                <BenchBadge kg={kg} unlocked goal={kg === 120} size={88} />
+              <li key={kg} className="flex flex-col items-center">
+                <BenchBadge kg={kg} unlocked size={88} />
+                <span className="text-sm font-black">{benchRankLabel(kg)}</span>
               </li>
             ))}
           </ul>

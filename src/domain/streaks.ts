@@ -90,6 +90,39 @@ export function benchBadges(bestKg: number): BenchBadge[] {
   return badges;
 }
 
+export const BENCH_RANKS = ['Bronze', 'Argent', 'Or', 'Rubis', 'Obsidienne'] as const;
+export type BenchRankName = (typeof BENCH_RANKS)[number];
+
+export interface BenchRank {
+  name: BenchRankName;
+  /** 0 (Bronze) to 4 (Obsidienne): each tier adds ornaments to the badge. */
+  tier: number;
+  /** 1 or 2 within Bronze, Argent and Or; 0 for Rubis (the 120 kg goal); 1–3 for Obsidienne. */
+  division: number;
+}
+
+/**
+ * Rank of a bench milestone: Bronze 60–70, Argent 80–90, Or 100–110 (divisions I and II), Rubis
+ * at 120 (the goal), then Obsidienne I, II, III from 130 kg.
+ */
+export function benchRank(kg: number): BenchRank {
+  if (kg >= 130)
+    return { name: 'Obsidienne', tier: 4, division: Math.min(3, Math.floor((kg - 130) / 10) + 1) };
+  if (kg >= 120) return { name: 'Rubis', tier: 3, division: 0 };
+  const tier = kg >= 100 ? 2 : kg >= 80 ? 1 : 0;
+  const from = [60, 80, 100][tier] ?? 60;
+  const division = Math.min(2, Math.max(1, Math.floor((kg - from) / 10) + 1));
+  return { name: BENCH_RANKS[tier] ?? 'Bronze', tier, division };
+}
+
+const ROMAN = ['', 'I', 'II', 'III'];
+
+/** "Or II", "Rubis", "Obsidienne I". */
+export function benchRankLabel(kg: number): string {
+  const { name, division } = benchRank(kg);
+  return division > 0 ? `${name} ${ROMAN[division] ?? ''}` : name;
+}
+
 /** Day each milestone was first reached (a set of ≥ 1 rep at or above it), oldest sets first. */
 export function benchBadgeDates(
   history: readonly { weightKg: number; reps: number; date: LocalDate; startedAt: number }[],

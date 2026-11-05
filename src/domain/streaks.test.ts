@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
 import {
   benchBadgeDates,
+  benchRank,
+  benchRankLabel,
   benchBadges,
   benchBadgesCrossed,
   calorieStreak,
@@ -137,5 +139,29 @@ describe('benchBadgeDates', () => {
     ];
     const dates = benchBadgeDates(history, [60, 70, 80, 90]);
     expect(Object.fromEntries(dates)).toEqual({ 60: '2026-09-01', 70: '2026-09-01', 80: '2026-10-20' });
+  });
+});
+
+describe('benchRank', () => {
+  it('names each 10 kg milestone: two divisions per metal, Rubis at the goal, then Obsidienne', () => {
+    const labels = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200].map(benchRankLabel);
+    expect(labels).toEqual([
+      'Bronze I',
+      'Bronze II',
+      'Argent I',
+      'Argent II',
+      'Or I',
+      'Or II',
+      'Rubis',
+      'Obsidienne I',
+      'Obsidienne II',
+      'Obsidienne III',
+      'Obsidienne III',
+    ]);
+  });
+
+  it('gives each tier its level of ornaments', () => {
+    expect([60, 80, 100, 120, 130].map((kg) => benchRank(kg).tier)).toEqual([0, 1, 2, 3, 4]);
+    expect(benchRank(120).division).toBe(0);
   });
 });

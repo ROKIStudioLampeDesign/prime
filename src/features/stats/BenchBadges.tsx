@@ -1,10 +1,8 @@
 import { BenchBadge } from '../../components/BenchBadge';
-import { benchBadgeDates, benchBadges } from '../../domain/streaks';
+import { benchBadgeDates, benchBadges, benchRankLabel } from '../../domain/streaks';
 import type { HistorySet } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
 import { shortDateLabel, toTime } from './chartUtils';
-
-const GOAL_KG = 120;
 
 /** Bench milestones every 10 kg: unlocked plates with their date, the next ones with what's left. */
 export function BenchBadges({ bestKg, history }: { bestKg: number; history: readonly HistorySet[] }) {
@@ -30,8 +28,11 @@ export function BenchBadges({ bestKg, history }: { bestKg: number; history: read
           const date = dates.get(b.kg);
           return (
             <li key={b.kg} className="flex flex-col items-center text-center">
-              <BenchBadge kg={b.kg} unlocked={b.unlocked} goal={b.kg === GOAL_KG} />
-              <p className="mt-1 text-xs font-bold text-muted tabular-nums">
+              <BenchBadge kg={b.kg} unlocked={b.unlocked} />
+              <p className={`mt-0.5 text-sm font-black ${b.unlocked ? '' : 'text-muted'}`}>
+                {benchRankLabel(b.kg)}
+              </p>
+              <p className="text-xs font-bold text-muted tabular-nums">
                 {b.unlocked
                   ? date
                     ? shortDateLabel(toTime(date))
