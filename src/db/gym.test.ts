@@ -275,6 +275,34 @@ describe('workout logging', () => {
     ]);
   });
 
+  it('prefills the boxes from a newer session than the template, not from its plan', async () => {
+    const bench = await seededId('bench-press');
+    const templateId = await createTemplate(
+      {
+        name: 'Push',
+        exercises: [
+          {
+            exerciseId: bench,
+            targetSets: 2,
+            sets: [
+              { weightKg: 50, reps: 10 },
+              { weightKg: 50, reps: 10 },
+            ],
+          },
+        ],
+      },
+      db,
+    );
+    await db.templates.update(templateId, { updatedAt: 1000 });
+    await pastWorkout(bench, [[60, 8]], 2000); // done outside the template, after its last change
+    const id = await startWorkout(templateId, db);
+    const sets = await getWorkoutSets(id, db);
+    expect(sets.map((s) => [s.weightKg, s.reps])).toEqual([
+      [60, 8],
+      [50, 10],
+    ]);
+  });
+
   it('leaves its template alone when an exercise was added', async () => {
     const bench = await seededId('bench-press');
     const squat = await seededId('back-squat');

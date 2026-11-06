@@ -24,16 +24,22 @@ export interface WorkoutHistoryItem {
   sets: readonly SetData[];
 }
 
+/** The sets of an exercise in one past workout, with when that workout started. */
+export interface PastPerformance {
+  startedAt: number;
+  sets: PerformedSet[];
+}
+
 /**
  * The completed sets of `exerciseId` in the most recent workout that started before `before`
- * (excluding `excludeWorkoutId`), sorted by set number. Undefined when never performed.
- * Workouts where the exercise has no completed set are skipped.
+ * (excluding `excludeWorkoutId`), sorted by set number, with that workout's start. Undefined
+ * when never performed. Workouts where the exercise has no completed set are skipped.
  */
-export function lastPerformance(
+export function lastPerformanceSession(
   history: readonly WorkoutHistoryItem[],
   exerciseId: number,
   options: { before?: number; excludeWorkoutId?: number } = {},
-): PerformedSet[] | undefined {
+): PastPerformance | undefined {
   const candidates = history
     .filter(
       (w) =>
@@ -46,9 +52,18 @@ export function lastPerformance(
       .filter((s) => s.exerciseId === exerciseId && s.completed)
       .map(({ setNumber, weightKg, reps }) => ({ setNumber, weightKg, reps }))
       .sort((a, b) => a.setNumber - b.setNumber);
-    if (sets.length > 0) return sets;
+    if (sets.length > 0) return { startedAt: workout.startedAt, sets };
   }
   return undefined;
+}
+
+/** The sets of `lastPerformanceSession`, without the workout start. */
+export function lastPerformance(
+  history: readonly WorkoutHistoryItem[],
+  exerciseId: number,
+  options: { before?: number; excludeWorkoutId?: number } = {},
+): PerformedSet[] | undefined {
+  return lastPerformanceSession(history, exerciseId, options)?.sets;
 }
 
 /** Previous values for a set number: the same set number, else the last set performed. */
@@ -94,6 +109,26 @@ export function prefillFromPlan(
       weightKg: p.weightKg > 0 || p.reps > 0 ? p.weightKg : (last?.weightKg ?? 0),
       reps: p.reps > 0 ? p.reps : (last?.reps ?? fallbackReps),
     };
+  });
+}
+
+/**
+ * Initial values for a template's planned sets, given the last performance. When that
+ * performance is newer than the template's last change (`planUpdatedAt`), each set takes what was
+ * actually done last time (same set number), so the boxes show the latest loads and reps; sets
+ * beyond it, and templates edited since, follow the plan (`prefillFromPlan`).
+ */
+export function prefillForTemplate(
+  previous: PastPerformance | undefined,
+  plan: readonly TemplateSet[],
+  planUpdatedAt: number,
+  fallbackReps = 0,
+): PerformedSet[] {
+  const planned = prefillFromPlan(previous?.sets, plan, fallbackReps);
+  if (!previous || previous.startedAt <= planUpdatedAt) return planned;
+  return planned.map((p) => {
+    const done = previous.sets.find((s) => s.setNumber === p.setNumber);
+    return done ? { setNumber: p.setNumber, weightKg: done.weightKg, reps: done.reps } : p;
   });
 }
 

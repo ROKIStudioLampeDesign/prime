@@ -125,6 +125,48 @@ export function recordsBeaten(
   });
 }
 
+/** A set of the current workout, as far as live record badges are concerned. */
+export interface SessionSet {
+  id: number;
+  weightKg: number;
+  reps: number;
+  completed: boolean;
+  setNumber: number;
+  /** Epoch ms; orders the sets as they were validated. */
+  completedAt?: number;
+}
+
+/**
+ * Which completed sets of the current workout hold an all-time record, by set id. For each kind,
+ * only the single best set of the session gets it, and only if it beats the record from before the
+ * workout (`previous`): two sets that both beat last week's best don't both get a badge. On ties,
+ * the set validated first keeps the record. No previous record for a kind: no badge.
+ */
+export function sessionRecordHolders(
+  sets: readonly SessionSet[],
+  previous: PersonalRecords,
+): Map<number, RecordKind[]> {
+  const done = sets
+    .filter((s) => s.completed)
+    .sort((a, b) => (a.completedAt ?? Infinity) - (b.completedAt ?? Infinity) || a.setNumber - b.setNumber);
+  const holders = new Map<number, RecordKind[]>();
+  for (const kind of RECORD_KINDS) {
+    const record = previous[kind];
+    if (!record) continue;
+    let best = record.value;
+    let holder: number | undefined;
+    for (const s of done) {
+      const value = recordValue(kind, s);
+      if (value !== undefined && value > best + 1e-9) {
+        best = value;
+        holder = s.id;
+      }
+    }
+    if (holder !== undefined) holders.set(holder, [...(holders.get(holder) ?? []), kind]);
+  }
+  return holders;
+}
+
 /** Date of the most recent record among the kinds (for sorting the records list). */
 export function latestRecordDate(records: PersonalRecords): LocalDate | undefined {
   let latest: LocalDate | undefined;

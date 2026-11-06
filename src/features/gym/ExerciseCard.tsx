@@ -14,19 +14,11 @@ import {
 import { NumericInput } from '../../components/NumericInput';
 import { iconButton } from '../../components/Screen';
 import type { Exercise, Workout, WorkoutSet } from '../../db/db';
-import {
-  addSet,
-  getLastPerformance,
-  moveExercise,
-  removeExercise,
-  removeSet,
-  setCompleted,
-  updateSet,
-} from '../../db/workouts';
+import { addSet, moveExercise, removeExercise, removeSet, setCompleted, updateSet } from '../../db/workouts';
 import { getRecordsBefore } from '../../db/stats';
-import { RECORD_LABELS, recordsBeaten, type PersonalRecords, type RecordKind } from '../../domain/strength';
-import { previousForSet, stepWeight, type PerformedSet } from '../../domain/workout';
-import { formatWeight, setLoadLabel } from '../../lib/format';
+import { RECORD_LABELS, sessionRecordHolders, type RecordKind } from '../../domain/strength';
+import { stepWeight } from '../../domain/workout';
+import { formatWeight } from '../../lib/format';
 import { musclesLabel } from './exerciseData';
 
 const STEPS = [2.5, 1.25, 0.5];
@@ -52,16 +44,8 @@ export function ExerciseCard({
   isLast,
   restSeconds,
 }: ExerciseCardProps) {
-  // No "last time" hint on a finished workout: back-filled sessions start blank, not guessed.
-  const showPrevious = workout.status !== 'done';
-  const previous = useLiveQuery(
-    () =>
-      showPrevious
-        ? getLastPerformance(exerciseId, { before: workout.startedAt, excludeWorkoutId: workout.id })
-        : undefined,
-    [exerciseId, workout.startedAt, workout.id, showPrevious],
-  );
-  // Records from before this workout only, so the badge means "better than ever before".
+  // Records from before this workout; only the session's best set per kind gets the badge, so
+  // it always means "best ever", including the sets already done today.
   const records = useLiveQuery(
     () => getRecordsBefore(exerciseId, workout),
     [exerciseId, workout.id, workout.startedAt],
@@ -72,6 +56,7 @@ export function ExerciseCard({
   const name = exercise?.name ?? 'Exercice inconnu';
   const menuSet = sets.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
+  const holders = records ? sessionRecordHolders(sets, records) : undefined;
 
   function cycleStep() {
     const i = STEPS.indexOf(step);
@@ -138,8 +123,7 @@ export function ExerciseCard({
             key={set.id}
             set={set}
             step={step}
-            previous={previousForSet(previous, set.setNumber)}
-            records={set.completed ? recordsFor(set, records) : []}
+            records={holders?.get(set.id) ?? []}
             onToggle={() => void setCompleted(set.id, !set.completed, restSeconds)}
             onMenu={() => setMenuSetId(set.id)}
           />
@@ -170,21 +154,16 @@ export function ExerciseCard({
   );
 }
 
-function recordsFor(set: WorkoutSet, records: PersonalRecords | undefined): RecordKind[] {
-  return records ? recordsBeaten(set, records) : [];
-}
-
 interface SetRowProps {
   set: WorkoutSet;
   step: number;
-  previous: PerformedSet | undefined;
-  /** Records this completed set beats (empty: no badge). */
+  /** All-time records this completed set holds (empty: no badge). */
   records: RecordKind[];
   onToggle: () => void;
   onMenu: () => void;
 }
 
-function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps) {
+function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
   return (
     <li className={`border-l-4 py-1 pr-0.5 ${set.completed ? 'border-gym bg-gym/18' : 'border-transparent'}`}>
@@ -239,19 +218,17 @@ function SetRow({ set, step, previous, records, onToggle, onMenu }: SetRowProps)
           <CheckIcon className="size-5" strokeWidth={3} />
         </button>
       </div>
-      {(previous || set.rpe !== undefined || records.length > 0) && (
+      {(set.rpe !== undefined || records.length > 0) && (
         <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-xs font-semibold text-muted tabular-nums">
           {records.length > 0 && (
             <span
               className="bg-accent-fill px-1.5 py-px text-[11px] font-black text-accent-fg"
               title={records.map((k) => RECORD_LABELS[k]).join(', ')}
-              aria-label={`Record battu : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
+              aria-label={`Record all-time : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
             >
               PR
             </span>
           )}
-          {previous && `Dernière fois : ${setLoadLabel(previous)} × ${previous.reps}`}
-          {previous && set.rpe !== undefined && ' · '}
           {set.rpe !== undefined && `RPE ${set.rpe}`}
         </p>
       )}

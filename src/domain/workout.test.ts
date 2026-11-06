@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   defaultSetCount,
   lastPerformance,
+  lastPerformanceSession,
   nextSetValues,
+  prefillForTemplate,
   prefillFromPlan,
   prefillSets,
   previousForSet,
@@ -325,5 +327,58 @@ describe('prefillFromPlan and bodyweight', () => {
     expect(prefillFromPlan(previous, [{ weightKg: 50, reps: 0 }])).toEqual([
       { setNumber: 1, weightKg: 50, reps: 10 },
     ]);
+  });
+});
+
+describe('prefillForTemplate', () => {
+  const plan = [
+    { weightKg: 17.5, reps: 10 },
+    { weightKg: 17.5, reps: 10 },
+    { weightKg: 17.5, reps: 10 },
+  ];
+  const last = {
+    startedAt: 2000,
+    sets: [
+      { setNumber: 1, weightKg: 20, reps: 12 },
+      { setNumber: 2, weightKg: 20, reps: 11 },
+    ],
+  };
+
+  it('takes what was done last time when it is newer than the template; extra sets follow the plan', () => {
+    expect(prefillForTemplate(last, plan, 1000)).toEqual([
+      { setNumber: 1, weightKg: 20, reps: 12 },
+      { setNumber: 2, weightKg: 20, reps: 11 },
+      { setNumber: 3, weightKg: 17.5, reps: 10 },
+    ]);
+  });
+
+  it('follows the plan when the template changed since (or at) the last performance', () => {
+    const planned = prefillFromPlan(last.sets, plan);
+    expect(prefillForTemplate(last, plan, 3000)).toEqual(planned);
+    expect(prefillForTemplate(last, plan, 2000)).toEqual(planned);
+    expect(prefillForTemplate(undefined, plan, 0)).toEqual(prefillFromPlan(undefined, plan));
+    expect(prefillForTemplate(last, [], 0)).toEqual([]);
+  });
+});
+
+describe('lastPerformanceSession', () => {
+  it('returns the sets with the start of their workout', () => {
+    const history = [
+      {
+        workoutId: 1,
+        startedAt: 100,
+        sets: [{ exerciseId: 5, setNumber: 1, weightKg: 50, reps: 5, completed: true }],
+      },
+      {
+        workoutId: 2,
+        startedAt: 200,
+        sets: [{ exerciseId: 5, setNumber: 1, weightKg: 0, reps: 0, completed: false }],
+      },
+    ];
+    expect(lastPerformanceSession(history, 5)).toEqual({
+      startedAt: 100,
+      sets: [{ setNumber: 1, weightKg: 50, reps: 5 }],
+    });
+    expect(lastPerformanceSession(history, 9)).toBeUndefined();
   });
 });

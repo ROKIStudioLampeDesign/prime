@@ -7,6 +7,7 @@ import {
   personalRecords,
   recordsBeaten,
   sessionProgression,
+  sessionRecordHolders,
   type HistorySet,
 } from './strength';
 
@@ -146,5 +147,45 @@ describe('liftGoalProgress', () => {
       remainingKg: 0,
       reached: true,
     });
+  });
+});
+
+describe('sessionRecordHolders', () => {
+  const previous = personalRecords(history);
+  const live = (id: number, weightKg: number, reps: number, completedAt?: number) => ({
+    id,
+    setNumber: id,
+    weightKg,
+    reps,
+    completed: true,
+    ...(completedAt !== undefined && { completedAt }),
+  });
+
+  it('gives each record to the single best set of the session only', () => {
+    // Both beat the previous volume (580): only the bigger one is the all-time best.
+    const holders = sessionRecordHolders([live(1, 40, 30, 10), live(2, 40, 25, 20)], previous);
+    expect([...holders]).toEqual([[1, ['volume']]]);
+  });
+
+  it('lets a later set take the record from an earlier one', () => {
+    const holders = sessionRecordHolders([live(1, 75, 5, 10), live(2, 77.5, 5, 20)], previous);
+    expect(holders.get(1)).toBeUndefined();
+    expect(holders.get(2)).toEqual(['weight', 'e1rm']);
+  });
+
+  it('keeps the record on the set validated first on ties, and splits kinds across sets', () => {
+    expect([...sessionRecordHolders([live(2, 75, 5, 20), live(1, 75, 5, 10)], previous)]).toEqual([
+      [1, ['weight', 'e1rm']],
+    ]);
+    const split = sessionRecordHolders([live(1, 80, 1, 10), live(2, 40, 30, 20)], previous);
+    expect(split.get(1)).toEqual(['weight']);
+    expect(split.get(2)).toEqual(['volume']);
+  });
+
+  it('ignores unvalidated sets, sets that only tie, and kinds without a previous record', () => {
+    expect(sessionRecordHolders([{ ...live(1, 200, 1), completed: false }], previous).size).toBe(0);
+    expect(sessionRecordHolders([live(1, 72.5, 6, 10)], previous).size).toBe(0);
+    expect(sessionRecordHolders([live(1, 200, 1, 10)], {}).size).toBe(0);
+    expect(sessionRecordHolders([], previous).size).toBe(0);
   });
 });

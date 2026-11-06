@@ -4,11 +4,14 @@ import { prBenchPlan } from '../domain/streaks';
 import {
   defaultSetCount,
   lastPerformance,
+  lastPerformanceSession,
   nextSetValues,
   prefillSets,
   prefillFromPlan,
+  prefillForTemplate,
   templateAfterWorkout,
   templateFromSets,
+  type PastPerformance,
   type TemplateSet,
   workoutStats,
   type PerformedSet,
@@ -74,13 +77,12 @@ async function previousForPrefill(
   workout: Workout,
   exerciseId: number,
   database: PrimeDB,
-): Promise<PerformedSet[] | undefined> {
+): Promise<PastPerformance | undefined> {
   if (workout.status === 'done') return undefined;
-  return getLastPerformance(
-    exerciseId,
-    { before: workout.startedAt, excludeWorkoutId: workout.id },
-    database,
-  );
+  return lastPerformanceSession(await exerciseHistory(exerciseId, database), exerciseId, {
+    before: workout.startedAt,
+    excludeWorkoutId: workout.id,
+  });
 }
 
 /**
@@ -94,6 +96,11 @@ export async function addExerciseToWorkout(
     setCount?: number;
     targetReps?: number;
     plan?: readonly TemplateSet[];
+    /**
+     * When the plan comes from a template: its last change. A newer performance then wins over
+     * the plan. Without it (e.g. the PR bench ramp), the plan always wins.
+     */
+    planUpdatedAt?: number;
   } = {},
   database: PrimeDB = db,
 ): Promise<boolean> {
@@ -106,11 +113,15 @@ export async function addExerciseToWorkout(
       const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
       if (sets.some((s) => s.exerciseId === exerciseId)) return false;
       const order = sets.reduce((max, s) => Math.max(max, s.order + 1), 0);
-      const previous = await previousForPrefill(workout, exerciseId, database);
-      // A template's planned sets win; without them, copy the last performance.
+      const last = await previousForPrefill(workout, exerciseId, database);
+      const previous = last?.sets;
+      // Planned sets give the count; their values yield to a newer performance (see
+      // `prefillForTemplate`). Without a plan, copy the last performance.
       const prefill =
         options.plan && options.plan.length > 0
-          ? prefillFromPlan(previous, options.plan, options.targetReps)
+          ? options.planUpdatedAt === undefined
+            ? prefillFromPlan(previous, options.plan, options.targetReps)
+            : prefillForTemplate(last, options.plan, options.planUpdatedAt, options.targetReps)
           : prefillSets(previous, options.setCount ?? defaultSetCount(previous), options.targetReps);
       await database.workoutSets.bulkAdd(
         prefill.map((p) => ({
@@ -151,7 +162,12 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
         await addExerciseToWorkout(
           id,
           te.exerciseId,
-          { setCount: te.targetSets, targetReps: te.targetReps, plan: te.sets },
+          {
+            setCount: te.targetSets,
+            targetReps: te.targetReps,
+            plan: te.sets,
+            ...(template && { planUpdatedAt: template.updatedAt }),
+          },
           database,
         );
       }
@@ -233,7 +249,7 @@ export async function addSet(workoutId: number, exerciseId: number, database: Pr
       const current = (await database.workoutSets.where({ exerciseId, workoutId }).toArray()).sort(
         (a, b) => a.setNumber - b.setNumber,
       );
-      const previous = await previousForPrefill(workout, exerciseId, database);
+      const previous = (await previousForPrefill(workout, exerciseId, database))?.sets;
       const next = nextSetValues(current, previous);
       const order =
         current[0]?.order ??
