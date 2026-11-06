@@ -57,13 +57,12 @@
   --color-paper-strong: #ffffff;
 
   /* Barbell gauge (bench goal): official Olympic plate colours, steel bar. Same in both themes. */
-  --color-plate-25: #d62828;
   --color-plate-20: #1d4fd6;
   --color-plate-15: #e9c21b;
   --color-plate-10: #2f9e44;
   --color-plate-5: #f1f1f1;
-  --color-plate-2-5: #4a4a4a;
-  --color-plate-1-25: #9aa0a6;
+  --color-plate-2-5: #2b2b2b;
+  --color-plate-1-25: #c0c4c8;
   --color-bar: #8d9196;
   --color-bar-knurl: #5f6368;
   --color-sleeve: #c9ccd0;

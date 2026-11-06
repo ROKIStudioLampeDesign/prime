@@ -6,7 +6,7 @@ import { setBenchGoalKg } from '../../db/liftGoals';
 import { parseDecimal } from '../../domain/number';
 import { liftGoalProgress, type PersonalRecords } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
-import { BarbellGauge } from './BarbellGauge';
+import { BarbellGauge, PlateFaces } from './BarbellGauge';
 
 const MAX_GOAL_KG = 500;
 
@@ -30,9 +30,8 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
             </h3>
             <p className="text-xl leading-tight headline tabular-nums">{formatWeight(progress.goalKg)} kg</p>
           </div>
-          <div className="mt-3">
-            <BarbellGauge bestKg={progress.bestKg} goalKg={progress.goalKg} />
-          </div>
+          <LoadedBar label="PR actuel" totalKg={progress.bestKg} />
+          <LoadedBar label="Objectif" totalKg={progress.goalKg} />
           <div className="mt-1 flex items-center justify-between gap-3">
             <p className="text-sm font-semibold tabular-nums">
               {progress.reached
@@ -65,6 +64,24 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
         {editing && <GoalForm goalKg={goalKg} onClose={() => setEditing(false)} />}
       </BottomSheet>
     </section>
+  );
+}
+
+/** One loaded bar (side view) and its plates face on, under a label and the total. */
+function LoadedBar({ label, totalKg }: { label: string; totalKg: number }) {
+  return (
+    <figure className="mt-4">
+      <figcaption className="flex items-baseline justify-between gap-3 text-sm font-extrabold">
+        <span>{label}</span>
+        <span className="tabular-nums">{totalKg > 0 ? `${formatWeight(totalKg)} kg` : '—'}</span>
+      </figcaption>
+      <div className="mt-1">
+        <BarbellGauge totalKg={totalKg} />
+      </div>
+      <div className="mt-1">
+        <PlateFaces totalKg={totalKg} />
+      </div>
+    </figure>
   );
 }
 

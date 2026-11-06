@@ -3,8 +3,11 @@
 /** Men's Olympic bar. */
 export const BAR_KG = 20;
 
-/** Standard plates, heaviest first. */
-export const PLATE_KGS = [25, 20, 15, 10, 5, 2.5, 1.25] as const;
+/**
+ * Calibrated competition (powerlifting) plates, heaviest first. No 25 kg plate: the bar is
+ * always loaded with 20 kg plates and smaller.
+ */
+export const PLATE_KGS = [20, 15, 10, 5, 2.5, 1.25] as const;
 export type PlateKg = (typeof PLATE_KGS)[number];
 
 /**
@@ -25,18 +28,14 @@ export function platesFor(sideKg: number): PlateKg[] {
   return plates;
 }
 
-export interface BarbellLoad {
-  /** Plates per side for the best lift (a lift lighter than the bar shows the bare bar). */
-  current: PlateKg[];
-  /** Plates per side still to add to reach the goal (empty once reached). */
-  missing: PlateKg[];
+/** Plates per side for a total load on the bar (a load lighter than the bar shows the bare bar). */
+export function barLoading(totalKg: number): PlateKg[] {
+  return platesFor((Math.max(totalKg, BAR_KG) - BAR_KG) / 2);
 }
 
-/** The best lift loaded on a bar, and what each side still needs for the goal. */
-export function barbellLoad(bestKg: number, goalKg: number): BarbellLoad {
-  const loaded = Math.max(bestKg, BAR_KG);
-  return {
-    current: platesFor((loaded - BAR_KG) / 2),
-    missing: goalKg > loaded ? platesFor((goalKg - loaded) / 2) : [],
-  };
+/** Plates grouped by weight, heaviest first, for a "2 × 20 kg" legend. */
+export function plateCounts(plates: readonly PlateKg[]): { kg: PlateKg; count: number }[] {
+  return PLATE_KGS.map((kg) => ({ kg, count: plates.filter((p) => p === kg).length })).filter(
+    (c) => c.count > 0,
+  );
 }
