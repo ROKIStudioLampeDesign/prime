@@ -1,11 +1,10 @@
-import { BrowserMultiFormatReader, type IScannerControls } from '@zxing/browser';
-import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../../components/Button';
 import { CloseIcon } from '../../components/icons';
 import { TextField } from '../../components/TextField';
-import { isValidGtin, normalizeBarcode, scannerZoom } from '../../domain/barcode';
+import { isValidGtin, normalizeBarcode, scannerZoom, scanRegion } from '../../domain/barcode';
+import { decodeBarcode, loadBarcodeDecoder } from './barcodeDecoder';
 
 type CameraState = 'starting' | 'scanning' | 'denied' | 'noCamera' | 'insecure' | 'error';
 
@@ -18,20 +17,8 @@ const CAMERA_MESSAGES: Record<Exclude<CameraState, 'starting' | 'scanning'>, str
 };
 
 /**
- * Food packaging codes only: faster and fewer false reads than "all formats". TRY_HARDER also
- * scans more rows of each frame, so slightly tilted or small codes still read.
- */
-const HINTS = new Map<DecodeHintType, unknown>([
-  [
-    DecodeHintType.POSSIBLE_FORMATS,
-    [BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.UPC_A, BarcodeFormat.UPC_E],
-  ],
-  [DecodeHintType.TRY_HARDER, true],
-]);
-
-/**
  * Without a resolution, iOS Safari streams 640×480: a barcode held far enough to be in focus is
- * then too few pixels wide to decode. Ask for 1080p (zxing decodes the frame at full size).
+ * then too few pixels wide to decode. Ask for 1080p.
  */
 const VIDEO: MediaTrackConstraints = {
   facingMode: { ideal: 'environment' },
@@ -39,21 +26,20 @@ const VIDEO: MediaTrackConstraints = {
   height: { ideal: 1080 },
 };
 
+/** Pause between two decode attempts (the decode itself takes a few tens of ms). */
+const SCAN_PAUSE_MS = 40;
+
 /** Zoom and focus aren't in TypeScript's DOM types yet (Safari 17+, Chrome support them). */
 interface CameraCapabilities {
   zoom?: { min?: number; max?: number };
   focusMode?: string[];
 }
 
-const allTracks = (t: MediaStreamTrack) => [t];
-
 /** Applies camera settings missing from the DOM types; ignored by cameras that lack them. */
-function applyAdvanced(c: IScannerControls, advanced: Record<string, unknown>[]) {
-  try {
-    c.streamVideoConstraintsApply?.({ advanced } as unknown as MediaTrackConstraints, allTracks);
-  } catch {
-    // Experimental API: scanning still works at the current settings.
-  }
+function applyAdvanced(track: MediaStreamTrack, advanced: Record<string, unknown>[]) {
+  track.applyConstraints({ advanced } as unknown as MediaTrackConstraints).catch(() => {
+    // Unsupported setting: scanning still works at the current one.
+  });
 }
 
 /**
@@ -61,10 +47,10 @@ function applyAdvanced(c: IScannerControls, advanced: Record<string, unknown>[])
  * blurry. Zoom 2× instead: the code is big and sharp from 25–30 cm. Continuous focus if offered.
  * Returns the zoom levels for the ×1/×2 toggle, or undefined when zoom can't be set.
  */
-function setupCamera(c: IScannerControls): { near: number; far: number } | undefined {
+function setupCamera(track: MediaStreamTrack): { near: number; far: number } | undefined {
   let caps: CameraCapabilities | undefined;
   try {
-    caps = c.streamVideoCapabilitiesGet?.(allTracks) as CameraCapabilities | undefined;
+    caps = track.getCapabilities?.() as CameraCapabilities | undefined;
   } catch {
     return undefined;
   }
@@ -74,8 +60,15 @@ function setupCamera(c: IScannerControls): { near: number; far: number } | undef
   const advanced: Record<string, unknown>[] = [];
   if (caps?.focusMode?.includes('continuous')) advanced.push({ focusMode: 'continuous' });
   if (zoomable) advanced.push({ zoom: far });
-  if (advanced.length > 0) applyAdvanced(c, advanced);
+  if (advanced.length > 0) applyAdvanced(track, advanced);
   return zoomable ? { near, far } : undefined;
+}
+
+function cameraError(e: unknown): CameraState {
+  const name = e instanceof Error ? e.name : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') return 'denied';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'noCamera';
+  return 'error';
 }
 
 interface BarcodeScannerProps {
@@ -84,7 +77,8 @@ interface BarcodeScannerProps {
 }
 
 /**
- * Full-screen rear-camera barcode scanner (zxing, works on iOS Safari unlike BarcodeDetector),
+ * Full-screen rear-camera barcode scanner (ZXing-C++ in WebAssembly: iOS Safari has no
+ * BarcodeDetector),
  * with a manual entry fallback that is always available.
  */
 export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
@@ -95,7 +89,7 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
   // Zoom levels the camera offers (undefined: not adjustable) and the one applied.
   const [zoomLevels, setZoomLevels] = useState<{ near: number; far: number }>();
   const [zoomed, setZoomed] = useState(true);
-  const controlsRef = useRef<IScannerControls | undefined>(undefined);
+  const trackRef = useRef<MediaStreamTrack | undefined>(undefined);
   const doneRef = useRef(false);
   const onDetectedRef = useRef(onDetected);
   useEffect(() => {
@@ -105,45 +99,71 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    let controls: IScannerControls | undefined;
     let cancelled = false;
+    let stream: MediaStream | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
       queueMicrotask(() => setCamera('insecure'));
       return;
     }
-    const reader = new BrowserMultiFormatReader(HINTS, { delayBetweenScanAttempts: 150 });
-    reader
-      .decodeFromConstraints({ audio: false, video: VIDEO }, video, (result) => {
-        if (!result || doneRef.current) return;
-        const code = normalizeBarcode(result.getText());
-        if (!isValidGtin(code)) return;
-        doneRef.current = true;
-        if ('vibrate' in navigator) navigator.vibrate(40);
-        controls?.stop();
-        onDetectedRef.current(code);
-      })
-      .then((c) => {
-        if (cancelled) c.stop();
-        else {
-          controls = c;
-          controlsRef.current = c;
-          setCamera('scanning');
-          const levels = setupCamera(c);
-          if (levels) setZoomLevels(levels);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    // Decode only the visible central band of the frame, then try again shortly after.
+    async function scan() {
+      if (cancelled || doneRef.current || !video || !ctx) return;
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        const r = scanRegion(
+          { width: video.videoWidth, height: video.videoHeight },
+          { width: video.clientWidth, height: video.clientHeight },
+        );
+        canvas.width = r.width;
+        canvas.height = r.height;
+        ctx.drawImage(video, r.x, r.y, r.width, r.height, 0, 0, r.width, r.height);
+        let text: string | undefined;
+        try {
+          text = await decodeBarcode(ctx.getImageData(0, 0, r.width, r.height));
+        } catch {
+          text = undefined;
         }
+        if (cancelled || doneRef.current) return;
+        const code = text === undefined ? '' : normalizeBarcode(text);
+        if (isValidGtin(code)) {
+          doneRef.current = true;
+          if ('vibrate' in navigator) navigator.vibrate(40);
+          stream?.getTracks().forEach((t) => t.stop());
+          onDetectedRef.current(code);
+          return;
+        }
+      }
+      timer = setTimeout(() => void scan(), SCAN_PAUSE_MS);
+    }
+
+    Promise.all([navigator.mediaDevices.getUserMedia({ audio: false, video: VIDEO }), loadBarcodeDecoder()])
+      .then(async ([s]) => {
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        stream = s;
+        video.srcObject = s;
+        await video.play().catch(() => undefined);
+        const track = s.getVideoTracks()[0];
+        trackRef.current = track;
+        setCamera('scanning');
+        const levels = track ? setupCamera(track) : undefined;
+        if (levels) setZoomLevels(levels);
+        void scan();
       })
       .catch((e: unknown) => {
-        if (cancelled) return;
-        const name = e instanceof Error ? e.name : '';
-        if (name === 'NotAllowedError' || name === 'SecurityError') setCamera('denied');
-        else if (name === 'NotFoundError' || name === 'OverconstrainedError') setCamera('noCamera');
-        else setCamera('error');
+        if (!cancelled) setCamera(cameraError(e));
       });
 
     return () => {
       cancelled = true;
-      controls?.stop();
+      clearTimeout(timer);
+      stream?.getTracks().forEach((t) => t.stop());
     };
   }, []);
 
@@ -151,8 +171,8 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
     if (!zoomLevels) return;
     const next = !zoomed;
     setZoomed(next);
-    const c = controlsRef.current;
-    if (c) applyAdvanced(c, [{ zoom: next ? zoomLevels.far : zoomLevels.near }]);
+    const track = trackRef.current;
+    if (track) applyAdvanced(track, [{ zoom: next ? zoomLevels.far : zoomLevels.near }]);
   }
 
   function submitManual(e: FormEvent) {

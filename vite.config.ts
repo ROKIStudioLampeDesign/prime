@@ -29,7 +29,8 @@ export default defineConfig({
       },
       workbox: {
         // The manifest is added by the plugin itself; globbing it too creates a conflicting precache entry.
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // wasm: the barcode decoder, so scanning works offline too.
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm}'],
         navigateFallback: '/index.html',
         // Control the page on first install (offline-ready right away). Updates still wait for
         // the user's "Mettre à jour" because skipWaiting stays off in prompt mode.

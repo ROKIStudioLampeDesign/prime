@@ -71,9 +71,13 @@ Rules:
   statuses, never throws). Its result only **prefills** the product form for review; the product is
   stored locally once saved. A barcode that already exists opens that product instead. If you add a
   network origin, also add it to the CSP in `public/_headers`.
-- **Heavy, rarely used code is lazy:** the barcode scanner (zxing) and Stats (Recharts) are loaded
+- **Heavy, rarely used code is lazy:** the barcode scanner and Stats (Recharts) are loaded
   on demand. Vendor libraries are split into `vendor-*` chunks (`vite.config.ts`) to stay cached
   across deploys.
+- **Barcode scanner:** zxing-wasm (ZXing-C++ in WebAssembly, `barcodeDecoder.ts`). Its `.wasm` is
+  bundled and precached (never zxing-wasm's default CDN), which needs `'wasm-unsafe-eval'` in the
+  CSP. Each frame decodes only the visible central band (`scanRegion`); the camera asks for 1080p
+  and 2× zoom. `e2e/barcodeScanner.spec.ts` scans a generated EAN-13 through a fake camera.
 - **Backups** (`src/db/backup.ts`): one JSON file with every table, Blobs as base64, the envelope
   version and the Dexie `schemaVersion`. Device settings (`storagePersisted`, `lastExportAt`,
   `firstLaunchAt`, reminder snooze) are never exported or overwritten. When a schema version

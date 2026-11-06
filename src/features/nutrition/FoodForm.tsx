@@ -30,7 +30,7 @@ interface FoodFormProps {
   onExistingFood?: (id: number) => void;
 }
 
-// The scanner pulls in zxing (~400 kB): only load it when the user opens it.
+// The scanner pulls in zxing-wasm (~1 MB of WebAssembly): only load it when the user opens it.
 const BarcodeScanner = lazy(() => import('./BarcodeScanner').then((m) => ({ default: m.BarcodeScanner })));
 
 type LookupState =

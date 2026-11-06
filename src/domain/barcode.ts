@@ -32,3 +32,37 @@ export function scannerZoom(
   const min = range.min ?? 1;
   return Math.min(range.max, Math.max(min, wanted));
 }
+
+export interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Part of a video frame worth decoding: the area actually visible on screen (the video is shown
+ * with `object-fit: cover`, so edges may be cropped), then its central horizontal band (`band` of
+ * its height), where the aiming frame is. Fewer pixels per frame means more frames tried per
+ * second. Integer pixels; the whole frame when a size is unknown (0).
+ */
+export function scanRegion(
+  video: { width: number; height: number },
+  view: { width: number; height: number },
+  band = 0.5,
+): Rect {
+  const full = { x: 0, y: 0, width: Math.round(video.width), height: Math.round(video.height) };
+  if (!(video.width > 0 && video.height > 0 && view.width > 0 && view.height > 0)) return full;
+  const scale = Math.max(view.width / video.width, view.height / video.height);
+  const visibleW = Math.min(video.width, view.width / scale);
+  const visibleH = Math.min(video.height, view.height / scale);
+  const height = visibleH * Math.min(1, Math.max(0, band));
+  const x = (video.width - visibleW) / 2;
+  const y = (video.height - height) / 2;
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    width: Math.max(1, Math.round(visibleW)),
+    height: Math.max(1, Math.round(height)),
+  };
+}

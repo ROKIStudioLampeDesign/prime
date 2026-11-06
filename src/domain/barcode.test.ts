@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidGtin, normalizeBarcode, scannerZoom } from './barcode';
+import { isValidGtin, normalizeBarcode, scannerZoom, scanRegion } from './barcode';
 
 describe('barcodes', () => {
   it('normalizes spaces and dashes', () => {
@@ -36,5 +36,48 @@ describe('scannerZoom', () => {
     expect(scannerZoom(undefined)).toBeUndefined();
     expect(scannerZoom({})).toBeUndefined();
     expect(scannerZoom({ min: 1, max: 1 })).toBeUndefined();
+  });
+});
+
+describe('scanRegion', () => {
+  it('keeps the visible width of a portrait stream and its central band', () => {
+    // 1080×1920 shown in a 390×650 box: scale 0.3611, visible 1080 × 1800.
+    expect(scanRegion({ width: 1080, height: 1920 }, { width: 390, height: 650 })).toEqual({
+      x: 0,
+      y: 510,
+      width: 1080,
+      height: 900,
+    });
+  });
+
+  it('drops the sides cropped off a landscape stream in a portrait box', () => {
+    // 1920×1080 in 390×650: scale 0.6019, visible 648 × 1080.
+    expect(scanRegion({ width: 1920, height: 1080 }, { width: 390, height: 650 }, 0.4)).toEqual({
+      x: 636,
+      y: 324,
+      width: 648,
+      height: 432,
+    });
+  });
+
+  it('clamps the band and falls back to the whole frame without sizes', () => {
+    expect(scanRegion({ width: 100, height: 200 }, { width: 100, height: 200 }, 2)).toEqual({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 200,
+    });
+    expect(scanRegion({ width: 640, height: 480 }, { width: 0, height: 0 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 640,
+      height: 480,
+    });
+    expect(scanRegion({ width: 0, height: 0 }, { width: 390, height: 650 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 0,
+      height: 0,
+    });
   });
 });
