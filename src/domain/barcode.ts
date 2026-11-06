@@ -16,3 +16,19 @@ export function isValidGtin(raw: string): boolean {
   const sum = digits.reverse().reduce((s, d, i) => s + d * (i % 2 === 0 ? 3 : 1), 0);
   return (10 - (sum % 10)) % 10 === check;
 }
+
+/** Zoom the scanner aims for: a barcode fills the frame from ~25 cm, where iPhones focus sharply. */
+export const SCANNER_ZOOM = 2;
+
+/**
+ * Zoom to apply given the camera's zoom range, or undefined when zoom can't be set (no range,
+ * or a range that can't reach above 1×). Clamped to the range.
+ */
+export function scannerZoom(
+  range: { min?: number; max?: number } | undefined,
+  wanted = SCANNER_ZOOM,
+): number | undefined {
+  if (!range || range.max === undefined || !(range.max > 1)) return undefined;
+  const min = range.min ?? 1;
+  return Math.min(range.max, Math.max(min, wanted));
+}

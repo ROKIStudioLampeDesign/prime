@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '../../components/Button';
 import { CloseIcon } from '../../components/icons';
 import { TextField } from '../../components/TextField';
-import { isValidGtin, normalizeBarcode } from '../../domain/barcode';
+import { isValidGtin, normalizeBarcode, scannerZoom } from '../../domain/barcode';
 
 type CameraState = 'starting' | 'scanning' | 'denied' | 'noCamera' | 'insecure' | 'error';
 
@@ -17,13 +17,66 @@ const CAMERA_MESSAGES: Record<Exclude<CameraState, 'starting' | 'scanning'>, str
   error: 'Impossible de démarrer la caméra. Saisis le code à la main.',
 };
 
-/** Food packaging codes only: faster and fewer false reads than "all formats". */
+/**
+ * Food packaging codes only: faster and fewer false reads than "all formats". TRY_HARDER also
+ * scans more rows of each frame, so slightly tilted or small codes still read.
+ */
 const HINTS = new Map<DecodeHintType, unknown>([
   [
     DecodeHintType.POSSIBLE_FORMATS,
     [BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.UPC_A, BarcodeFormat.UPC_E],
   ],
+  [DecodeHintType.TRY_HARDER, true],
 ]);
+
+/**
+ * Without a resolution, iOS Safari streams 640×480: a barcode held far enough to be in focus is
+ * then too few pixels wide to decode. Ask for 1080p (zxing decodes the frame at full size).
+ */
+const VIDEO: MediaTrackConstraints = {
+  facingMode: { ideal: 'environment' },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 },
+};
+
+/** Zoom and focus aren't in TypeScript's DOM types yet (Safari 17+, Chrome support them). */
+interface CameraCapabilities {
+  zoom?: { min?: number; max?: number };
+  focusMode?: string[];
+}
+
+const allTracks = (t: MediaStreamTrack) => [t];
+
+/** Applies camera settings missing from the DOM types; ignored by cameras that lack them. */
+function applyAdvanced(c: IScannerControls, advanced: Record<string, unknown>[]) {
+  try {
+    c.streamVideoConstraintsApply?.({ advanced } as unknown as MediaTrackConstraints, allTracks);
+  } catch {
+    // Experimental API: scanning still works at the current settings.
+  }
+}
+
+/**
+ * iPhones can't focus closer than ~15–20 cm, so a code held close enough to fill the frame is
+ * blurry. Zoom 2× instead: the code is big and sharp from 25–30 cm. Continuous focus if offered.
+ * Returns the zoom levels for the ×1/×2 toggle, or undefined when zoom can't be set.
+ */
+function setupCamera(c: IScannerControls): { near: number; far: number } | undefined {
+  let caps: CameraCapabilities | undefined;
+  try {
+    caps = c.streamVideoCapabilitiesGet?.(allTracks) as CameraCapabilities | undefined;
+  } catch {
+    return undefined;
+  }
+  const far = scannerZoom(caps?.zoom);
+  const near = scannerZoom(caps?.zoom, 1);
+  const zoomable = far !== undefined && near !== undefined && far > near;
+  const advanced: Record<string, unknown>[] = [];
+  if (caps?.focusMode?.includes('continuous')) advanced.push({ focusMode: 'continuous' });
+  if (zoomable) advanced.push({ zoom: far });
+  if (advanced.length > 0) applyAdvanced(c, advanced);
+  return zoomable ? { near, far } : undefined;
+}
 
 interface BarcodeScannerProps {
   onDetected: (barcode: string) => void;
@@ -39,6 +92,10 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
   const [camera, setCamera] = useState<CameraState>('starting');
   const [manual, setManual] = useState('');
   const [manualError, setManualError] = useState<string>();
+  // Zoom levels the camera offers (undefined: not adjustable) and the one applied.
+  const [zoomLevels, setZoomLevels] = useState<{ near: number; far: number }>();
+  const [zoomed, setZoomed] = useState(true);
+  const controlsRef = useRef<IScannerControls | undefined>(undefined);
   const doneRef = useRef(false);
   const onDetectedRef = useRef(onDetected);
   useEffect(() => {
@@ -57,24 +114,23 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
     }
     const reader = new BrowserMultiFormatReader(HINTS, { delayBetweenScanAttempts: 150 });
     reader
-      .decodeFromConstraints(
-        { audio: false, video: { facingMode: { ideal: 'environment' } } },
-        video,
-        (result) => {
-          if (!result || doneRef.current) return;
-          const code = normalizeBarcode(result.getText());
-          if (!isValidGtin(code)) return;
-          doneRef.current = true;
-          if ('vibrate' in navigator) navigator.vibrate(40);
-          controls?.stop();
-          onDetectedRef.current(code);
-        },
-      )
+      .decodeFromConstraints({ audio: false, video: VIDEO }, video, (result) => {
+        if (!result || doneRef.current) return;
+        const code = normalizeBarcode(result.getText());
+        if (!isValidGtin(code)) return;
+        doneRef.current = true;
+        if ('vibrate' in navigator) navigator.vibrate(40);
+        controls?.stop();
+        onDetectedRef.current(code);
+      })
       .then((c) => {
         if (cancelled) c.stop();
         else {
           controls = c;
+          controlsRef.current = c;
           setCamera('scanning');
+          const levels = setupCamera(c);
+          if (levels) setZoomLevels(levels);
         }
       })
       .catch((e: unknown) => {
@@ -90,6 +146,14 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
       controls?.stop();
     };
   }, []);
+
+  function toggleZoom() {
+    if (!zoomLevels) return;
+    const next = !zoomed;
+    setZoomed(next);
+    const c = controlsRef.current;
+    if (c) applyAdvanced(c, [{ zoom: next ? zoomLevels.far : zoomLevels.near }]);
+  }
 
   function submitManual(e: FormEvent) {
     e.preventDefault();
@@ -143,9 +207,20 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
           {camera === 'starting'
             ? 'Démarrage de la caméra…'
             : camera === 'scanning'
-              ? 'Place le code-barres dans le cadre'
+              ? 'Place le code-barres dans le cadre, téléphone à 25–30 cm'
               : CAMERA_MESSAGES[camera]}
         </p>
+        {camera === 'scanning' && zoomLevels && (
+          <button
+            type="button"
+            onClick={toggleZoom}
+            aria-pressed={zoomed}
+            aria-label={zoomed ? 'Zoom ×2 activé, revenir à ×1' : 'Zoomer ×2'}
+            className="absolute bottom-4 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-black/60 text-base font-black tabular-nums active:bg-black/80"
+          >
+            ×{zoomed ? 2 : 1}
+          </button>
+        )}
       </div>
 
       <form onSubmit={submitManual} className="bg-surface pt-4 px-safe pb-safe text-fg">

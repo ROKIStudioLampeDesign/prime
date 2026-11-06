@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isValidGtin, normalizeBarcode } from './barcode';
+import { isValidGtin, normalizeBarcode, scannerZoom } from './barcode';
 
 describe('barcodes', () => {
   it('normalizes spaces and dashes', () => {
@@ -21,5 +21,20 @@ describe('barcodes', () => {
     expect(isValidGtin('12345')).toBe(false);
     expect(isValidGtin('30176204220AB')).toBe(false);
     expect(isValidGtin('')).toBe(false);
+  });
+});
+
+describe('scannerZoom', () => {
+  it('aims for 2×, clamped to the camera range', () => {
+    expect(scannerZoom({ min: 1, max: 10 })).toBe(2);
+    expect(scannerZoom({ min: 1, max: 1.5 })).toBe(1.5);
+    expect(scannerZoom({ min: 2.5, max: 6 })).toBe(2.5);
+    expect(scannerZoom({ max: 4 }, 1)).toBe(1);
+  });
+
+  it('gives nothing when zoom is not adjustable', () => {
+    expect(scannerZoom(undefined)).toBeUndefined();
+    expect(scannerZoom({})).toBeUndefined();
+    expect(scannerZoom({ min: 1, max: 1 })).toBeUndefined();
   });
 });
