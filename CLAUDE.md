@@ -171,6 +171,17 @@ Rules:
   DST/month/year boundaries for dates).
 - Prettier formats everything (Tailwind classes are auto-sorted); don't hand-format.
 
+## Working with Claude
+
+- **Answer minimally:** only what is essential; explain what was done in the shortest form.
+- **Ship on your own:** when nothing needs the user's decision, commit and push to `main` without
+  asking, then check that the Cloudflare deploy succeeded ("Workers Builds: prime" check run on
+  the commit, via `gh api repos/ROKIStudioLampeDesign/prime/commits/<sha>/check-runs`). Ask first
+  for design directions or risky changes.
+- **Use the available skills** whenever one improves the result (debugging, TDD, design,
+  verification…).
+- **Propose ideas now and then:** a one-line improvement idea, never implemented unasked.
+
 ## Definition of done
 
 A change is done only when all of these hold:
