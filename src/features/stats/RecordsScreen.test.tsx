@@ -41,7 +41,8 @@ describe('RecordsScreen', () => {
 
     renderWithRouter(<RecordsScreen />);
     expect(await screen.findByRole('heading', { name: 'Bench' })).toBeTruthy();
-    expect(screen.getByText('1RM estimé · 60 kg × 8')).toBeTruthy();
+    expect(screen.getByText('Charge max · 60 kg × 8')).toBeTruthy();
+    expect(screen.queryByText(/1RM/)).toBeNull();
     expect(screen.queryByText(/Squat/)).toBeNull();
     expect(screen.getByRole('link', { name: 'Voir la progression' }).getAttribute('href')).toBe(
       `/stats/progress?exercise=${bench}`,

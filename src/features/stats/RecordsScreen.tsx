@@ -12,7 +12,6 @@ import { listExerciseHistory } from '../../db/stats';
 import {
   latestRecordDate,
   personalRecords,
-  RECORD_KINDS,
   RECORD_LABELS,
   type HistorySet,
   type PersonalRecords,
@@ -23,7 +22,7 @@ import { BenchBadges } from './BenchBadges';
 import { BenchGoal } from './BenchGoal';
 import { shortDateLabel, toTime } from './chartUtils';
 import { recordDetail } from './labels';
-import { RecordRow, StatsTabs } from './shared';
+import { StatsTabs } from './shared';
 
 /** /stats/records — the bench records: the one lift followed here (see BENCH_SEED_ID). */
 export function RecordsScreen() {
@@ -69,8 +68,8 @@ interface BenchRecordsProps {
 }
 
 function BenchRecords({ id, name, records, goalKg, history }: BenchRecordsProps) {
-  // The estimated 1RM leads; without one (only sets of many reps), the heaviest load does.
-  const lead: RecordKind = records.e1rm ? 'e1rm' : 'weight';
+  // Only the current PR: the heaviest load actually lifted (no estimated 1RM, no volume).
+  const lead: RecordKind = 'weight';
   const top = records[lead];
   return (
     <>
@@ -95,12 +94,6 @@ function BenchRecords({ id, name, records, goalKg, history }: BenchRecordsProps)
 
       <BenchGoal records={records} goalKg={goalKg} />
       <BenchBadges bestKg={records.weight?.weightKg ?? 0} history={history} />
-
-      <dl className="divide-y divide-line border-b border-line">
-        {RECORD_KINDS.filter((kind) => kind !== lead).map((kind) => (
-          <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
-        ))}
-      </dl>
 
       <Link
         to={`/stats/progress?exercise=${id}`}
