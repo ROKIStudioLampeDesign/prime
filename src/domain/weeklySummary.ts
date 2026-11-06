@@ -29,6 +29,11 @@ export interface WeeklySummaryInput {
   goals: Goals;
   /** All weigh-ins (any range); only the relevant ones are used. */
   weights: readonly WeightPoint[];
+  /**
+   * The current day: it is still in progress, so its food entries (and later days') are left out
+   * of the nutrition stats, as if not logged. Omitted: every day counts.
+   */
+  today?: LocalDate;
 }
 
 export interface WeeklySummary {
@@ -61,7 +66,8 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
   const days: DayNutrition[] = dates.map((date) => {
     const entries = input.foodEntries.filter((e) => e.date === date);
     const total = sumMacros(entries.map((e) => e.macros));
-    return { date, logged: entries.length > 0, kcal: total.kcal, protein: total.protein };
+    const counted = input.today === undefined || date < input.today;
+    return { date, logged: counted && entries.length > 0, kcal: total.kcal, protein: total.protein };
   });
   const logged = days.filter((d) => d.logged);
   const avg = (key: 'kcal' | 'protein') =>

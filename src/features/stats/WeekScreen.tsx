@@ -85,7 +85,7 @@ export function WeekScreen() {
         <Loading />
       ) : (
         (() => {
-          const input = { foodEntries: entries, workouts, goals, weights };
+          const input = { foodEntries: entries, workouts, goals, weights, today };
           const week = weeklySummary({ ...input, weekOf: start });
           const previous = weeklySummary({ ...input, weekOf: prevStart });
           const sessions = delta(week.workoutCount, previous.workoutCount);
@@ -162,8 +162,8 @@ export function WeekScreen() {
                 met={(d) => goals.protein !== undefined && proteinGoalMet(d.protein, goals.protein)}
               />
               <p className="mt-3 text-xs font-semibold text-muted">
-                Moyennes calculées sur les jours renseignés seulement. Calories : objectif atteint juste en
-                dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
+                Moyennes calculées sur les jours renseignés seulement, sans la journée en cours. Calories :
+                objectif atteint juste en dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
               </p>
             </>
           );

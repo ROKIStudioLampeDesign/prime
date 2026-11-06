@@ -8,6 +8,7 @@ import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import type { Exercise } from '../../db/db';
+import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { listExercises } from '../../db/exercises';
 import { listExerciseHistory } from '../../db/stats';
 import {
@@ -83,7 +84,11 @@ function ProgressionContent({
   }
 
   const requested = Number(params.get('exercise'));
-  const selected = options.find((e) => e.id === requested) ?? (options[0] as Exercise);
+  // Default: the bench (the lift the app follows), else the most recently trained exercise.
+  const selected =
+    options.find((e) => e.id === requested) ??
+    options.find((e) => e.seedId === BENCH_SEED_ID) ??
+    (options[0] as Exercise);
   const sets = history.get(selected.id) ?? [];
   const points = sessionProgression(sets, metric).map((p) => ({ t: toTime(p.date), value: p.value }));
   const records = personalRecords(sets);

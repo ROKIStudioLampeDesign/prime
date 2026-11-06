@@ -59,6 +59,19 @@ describe('weeklySummary', () => {
     });
   });
 
+  it('leaves the day in progress (and later days) out of the nutrition stats', () => {
+    const live = weeklySummary({ ...base, today: d('2026-11-03') });
+    expect(live.loggedDays).toBe(1);
+    expect(live.avgKcal).toBeCloseTo(2200);
+    expect(live.kcalGoalDays).toBe(1);
+    expect(live.days.find((x) => x.date === '2026-11-03')?.logged).toBe(false);
+    expect(live.workoutCount).toBe(2); // sessions still count
+    // First day of the week: nothing counted yet.
+    expect(weeklySummary({ ...base, today: d('2026-11-02') }).avgKcal).toBeUndefined();
+    // A past week is unaffected.
+    expect(weeklySummary({ ...base, today: d('2026-11-12') }).loggedDays).toBe(3);
+  });
+
   it('counts goal days among logged days (kcal ±10 %, protein ≥ goal)', () => {
     expect(s.kcalGoalDays).toBe(1); // 2200 ok; 2600 > 2530; 1800 < 2070
     expect(s.proteinGoalDays).toBe(2); // 160 and 170
