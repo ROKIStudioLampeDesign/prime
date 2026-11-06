@@ -6,7 +6,19 @@ const D = process.argv[2] || __dirname;
 const theme = process.argv[3] || 'dark';
 const { parts } = JSON.parse(fs.readFileSync(D + '/parts.json', 'utf8'));
 const AXIS = { front: 102.25, back: 315 };
-const HIDDEN = new Set(['path1304-3', 'use1903']);
+// Back of the neck: the chart's striped splenius strips (path1327, path1238 and their stripes
+// path1339/1343/1347, labelled traps) and the nuchal ligament band (path1376) running up to the
+// skull made the neck unreadable. Without them the traps read as one kite split by the spine line.
+const HIDDEN = new Set([
+  'path1304-3',
+  'use1903',
+  'path1327',
+  'path1238',
+  'path1339',
+  'path1343',
+  'path1347',
+  'path1376',
+]);
 const bump = (v, c, w) => Math.exp(-(((v - c) / w) ** 2));
 
 // Horizontal scale of the distance to the body axis, by height (and how far out the point is).
