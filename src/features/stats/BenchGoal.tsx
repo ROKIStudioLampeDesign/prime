@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
-import { ProgressBar } from '../../components/Progress';
 import { TextField } from '../../components/TextField';
 import { setBenchGoalKg } from '../../db/liftGoals';
 import { parseDecimal } from '../../domain/number';
 import { liftGoalProgress, type PersonalRecords } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
+import { BarbellGauge } from './BarbellGauge';
 
 const MAX_GOAL_KG = 500;
 
@@ -30,8 +30,8 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
             </h3>
             <p className="text-xl leading-tight headline tabular-nums">{formatWeight(progress.goalKg)} kg</p>
           </div>
-          <div className="mt-2">
-            <ProgressBar ratio={progress.ratio} />
+          <div className="mt-3">
+            <BarbellGauge bestKg={progress.bestKg} goalKg={progress.goalKg} />
           </div>
           <div className="mt-1 flex items-center justify-between gap-3">
             <p className="text-sm font-semibold tabular-nums">
