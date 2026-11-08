@@ -152,6 +152,8 @@ export interface GymDay {
   date: LocalDate;
   attended: boolean;
   rest?: boolean;
+  /** "Jour rouge": no gym and ate badly, meals not logged. Exclusive with attended and rest. */
+  red?: boolean;
 }
 
 export interface Template {

@@ -10,7 +10,7 @@ import { useToday } from '../../components/useToday';
 import { getWeeklyTarget, listGymDays } from '../../db/gymDays';
 import { listAllWorkouts } from '../../db/workouts';
 import { formatMonthParam, parseMonthParam, shiftMonth, type LocalDate } from '../../domain/date';
-import { attendedDates, monthGrid, restDates, sessionsInMonth } from '../../domain/gymCalendar';
+import { attendedDates, monthGrid, redDates, restDates, sessionsInMonth } from '../../domain/gymCalendar';
 import { weekStreak } from '../../domain/streaks';
 import { DaySheet } from './DaySheet';
 import { GymTabs } from './shared';
@@ -64,6 +64,17 @@ export function CalendarScreen() {
     [workouts, gymDays],
   );
 
+  const red = useMemo(
+    () =>
+      workouts &&
+      gymDays &&
+      redDates(
+        workouts.map((w) => w.date),
+        gymDays,
+      ),
+    [workouts, gymDays],
+  );
+
   function goToMonth(delta: number) {
     setParams({ month: formatMonthParam(shiftMonth(shown, delta)) }, { replace: true });
   }
@@ -78,6 +89,7 @@ export function CalendarScreen() {
 
       {attended === undefined ||
       resting === undefined ||
+      red === undefined ||
       workouts === undefined ||
       gymDays === undefined ||
       weeklyTarget === undefined ? (
@@ -136,6 +148,7 @@ export function CalendarScreen() {
                       date={date}
                       attended={attended.has(date)}
                       rest={resting.has(date)}
+                      red={red.has(date)}
                       isToday={date === today}
                       isFuture={date > today}
                       onClick={() => setSelectedDay(date)}
@@ -155,6 +168,7 @@ export function CalendarScreen() {
         workouts={workouts?.filter((w) => w.date === selectedDay) ?? []}
         manual={gymDays?.find((d) => d.date === selectedDay)?.attended ?? false}
         rest={selectedDay !== undefined && (resting?.has(selectedDay) ?? false)}
+        red={selectedDay !== undefined && (red?.has(selectedDay) ?? false)}
         onClose={() => setSelectedDay(undefined)}
       />
     </Screen>
@@ -175,27 +189,30 @@ interface DayCellProps {
   date: LocalDate;
   attended: boolean;
   rest: boolean;
+  red: boolean;
   isToday: boolean;
   isFuture: boolean;
   onClick: () => void;
 }
 
-function DayCell({ date, attended, rest, isToday, isFuture, onClick }: DayCellProps) {
+function DayCell({ date, attended, rest, red, isToday, isFuture, onClick }: DayCellProps) {
   const day = Number(date.slice(8));
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : ''}`}
+      aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : red ? ', jour rouge' : ''}`}
       aria-current={isToday ? 'date' : undefined}
       className={`flex h-full min-h-11 items-center justify-center text-sm font-semibold tabular-nums ${
         attended
           ? 'bg-gym text-on-gym'
           : rest
             ? 'bg-fg text-bg'
-            : isFuture
-              ? 'text-muted'
-              : 'text-fg active:bg-surface-2'
+            : red
+              ? 'bg-red-day text-on-red-day'
+              : isFuture
+                ? 'text-muted'
+                : 'text-fg active:bg-surface-2'
       } ${isToday ? `ring-2 ring-inset ${rest && !attended ? 'ring-bg' : 'ring-fg'}` : ''}`}
     >
       {day}

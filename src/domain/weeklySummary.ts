@@ -15,8 +15,10 @@ export function proteinGoalMet(protein: number, goal: number): boolean {
 
 export interface DayNutrition {
   date: LocalDate;
-  /** False when no food entry exists for the day (then totals are not meaningful). */
+  /** False when no food entry exists for the day, or on a jour rouge (totals not meaningful). */
   logged: boolean;
+  /** Marked as a jour rouge: ate badly, meals not logged. */
+  red: boolean;
   kcal: number;
   protein: number;
 }
@@ -34,6 +36,8 @@ export interface WeeklySummaryInput {
    * of the nutrition stats, as if not logged. Omitted: every day counts.
    */
   today?: LocalDate;
+  /** Jours rouges (any range): never counted as logged, whatever entries they have. */
+  redDays?: ReadonlySet<LocalDate>;
 }
 
 export interface WeeklySummary {
@@ -43,6 +47,8 @@ export interface WeeklySummary {
   volumeKg: number;
   days: DayNutrition[];
   loggedDays: number;
+  /** Jours rouges in the week. */
+  redDays: number;
   /** Averages over logged days only; undefined when no day is logged. */
   avgKcal?: number;
   avgProtein?: number;
@@ -67,7 +73,14 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     const entries = input.foodEntries.filter((e) => e.date === date);
     const total = sumMacros(entries.map((e) => e.macros));
     const counted = input.today === undefined || date < input.today;
-    return { date, logged: counted && entries.length > 0, kcal: total.kcal, protein: total.protein };
+    const red = input.redDays?.has(date) ?? false;
+    return {
+      date,
+      logged: counted && !red && entries.length > 0,
+      red,
+      kcal: total.kcal,
+      protein: total.protein,
+    };
   });
   const logged = days.filter((d) => d.logged);
   const avg = (key: 'kcal' | 'protein') =>
@@ -87,6 +100,7 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     volumeKg: workouts.reduce((s, w) => s + w.volumeKg, 0),
     days,
     loggedDays: logged.length,
+    redDays: days.filter((d) => d.red).length,
     avgKcal: avg('kcal'),
     avgProtein: avg('protein'),
     kcalGoalDays:

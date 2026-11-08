@@ -167,7 +167,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     // Legacy flag from short-lived builds (bodyweight is now simply 0 kg): accepted, ignored.
     bodyweight: optional(bool),
   }),
-  gymDays: shape({ date: localDate, attended: bool, rest: optional(bool) }),
+  gymDays: shape({ date: localDate, attended: bool, rest: optional(bool), red: optional(bool) }),
   templates: shape({
     id,
     name: text,

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import { attendedDates, monthGrid, restDates, sessionsInMonth, weekStart, weeklyStreak } from './gymCalendar';
+import {
+  attendedDates,
+  monthGrid,
+  redDates,
+  restDates,
+  sessionsInMonth,
+  weekStart,
+  weeklyStreak,
+} from './gymCalendar';
 
 const d = (s: string) => s as LocalDate;
 
@@ -106,5 +114,17 @@ describe('restDates', () => {
     const rest = restDates(workouts, manual);
     const attended = attendedDates(workouts, manual);
     expect([...rest].filter((x) => attended.has(x))).toEqual([]);
+  });
+});
+
+describe('redDates', () => {
+  it('keeps marked days without a workout', () => {
+    expect(redDates([], []).size).toBe(0);
+    const marks = [
+      { date: d('2026-11-03'), red: true },
+      { date: d('2026-11-04'), red: true },
+      { date: d('2026-11-05') },
+    ];
+    expect([...redDates([d('2026-11-04')], marks)]).toEqual(['2026-11-03']);
   });
 });

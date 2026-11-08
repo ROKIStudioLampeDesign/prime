@@ -54,9 +54,19 @@ describe('weeklySummary', () => {
     expect(s.days.find((x) => x.date === '2026-11-04')).toEqual({
       date: '2026-11-04',
       logged: false,
+      red: false,
       kcal: 0,
       protein: 0,
     });
+  });
+
+  it('leaves jours rouges out of the nutrition stats and counts them', () => {
+    const red = weeklySummary({ ...base, redDays: new Set([d('2026-11-03'), d('2026-10-30')]) });
+    expect(red.redDays).toBe(1); // the other one is outside the week
+    expect(red.loggedDays).toBe(2);
+    expect(red.avgKcal).toBeCloseTo((2200 + 1800) / 2);
+    expect(red.days.find((x) => x.date === '2026-11-03')).toMatchObject({ logged: false, red: true });
+    expect(s.redDays).toBe(0);
   });
 
   it('leaves the day in progress (and later days) out of the nutrition stats', () => {

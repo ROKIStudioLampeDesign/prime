@@ -7,7 +7,7 @@ import { useNow } from '../../components/useNow';
 import { listBodyWeights } from '../../db/bodyWeights';
 import type { Workout } from '../../db/db';
 import { getGoals } from '../../db/goals';
-import { getGymDay, setRestDay } from '../../db/gymDays';
+import { getGymDay, setRedDay, setRestDay } from '../../db/gymDays';
 import { listEntriesForDate } from '../../db/logEntries';
 import { getStreaks } from '../../db/streaks';
 import { getWorkoutSets, listAllWorkouts } from '../../db/workouts';
@@ -171,9 +171,13 @@ export function StreaksCard({ today }: { today: LocalDate }) {
             />
             {calories.today !== 'ok' && (
               <p
-                className={`mt-1 text-[13px] font-semibold ${calories.today === 'over' ? 'text-danger' : 'text-muted'}`}
+                className={`mt-1 text-[13px] font-semibold ${calories.today === 'empty' ? 'text-muted' : 'text-danger'}`}
               >
-                {calories.today === 'over' ? 'Objectif dépassé aujourd’hui.' : 'Note tes repas du jour.'}
+                {calories.today === 'over'
+                  ? 'Objectif dépassé aujourd’hui.'
+                  : calories.today === 'red'
+                    ? 'Jour rouge aujourd’hui.'
+                    : 'Note tes repas du jour.'}
               </p>
             )}
           </div>
@@ -217,6 +221,8 @@ const gymButton =
 /** Secondary action on the cobalt band: outlined, so the yellow button stays the main one. */
 const gymSecondaryButton =
   'mt-3 flex min-h-12 items-center justify-center border-2 border-on-gym px-4 text-[15px] font-extrabold focus-inset active:opacity-70';
+const redSecondaryButton =
+  'mt-3 flex min-h-12 items-center justify-center border-2 border-on-red-day px-4 text-[15px] font-extrabold focus-inset active:opacity-70';
 
 function ActiveWorkoutCard({ workout }: { workout: Workout }) {
   const now = useNow(30_000);
@@ -297,6 +303,27 @@ export function GymCard({ today }: { today: LocalDate }) {
     );
   }
 
+  if (gymDay?.red === true) {
+    return (
+      <section aria-labelledby="today-gym" className={`${band} grow-[2] bg-red-day text-on-red-day`}>
+        <h2 id="today-gym" className={bandLabel}>
+          Salle
+        </h2>
+        <div>
+          <p className="text-[1.5rem] leading-[1.05] headline">Jour rouge</p>
+          <p className="mt-1 text-[15px] font-semibold">Pas de salle, repas non notés. Demain, on repart.</p>
+          <button
+            type="button"
+            className={`${redSecondaryButton} w-full`}
+            onClick={() => void setRedDay(today, false)}
+          >
+            Annuler le jour rouge
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="today-gym" className={gymBand}>
       <h2 id="today-gym" className={bandLabel}>
@@ -309,12 +336,15 @@ export function GymCard({ today }: { today: LocalDate }) {
             ? `Dernière séance ${agoLabel(state.last.daysAgo)}.`
             : 'Ta première séance apparaîtra ici.'}
         </p>
-        <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Link to="/gym?start=1" className={gymButton}>
-            Commencer une séance
-          </Link>
+        <Link to="/gym?start=1" className={gymButton}>
+          Commencer une séance
+        </Link>
+        <div className="grid grid-cols-2 gap-2">
           <button type="button" className={gymSecondaryButton} onClick={() => void setRestDay(today, true)}>
             Jour de repos
+          </button>
+          <button type="button" className={gymSecondaryButton} onClick={() => void setRedDay(today, true)}>
+            Jour rouge
           </button>
         </div>
       </div>

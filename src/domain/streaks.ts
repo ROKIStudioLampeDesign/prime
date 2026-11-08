@@ -10,28 +10,35 @@ export interface DayKcal {
 export interface CalorieStreak {
   /** Consecutive days at or under the goal, ending today (or yesterday while today is empty). */
   days: number;
-  /** Today: 'ok' (logged, under the goal), 'over' (it broke the streak) or 'empty' (not yet). */
-  today: 'ok' | 'over' | 'empty';
+  /**
+   * Today: 'ok' (logged, under the goal), 'over' (it broke the streak), 'red' (marked as a jour
+   * rouge, which breaks it too) or 'empty' (not yet).
+   */
+  today: 'ok' | 'over' | 'red' | 'empty';
 }
 
 /**
  * Consecutive days whose logged calories stay at or under `goal`. A day counts only if something
  * was logged (an empty day is not a success); a day over the goal breaks the streak. Today is
- * still open: empty, it neither counts nor breaks.
+ * still open: empty, it neither counts nor breaks. A jour rouge (`red`) breaks it whatever was logged.
  */
 export function calorieStreak(
   byDay: ReadonlyMap<LocalDate, DayKcal>,
   goal: number,
   today: LocalDate,
+  red: ReadonlySet<LocalDate> = new Set(),
 ): CalorieStreak {
-  const ok = (d: DayKcal | undefined) => d !== undefined && d.entries > 0 && d.kcal <= goal;
+  const ok = (date: LocalDate) => {
+    const d = byDay.get(date);
+    return !red.has(date) && d !== undefined && d.entries > 0 && d.kcal <= goal;
+  };
+  if (red.has(today)) return { days: 0, today: 'red' };
   const todayRow = byDay.get(today);
-  const todayState =
-    todayRow === undefined || todayRow.entries === 0 ? 'empty' : ok(todayRow) ? 'ok' : 'over';
+  const todayState = todayRow === undefined || todayRow.entries === 0 ? 'empty' : ok(today) ? 'ok' : 'over';
   if (todayState === 'over') return { days: 0, today: 'over' };
   let days = todayState === 'ok' ? 1 : 0;
   let cursor = addDays(today, -1);
-  while (ok(byDay.get(cursor))) {
+  while (ok(cursor)) {
     days++;
     cursor = addDays(cursor, -1);
   }

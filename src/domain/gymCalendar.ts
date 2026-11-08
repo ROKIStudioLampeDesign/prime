@@ -48,6 +48,19 @@ export function restDates(
   return out;
 }
 
+/**
+ * "Jours rouges": no gym and meals not logged. Like a rest day, a day with a workout never is one.
+ */
+export function redDates(
+  workoutDates: readonly LocalDate[],
+  manualDays: readonly { date: LocalDate; red?: boolean }[],
+): Set<LocalDate> {
+  const worked = new Set(workoutDates);
+  const out = new Set<LocalDate>();
+  for (const d of manualDays) if (d.red === true && !worked.has(d.date)) out.add(d.date);
+  return out;
+}
+
 /** Number of gym days in a month (month is 1-12). */
 export function sessionsInMonth(attended: ReadonlySet<LocalDate>, year: number, month: number): number {
   const prefix = `${year}-${String(month).padStart(2, '0')}-`;

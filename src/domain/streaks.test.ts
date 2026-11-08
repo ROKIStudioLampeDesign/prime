@@ -46,6 +46,15 @@ describe('calorieStreak', () => {
     expect(calorieStreak(byDay, 1500, today)).toEqual({ days: 0, today: 'empty' });
   });
 
+  it('breaks on a jour rouge, whatever was logged that day', () => {
+    const byDay = days({ '2026-11-02': 1400, '2026-11-03': 1400, '2026-11-04': 1400 });
+    expect(calorieStreak(byDay, 1500, today, new Set([d('2026-11-03')]))).toEqual({
+      days: 1,
+      today: 'empty',
+    });
+    expect(calorieStreak(byDay, 1500, today, new Set([today]))).toEqual({ days: 0, today: 'red' });
+  });
+
   it('crosses month and year boundaries', () => {
     const byDay = days({ '2025-12-31': 1000, '2026-01-01': 1000 });
     expect(calorieStreak(byDay, 1500, d('2026-01-01')).days).toBe(2);

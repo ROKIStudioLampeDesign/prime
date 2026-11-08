@@ -55,6 +55,9 @@
   --color-nutrition-strong: #f4e04d;
   --color-gym-strong: #6b84ff;
   --color-paper-strong: #ffffff;
+  /* "Jour rouge" (no gym, ate badly, meals not logged): same in both themes. */
+  --color-red-day: #d42a24;
+  --color-on-red-day: #ffffff;
 
   /* Barbell gauge (bench goal): official Olympic plate colours, steel bar. Same in both themes. */
   --color-plate-20: #1d4fd6;

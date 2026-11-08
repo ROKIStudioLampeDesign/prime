@@ -9,7 +9,10 @@ import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import type { LogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
+import { getGymDay, setRedDay } from '../../db/gymDays';
 import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
+import { listAllWorkouts } from '../../db/workouts';
+import type { LocalDate } from '../../domain/date';
 import { MEAL_SLOTS, roundTo, sumMacros, type MealSlot } from '../../domain/nutrition';
 import { formatGrams, formatMacro } from '../../lib/format';
 import { DailySummary } from './DailySummary';
@@ -56,6 +59,7 @@ export function DiaryScreen() {
       ) : (
         <>
           <DailySummary totals={totals} goals={goals} />
+          {date <= today && <RedDay date={date} />}
           {entries.length === 0 ? (
             <EmptyState
               title="Rien de noté ce jour-là"
@@ -113,6 +117,47 @@ export function DiaryScreen() {
         onClose={closeEditor}
       />
     </Screen>
+  );
+}
+
+/**
+ * "Jour rouge" for the shown day: ate badly and meals not logged (no gym either). Shown as a red
+ * band once marked; days with a workout can't be one.
+ */
+function RedDay({ date }: { date: LocalDate }) {
+  const state = useLiveQuery(async () => {
+    const [day, workouts] = await Promise.all([getGymDay(date), listAllWorkouts()]);
+    return { red: day?.red === true, worked: workouts.some((w) => w.date === date) };
+  }, [date]);
+  if (state === undefined || state.worked) return null;
+  if (!state.red) {
+    return (
+      <button
+        type="button"
+        onClick={() => void setRedDay(date, true)}
+        className="mt-2 min-h-11 text-sm font-extrabold text-danger active:opacity-60"
+      >
+        Marquer comme jour rouge
+      </button>
+    );
+  }
+  return (
+    <section
+      aria-label="Jour rouge"
+      className="mt-3 bleed flex items-center justify-between gap-3 bg-red-day py-3 text-on-red-day"
+    >
+      <div>
+        <p className="text-xl leading-tight headline">Jour rouge</p>
+        <p className="text-[13px] font-semibold">Mal mangé, pas de salle. Exclu des moyennes.</p>
+      </div>
+      <button
+        type="button"
+        onClick={() => void setRedDay(date, false)}
+        className="min-h-11 shrink-0 border-2 border-on-red-day px-3 text-sm font-extrabold focus-inset active:opacity-70"
+      >
+        Annuler
+      </button>
+    </section>
   );
 }
 

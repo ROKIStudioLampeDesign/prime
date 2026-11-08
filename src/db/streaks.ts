@@ -1,5 +1,5 @@
 import { todayLocalDate, type LocalDate } from '../domain/date';
-import { attendedDates } from '../domain/gymCalendar';
+import { attendedDates, redDates } from '../domain/gymCalendar';
 import { calorieStreak, weekStreak, type CalorieStreak, type WeekStreak } from '../domain/streaks';
 import { db, type PrimeDB } from './db';
 import { getGoals } from './goals';
@@ -24,13 +24,12 @@ export async function getStreaks(
     listGymDays(database),
     getWeeklyTarget(),
   ]);
-  const attended = attendedDates(
-    workouts.map((w) => w.date),
-    gymDays,
-  );
+  const workoutDates = workouts.map((w) => w.date);
+  const attended = attendedDates(workoutDates, gymDays);
+  const red = redDates(workoutDates, gymDays);
   return {
     ...(goals.kcal !== undefined && {
-      calories: { ...calorieStreak(byDay, goals.kcal, today), goal: goals.kcal },
+      calories: { ...calorieStreak(byDay, goals.kcal, today, red), goal: goals.kcal },
     }),
     week: weekStreak(attended, today, target),
   };

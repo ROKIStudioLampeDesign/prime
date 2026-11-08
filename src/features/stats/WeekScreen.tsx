@@ -9,6 +9,9 @@ import { Loading } from '../../components/Loading';
 import { headerButton, Screen } from '../../components/Screen';
 import { listBodyWeights } from '../../db/bodyWeights';
 import { getGoals } from '../../db/goals';
+import { listGymDays } from '../../db/gymDays';
+import { listAllWorkouts } from '../../db/workouts';
+import { redDates } from '../../domain/gymCalendar';
 import { listEntriesBetween, listWorkoutVolumesBetween } from '../../db/stats';
 import { addDays, fromLocalDate, isLocalDate, type LocalDate } from '../../domain/date';
 import { roundMacro } from '../../domain/nutrition';
@@ -49,6 +52,13 @@ export function WeekScreen() {
   const workouts = useLiveQuery(() => listWorkoutVolumesBetween(prevStart, end), [prevStart, end]);
   const goals = useLiveQuery(getGoals);
   const weights = useLiveQuery(listBodyWeights);
+  const redDays = useLiveQuery(async () => {
+    const [all, gymDays] = await Promise.all([listAllWorkouts(), listGymDays()]);
+    return redDates(
+      all.map((w) => w.date),
+      gymDays,
+    );
+  });
   const isCurrent = start === weekStart(today);
 
   const go = (date: LocalDate) =>
@@ -81,11 +91,15 @@ export function WeekScreen() {
         </button>
       </div>
 
-      {entries === undefined || workouts === undefined || goals === undefined || weights === undefined ? (
+      {entries === undefined ||
+      workouts === undefined ||
+      goals === undefined ||
+      weights === undefined ||
+      redDays === undefined ? (
         <Loading />
       ) : (
         (() => {
-          const input = { foodEntries: entries, workouts, goals, weights, today };
+          const input = { foodEntries: entries, workouts, goals, weights, today, redDays };
           const week = weeklySummary({ ...input, weekOf: start });
           const previous = weeklySummary({ ...input, weekOf: prevStart });
           const sessions = delta(week.workoutCount, previous.workoutCount);
@@ -110,7 +124,11 @@ export function WeekScreen() {
                   value={week.avgKcal === undefined ? '—' : formatMacro('kcal', week.avgKcal)}
                   unit={week.avgKcal === undefined ? undefined : 'kcal / jour'}
                   maxRem={4.5}
-                  hint={`${logged} jour${logged > 1 ? 's' : ''} renseigné${logged > 1 ? 's' : ''}`}
+                  hint={`${logged} jour${logged > 1 ? 's' : ''} renseigné${logged > 1 ? 's' : ''}${
+                    week.redDays > 0
+                      ? ` · ${week.redDays} jour${week.redDays > 1 ? 's' : ''} rouge${week.redDays > 1 ? 's' : ''}`
+                      : ''
+                  }`}
                 />
                 <BandTile
                   tone="paper"
@@ -162,8 +180,9 @@ export function WeekScreen() {
                 met={(d) => goals.protein !== undefined && proteinGoalMet(d.protein, goals.protein)}
               />
               <p className="mt-3 text-xs font-semibold text-muted">
-                Moyennes calculées sur les jours renseignés seulement, sans la journée en cours. Calories :
-                objectif atteint juste en dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
+                Moyennes calculées sur les jours renseignés seulement, sans la journée en cours ni les jours
+                rouges (barres rouges). Calories : objectif atteint juste en dessous (90 à 100 %), raté
+                au-dessus. Protéines : atteint dès 95 %.
               </p>
             </>
           );
@@ -186,9 +205,15 @@ interface DailyChartProps {
 
 /** Mini bar chart of a week: bright bars when the goal is met, dimmed otherwise, dashed goal line. */
 function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartProps) {
-  const data = days.map((d, i) => ({ label: DAY_LETTERS[i] ?? '', value: d.logged ? value(d) : 0, day: d }));
-  const max = Math.max(goal ?? 0, ...data.map((d) => d.value));
+  const values = days.map((d) => (d.logged ? value(d) : 0));
+  const max = Math.max(goal ?? 0, ...values);
   const yTicks = niceTicks(0, max * 1.05, 3);
+  // A jour rouge has no meaningful total: a full-height red bar marks it instead.
+  const data = days.map((d, i) => ({
+    label: DAY_LETTERS[i] ?? '',
+    value: d.red ? (yTicks.at(-1) ?? max) : (values[i] ?? 0),
+    day: d,
+  }));
   return (
     <section className="mt-5" aria-label={title}>
       <h2 className="mb-1 flex items-baseline justify-between gap-3">
@@ -199,7 +224,7 @@ function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartPr
           </span>
         )}
       </h2>
-      {days.every((d) => !d.logged) ? (
+      {days.every((d) => !d.logged && !d.red) ? (
         <ChartEmpty height={CHART_HEIGHT} />
       ) : (
         <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
@@ -213,8 +238,8 @@ function DailyChart({ title, color, unit, days, value, goal, met }: DailyChartPr
               {data.map((d) => (
                 <Cell
                   key={d.day.date}
-                  fill={color}
-                  fillOpacity={goal === undefined || met(d.day) ? 1 : 0.4}
+                  fill={d.day.red ? 'var(--color-red-day)' : color}
+                  fillOpacity={d.day.red || goal === undefined || met(d.day) ? 1 : 0.4}
                 />
               ))}
             </Bar>
