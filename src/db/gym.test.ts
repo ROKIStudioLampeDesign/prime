@@ -294,6 +294,18 @@ describe('workout logging', () => {
     ]);
   });
 
+  it('prefills from the exercise’s last session in another template, even if this one changed since', async () => {
+    const bench = await seededId('bench-press');
+    const templateId = await createTemplate(
+      { name: 'Push', exercises: [{ exerciseId: bench, targetSets: 1, sets: [{ weightKg: 50, reps: 10 }] }] },
+      db,
+    );
+    await pastWorkout(bench, [[70, 6]], 2000); // e.g. done in another template
+    await db.templates.update(templateId, { updatedAt: 3000 }); // this template edited afterwards
+    const id = await startWorkout(templateId, db);
+    expect((await getWorkoutSets(id, db)).map((s) => [s.weightKg, s.reps])).toEqual([[70, 6]]);
+  });
+
   it('prefills the boxes from a newer session than the template, not from its plan', async () => {
     const bench = await seededId('bench-press');
     const templateId = await createTemplate(
@@ -355,7 +367,7 @@ describe('workout logging', () => {
 });
 
 describe('bodyweight sets (0 kg)', () => {
-  it('a 0 kg set carries over as bodyweight, and a template plans it with reps only', async () => {
+  it('a 0 kg set carries over as bodyweight, from a template too', async () => {
     const crunch = await seededId('crunch');
     const first = await startWorkout(undefined, db);
     await addExerciseToWorkout(first, crunch, {}, db);
@@ -369,7 +381,7 @@ describe('bodyweight sets (0 kg)', () => {
     expect((await getWorkoutSets(next, db))[0]).toMatchObject({ weightKg: 0, reps: 20 });
     await deleteWorkout(next, db);
 
-    // Planned "— kg × 15" stays at bodyweight instead of copying a previous load.
+    // A template planning "— kg × 15" stays at bodyweight; the reps follow the last session.
     const templateId = await createTemplate(
       {
         name: 'Abdos',
@@ -378,7 +390,7 @@ describe('bodyweight sets (0 kg)', () => {
       db,
     );
     const fromTemplate = await startWorkout(templateId, db);
-    expect((await getWorkoutSets(fromTemplate, db))[0]).toMatchObject({ weightKg: 0, reps: 15 });
+    expect((await getWorkoutSets(fromTemplate, db))[0]).toMatchObject({ weightKg: 0, reps: 20 });
   });
 });
 

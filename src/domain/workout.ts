@@ -113,19 +113,18 @@ export function prefillFromPlan(
 }
 
 /**
- * Initial values for a template's planned sets, given the last performance. When that
- * performance is newer than the template's last change (`planUpdatedAt`), each set takes what was
- * actually done last time (same set number), so the boxes show the latest loads and reps; sets
- * beyond it, and templates edited since, follow the plan (`prefillFromPlan`).
+ * Initial values for a template's planned sets, given the exercise's last performance in any
+ * workout (from this template, another one, or none): each set takes what was actually done last
+ * time (same set number), so loads and reps follow the exercise, not the template. The template
+ * gives the number of sets; sets beyond the last performance follow its plan (`prefillFromPlan`).
  */
 export function prefillForTemplate(
   previous: PastPerformance | undefined,
   plan: readonly TemplateSet[],
-  planUpdatedAt: number,
   fallbackReps = 0,
 ): PerformedSet[] {
   const planned = prefillFromPlan(previous?.sets, plan, fallbackReps);
-  if (!previous || previous.startedAt <= planUpdatedAt) return planned;
+  if (!previous) return planned;
   return planned.map((p) => {
     const done = previous.sets.find((s) => s.setNumber === p.setNumber);
     return done ? { setNumber: p.setNumber, weightKg: done.weightKg, reps: done.reps } : p;

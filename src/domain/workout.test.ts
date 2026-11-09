@@ -344,20 +344,17 @@ describe('prefillForTemplate', () => {
     ],
   };
 
-  it('takes what was done last time when it is newer than the template; extra sets follow the plan', () => {
-    expect(prefillForTemplate(last, plan, 1000)).toEqual([
+  it('takes what was done last time, whenever the template changed; extra sets follow the plan', () => {
+    expect(prefillForTemplate(last, plan)).toEqual([
       { setNumber: 1, weightKg: 20, reps: 12 },
       { setNumber: 2, weightKg: 20, reps: 11 },
       { setNumber: 3, weightKg: 17.5, reps: 10 },
     ]);
   });
 
-  it('follows the plan when the template changed since (or at) the last performance', () => {
-    const planned = prefillFromPlan(last.sets, plan);
-    expect(prefillForTemplate(last, plan, 3000)).toEqual(planned);
-    expect(prefillForTemplate(last, plan, 2000)).toEqual(planned);
-    expect(prefillForTemplate(undefined, plan, 0)).toEqual(prefillFromPlan(undefined, plan));
-    expect(prefillForTemplate(last, [], 0)).toEqual([]);
+  it('follows the plan for an exercise never performed, and keeps the template’s set count', () => {
+    expect(prefillForTemplate(undefined, plan)).toEqual(prefillFromPlan(undefined, plan));
+    expect(prefillForTemplate(last, [])).toEqual([]);
   });
 });
 

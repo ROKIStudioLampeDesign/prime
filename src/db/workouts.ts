@@ -97,10 +97,10 @@ export async function addExerciseToWorkout(
     targetReps?: number;
     plan?: readonly TemplateSet[];
     /**
-     * When the plan comes from a template: its last change. A newer performance then wins over
-     * the plan. Without it (e.g. the PR bench ramp), the plan always wins.
+     * The plan comes from a template: the exercise's last performance (in any workout) wins over
+     * its loads and reps. Otherwise (e.g. the PR bench ramp), the plan always wins.
      */
-    planUpdatedAt?: number;
+    fromTemplate?: boolean;
   } = {},
   database: PrimeDB = db,
 ): Promise<boolean> {
@@ -115,13 +115,13 @@ export async function addExerciseToWorkout(
       const order = sets.reduce((max, s) => Math.max(max, s.order + 1), 0);
       const last = await previousForPrefill(workout, exerciseId, database);
       const previous = last?.sets;
-      // Planned sets give the count; their values yield to a newer performance (see
-      // `prefillForTemplate`). Without a plan, copy the last performance.
+      // A template's planned sets give the count; their values yield to the exercise's last
+      // performance (see `prefillForTemplate`). Without a plan, copy the last performance.
       const prefill =
         options.plan && options.plan.length > 0
-          ? options.planUpdatedAt === undefined
-            ? prefillFromPlan(previous, options.plan, options.targetReps)
-            : prefillForTemplate(last, options.plan, options.planUpdatedAt, options.targetReps)
+          ? options.fromTemplate === true
+            ? prefillForTemplate(last, options.plan, options.targetReps)
+            : prefillFromPlan(previous, options.plan, options.targetReps)
           : prefillSets(previous, options.setCount ?? defaultSetCount(previous), options.targetReps);
       await database.workoutSets.bulkAdd(
         prefill.map((p) => ({
@@ -166,7 +166,7 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
             setCount: te.targetSets,
             targetReps: te.targetReps,
             plan: te.sets,
-            ...(template && { planUpdatedAt: template.updatedAt }),
+            fromTemplate: true,
           },
           database,
         );
