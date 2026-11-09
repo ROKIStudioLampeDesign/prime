@@ -83,8 +83,8 @@ export function weekStreak(attended: ReadonlySet<LocalDate>, today: LocalDate, t
 
 export const BENCH_BADGE_FROM_KG = 60;
 export const BENCH_BADGE_STEP_KG = 10;
-/** Badges shown at least up to this load (the bench goal), then two steps past the best lift. */
-const BENCH_BADGE_SHOWN_UNTIL_KG = 120;
+/** Badges shown at least up to this load (one rank past the 130 kg goal), then two steps past the best lift. */
+const BENCH_BADGE_SHOWN_UNTIL_KG = 140;
 
 export interface BenchBadge {
   kg: number;
@@ -102,24 +102,25 @@ export function benchBadges(bestKg: number): BenchBadge[] {
   return badges;
 }
 
-export const BENCH_RANKS = ['Bronze', 'Argent', 'Or', 'Rubis', 'Obsidienne'] as const;
+export const BENCH_RANKS = ['Bronze', 'Argent', 'Or', 'Rubis', 'Diamant', 'Obsidienne'] as const;
 export type BenchRankName = (typeof BENCH_RANKS)[number];
 
 export interface BenchRank {
   name: BenchRankName;
-  /** 0 (Bronze) to 4 (Obsidienne): each tier adds ornaments to the badge. */
+  /** 0 (Bronze) to 5 (Obsidienne): each tier adds ornaments to the badge. */
   tier: number;
-  /** 1 or 2 within Bronze, Argent and Or; 0 for Rubis (the 120 kg goal); 1–3 for Obsidienne. */
+  /** 1 or 2 within Bronze, Argent and Or; 0 for Rubis and Diamant (the 130 kg goal); 1–3 for Obsidienne. */
   division: number;
 }
 
 /**
  * Rank of a bench milestone: Bronze 60–70, Argent 80–90, Or 100–110 (divisions I and II), Rubis
- * at 120 (the goal), then Obsidienne I, II, III from 130 kg.
+ * at 120, Diamant at 130 (the goal), then Obsidienne I, II, III from 140 kg.
  */
 export function benchRank(kg: number): BenchRank {
-  if (kg >= 130)
-    return { name: 'Obsidienne', tier: 4, division: Math.min(3, Math.floor((kg - 130) / 10) + 1) };
+  if (kg >= 140)
+    return { name: 'Obsidienne', tier: 5, division: Math.min(3, Math.floor((kg - 140) / 10) + 1) };
+  if (kg >= 130) return { name: 'Diamant', tier: 4, division: 0 };
   if (kg >= 120) return { name: 'Rubis', tier: 3, division: 0 };
   const tier = kg >= 100 ? 2 : kg >= 80 ? 1 : 0;
   const from = [60, 80, 100][tier] ?? 60;

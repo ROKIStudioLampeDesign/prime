@@ -17,19 +17,18 @@ describe('BenchBadge', () => {
     expect(await axeViolations()).toEqual([]);
   });
 
-  it('adds ornaments with the rank: no wings in Bronze, wings from Or, a crown from Rubis', () => {
+  it('adds ornaments with each rank, up to Obsidienne', () => {
+    // One load per rank (divisions add pips, so they aren't compared).
+    const loads = [60, 80, 100, 120, 130, 140];
     const { container } = render(
       <>
-        <BenchBadge kg={60} unlocked />
-        <BenchBadge kg={100} unlocked />
-        <BenchBadge kg={110} unlocked />
-        <BenchBadge kg={120} unlocked />
+        {loads.map((kg) => (
+          <BenchBadge key={kg} kg={kg} unlocked />
+        ))}
       </>,
     );
-    const counts = [...container.querySelectorAll('svg')].map((svg) => svg.querySelectorAll('path').length);
-    const [bronze, orI, orII, rubis] = counts;
-    expect(orI).toBeGreaterThan(bronze ?? 0);
-    expect(orII).toBeGreaterThan(orI ?? 0);
-    expect(rubis).toBeGreaterThan(orII ?? 0);
+    const counts = [...container.querySelectorAll('svg')].map((svg) => svg.querySelectorAll('*').length);
+    counts.slice(1).forEach((count, i) => expect(count).toBeGreaterThan(counts[i] ?? 0));
+    expect(screen.getByRole('img', { name: 'Badge bench 130 kg, Diamant, débloqué' })).toBeTruthy();
   });
 });

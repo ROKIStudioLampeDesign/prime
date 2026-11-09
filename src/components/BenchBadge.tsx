@@ -2,116 +2,327 @@ import { useId, type ReactNode } from 'react';
 import { benchRank, benchRankLabel } from '../domain/streaks';
 
 /**
- * A bench milestone drawn as an original rank emblem: a faceted, riveted shield with an engraved
- * barbell and the load. Each tier adds ornaments: Bronze plain, Argent side blades, Or wings (2
- * feather rows on Or I, 3 with rays and a jewelled point on Or II), Rubis (the 120 kg goal) a
- * crown and 4 rows, Obsidienne 5 rows. Chevrons mark divisions I and II. Locked: a grey shield.
+ * A bench milestone drawn as an original ranked-game emblem, the "orbe couronné": a glossy orb
+ * with an engraved barbell, set in a spiked ring, over a banner with the load. Each rank adds
+ * ornaments: Bronze plain, Argent side blades, Or wings and a golden aura (rays on Or II), Rubis a
+ * crown, Diamant (the 130 kg goal) a jewelled crown, facets and an icy halo, Obsidienne dark wings
+ * and violet flames. The spikes grow with the rank; diamonds under the banner mark divisions.
+ * Locked: a grey emblem with a padlock.
  */
 interface Palette {
-  metal: readonly [string, string, string];
-  core: readonly [string, string];
-  text: string;
-  accent: string;
-  gem?: string;
-  rays?: string;
+  /** Metal of the ring, spikes, wings and banner: light, mid, dark, outline. */
+  frame: readonly [string, string, string, string];
+  /** The orb: light, mid, dark. */
+  gem: readonly [string, string, string];
+  glow?: string;
+  /** Engraving and banner text. */
+  ink: string;
 }
 
+const GOLD = ['#fff3b0', '#e6b12a', '#7a4d00', '#2e1d00'] as const;
 const PALETTES: readonly Palette[] = [
   {
-    metal: ['#ffdcb5', '#c47a3b', '#5a2b0c'],
-    core: ['#4e2410', '#1d0b03'],
-    text: '#ffe4c6',
-    accent: '#ffb878',
+    frame: ['#ffd4a8', '#b8733a', '#5a2c0e', '#241005'],
+    gem: ['#f0b078', '#94511f', '#3a1806'],
+    ink: '#ffe2c4',
   },
   {
-    metal: ['#ffffff', '#b3bdc8', '#47505b'],
-    core: ['#323b46', '#11161c'],
-    text: '#ffffff',
-    accent: '#e8eef5',
+    frame: ['#ffffff', '#c2ccd5', '#56606b', '#1c2127'],
+    gem: ['#eef5ff', '#8ea3bd', '#26344a'],
+    ink: '#ffffff',
+  },
+  { frame: GOLD, gem: ['#fff3b0', '#f2a900', '#6b3e00'], glow: '#ffc93a', ink: '#fff3c4' },
+  { frame: GOLD, gem: ['#ffa3b4', '#e0103a', '#4f0012'], glow: '#ff3355', ink: '#fff0c8' },
+  {
+    frame: ['#ffffff', '#d4e6f0', '#5f7d90', '#15232c'],
+    gem: ['#ffffff', '#8fe0ff', '#145f96'],
+    glow: '#6fd6ff',
+    ink: '#ffffff',
   },
   {
-    metal: ['#fff8cf', '#f2bb2b', '#7a4f02'],
-    core: ['#553600', '#1f1400'],
-    text: '#fff1bd',
-    accent: '#ffe27a',
-    gem: '#ff9d2e',
-    rays: '#ffcf40',
-  },
-  {
-    metal: ['#ffe9a3', '#d9a21f', '#5b3a00'],
-    core: ['#9e0f24', '#3a020a'],
-    text: '#ffe9b0',
-    accent: '#ff5a6e',
-    gem: '#ff2e4c',
-    rays: '#ff4d64',
-  },
-  {
-    metal: ['#ffeaa8', '#cf9b1c', '#4d3200'],
-    core: ['#2a0f3d', '#07020d'],
-    text: '#ffd86b',
-    accent: '#c56bff',
-    gem: '#b44dff',
-    rays: '#a43dff',
+    frame: ['#ffe39a', '#c48f17', '#4a2e00', '#160c00'],
+    gem: ['#d6b0ff', '#5a1fa0', '#0e021a'],
+    glow: '#a24dff',
+    ink: '#ffe08a',
   },
 ];
 
-const SHIELD = 'M50 16 L75 23 L75 52 C75 67.5 63.5 78.5 50 87 C36.5 78.5 25 67.5 25 52 L25 23 Z';
-const INNER = 'M50 22.5 L69 28 L69 52 C69 63.5 60.5 72 50 79 C39.5 72 31 63.5 31 52 L31 28 Z';
-const LEFT_HALF = 'M50 16 L25 23 L25 52 C25 67.5 36.5 78.5 50 87 Z';
-const RIVETS = [
-  [28, 26],
-  [72, 26],
-  [27, 50],
-  [73, 50],
-  [38, 72],
-  [62, 72],
-] as const;
-
+const CX = 50;
+const CY = 45;
+const BANNER_Y = 80;
 const rad = (deg: number) => (deg * Math.PI) / 180;
 const f = (n: number) => n.toFixed(2);
+const pol = (r: number, deg: number, cx = CX, cy = CY) =>
+  [cx + r * Math.cos(rad(deg)), cy + r * Math.sin(rad(deg))] as const;
 
-function Sparkle({ x, y, s, color }: { x: number; y: number; s: number; color: string }) {
-  const q = s * 0.18;
+function Sparkle({
+  x,
+  y,
+  s,
+  color,
+  opacity = 1,
+}: {
+  x: number;
+  y: number;
+  s: number;
+  color: string;
+  opacity?: number;
+}) {
+  const q = s * 0.16;
   return (
     <path
-      d={`M${x} ${y - s} Q${x + q} ${y - q} ${x + s} ${y} Q${x + q} ${y + q} ${x} ${y + s} Q${x - q} ${y + q} ${x - s} ${y} Q${x - q} ${y - q} ${x} ${y - s}Z`}
+      opacity={opacity}
       fill={color}
+      d={`M${x} ${y - s}Q${x + q} ${y - q} ${x + s} ${y}Q${x + q} ${y + q} ${x} ${y + s}Q${x - q} ${y + q} ${x - s} ${y}Q${x - q} ${y - q} ${x} ${y - s}Z`}
     />
   );
 }
 
-/** Layered wing: `rows` feathers fanning out from one shoulder of the shield. */
-function Wing({ side, rows, fill, line }: { side: -1 | 1; rows: number; fill: string; line: string }) {
-  const feathers: ReactNode[] = [];
-  for (let k = rows - 1; k >= 0; k--) {
-    const len = 30 - k * 4.5;
-    const ang = rad(-32 + k * 17);
-    const ox = 50 + side * 22;
-    const oy = 34 + k * 7;
-    const tx = ox + side * len * Math.cos(ang);
-    const ty = oy + len * Math.sin(ang);
-    const w = 5.2 - k * 0.5;
-    const nx = -Math.sin(ang) * w;
-    const ny = Math.cos(ang) * w;
-    feathers.push(
-      <g key={k}>
-        <path
-          d={`M${f(ox)} ${f(oy - w * 0.6)} Q${f((ox + tx) / 2 + side * nx)} ${f((oy + ty) / 2 - ny)} ${f(tx)} ${f(ty)} Q${f((ox + tx) / 2 - side * nx * 0.3)} ${f((oy + ty) / 2 + ny * 0.9)} ${f(ox)} ${f(oy + w)}Z`}
-          fill={fill}
-          stroke={line}
-          strokeWidth={0.8}
-          strokeLinejoin="round"
-        />
-        <path
-          d={`M${f(ox)} ${f(oy + w * 0.2)} L${f(tx - side * 1.5)} ${f(ty)}`}
-          stroke={line}
-          strokeWidth={0.6}
-          opacity={0.55}
-        />
+/** Rays (from Or II) and Obsidienne's flames behind the emblem; the halo is drawn by the caller. */
+function Rays({
+  tier,
+  division,
+  glow,
+  mask,
+}: {
+  tier: number;
+  division: number;
+  glow: string;
+  mask: string;
+}) {
+  const out: ReactNode[] = [];
+  if (tier >= 3 || (tier === 2 && division === 2)) {
+    const n = tier >= 4 ? 24 : 16;
+    out.push(
+      <g key="rays" mask={mask} fill={glow} opacity={tier >= 4 ? 0.55 : 0.4}>
+        {Array.from({ length: n }, (_, k) => {
+          const a = (360 / n) * k - 90;
+          const w = k % 2 ? 1.6 : 3;
+          const [x1, y1] = pol(62, a - w, 50, 46);
+          const [x2, y2] = pol(62, a + w, 50, 46);
+          return <path key={k} d={`M50 46L${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}Z`} />;
+        })}
       </g>,
     );
   }
+  if (tier === 5) {
+    for (let k = -3; k <= 3; k++) {
+      const x = 50 + k * 8;
+      const h = 30 - Math.abs(k) * 5;
+      out.push(
+        <path
+          key={`flame${k}`}
+          d={`M${x - 6} 44 Q${x - 5} ${f(30 - h * 0.3)} ${x + (k % 2 ? 2 : -2)} ${f(16 - h * 0.4)} Q${x + 6} ${f(30 - h * 0.2)} ${x + 6} 44Z`}
+          fill={k % 2 ? '#c27bff' : '#7a2cff'}
+          opacity={0.55}
+        />,
+      );
+    }
+  }
+  return <>{out}</>;
+}
+
+/** Argent: swept side blades. Or and up: feathered wings, one more row per rank. */
+function Wings({
+  tier,
+  division,
+  p,
+  light,
+  dark,
+}: {
+  tier: number;
+  division: number;
+  p: Palette;
+  light: string;
+  dark: string;
+}) {
+  const outline = p.frame[3];
+  if (tier === 0) return null;
+  const spread = 18;
+  const cy = 44;
+  if (tier === 1) {
+    return (
+      <>
+        {([-1, 1] as const).map((side) => {
+          const x = CX + side * spread;
+          return (
+            <g key={side}>
+              <path
+                d={`M${x} ${cy - 12} L${x + side * 20} ${cy - 6} L${x + side * 9} ${cy} L${x + side * 17} ${cy + 8} L${x} ${cy + 10}Z`}
+                fill={side < 0 ? light : dark}
+                stroke={outline}
+                strokeWidth={0.8}
+                strokeLinejoin="round"
+              />
+              {division === 2 && (
+                <path
+                  d={`M${x} ${cy + 6} L${x + side * 13} ${cy + 14} L${x} ${cy + 17}Z`}
+                  fill={dark}
+                  stroke={outline}
+                  strokeWidth={0.7}
+                />
+              )}
+            </g>
+          );
+        })}
+      </>
+    );
+  }
+  const rows = ([0, 0, 3, 4, 5, 6][tier] ?? 6) + (tier === 2 && division === 2 ? 1 : 0);
+  const feathers: ReactNode[] = [];
+  for (const side of [-1, 1] as const) {
+    for (let k = rows - 1; k >= 0; k--) {
+      const len = 34 - k * (20 / rows);
+      const ang = -38 + k * (78 / rows);
+      const ox = CX + side * spread;
+      const oy = cy - 6 + k * (22 / rows);
+      const tx = ox + side * len * Math.cos(rad(ang));
+      const ty = oy + len * Math.sin(rad(ang));
+      const w = 6 - k * 0.5;
+      const nx = -Math.sin(rad(ang)) * w;
+      const ny = Math.cos(rad(ang)) * w;
+      const fill = tier === 5 ? (k % 2 ? '#2a1240' : '#1a0a2c') : (k + (side > 0 ? 1 : 0)) % 2 ? dark : light;
+      feathers.push(
+        <path
+          key={`${side}${k}`}
+          d={`M${f(ox)} ${f(oy - w * 0.5)} Q${f((ox + tx) / 2 + side * nx)} ${f((oy + ty) / 2 - ny)} ${f(tx)} ${f(ty)} Q${f((ox + tx) / 2 - side * nx * 0.2)} ${f((oy + ty) / 2 + ny)} ${f(ox)} ${f(oy + w)}Z`}
+          fill={fill}
+          stroke={tier === 5 ? '#b56bff' : outline}
+          strokeWidth={tier === 5 ? 0.9 : 0.7}
+          strokeLinejoin="round"
+        />,
+      );
+    }
+  }
   return <>{feathers}</>;
+}
+
+/** Rubis: crown. Diamant: taller, jewelled. Obsidienne: spiked horns. */
+function Crown({ tier, p, light, dark }: { tier: number; p: Palette; light: string; dark: string }) {
+  const outline = p.frame[3];
+  const y = 18;
+  if (tier < 3) return null;
+  if (tier === 5) {
+    return (
+      <>
+        <path
+          d={`M34 ${y + 4} L28 ${y - 14} L40 ${y - 2} L44 ${y - 10} L50 ${y - 18} L56 ${y - 10} L60 ${y - 2} L72 ${y - 14} L66 ${y + 4}Z`}
+          fill={light}
+          stroke={outline}
+          strokeWidth={0.8}
+          strokeLinejoin="round"
+        />
+        <circle cx="50" cy={y - 6} r={2.6} fill="#c98bff" stroke={outline} strokeWidth={0.5} />
+      </>
+    );
+  }
+  const tall = tier === 4 ? 4 : 0;
+  const gem = p.gem[1];
+  return (
+    <>
+      <path
+        d={`M35 ${y + 4} L33 ${y - 9 - tall} L41.5 ${y - 3} L50 ${y - 14 - tall} L58.5 ${y - 3} L67 ${y - 9 - tall} L65 ${y + 4}Z`}
+        fill={light}
+        stroke={outline}
+        strokeWidth={0.8}
+        strokeLinejoin="round"
+      />
+      <rect x="35" y={y + 1} width="30" height="3.4" fill={dark} stroke={outline} strokeWidth={0.5} />
+      <circle cx="50" cy={y - 7 - tall} r={2.4} fill={gem} stroke={outline} strokeWidth={0.5} />
+      {tier === 4 && (
+        <>
+          <circle cx="38" cy={y - 2} r={1.5} fill={gem} />
+          <circle cx="62" cy={y - 2} r={1.5} fill={gem} />
+        </>
+      )}
+    </>
+  );
+}
+
+/** The banner with the load, its ends folded behind. */
+function Banner({
+  kg,
+  light,
+  mid,
+  dark,
+  outline,
+  ink,
+}: {
+  kg: number;
+  light: string;
+  mid: string;
+  dark: string;
+  outline: string;
+  ink: string;
+}) {
+  const y = BANNER_Y;
+  return (
+    <>
+      <path
+        d={`M22 ${y} L18 ${y + 5.5} L22 ${y + 11} L30 ${y + 11} L30 ${y}Z`}
+        fill={dark}
+        stroke={outline}
+        strokeWidth={0.6}
+      />
+      <path
+        d={`M78 ${y} L82 ${y + 5.5} L78 ${y + 11} L70 ${y + 11} L70 ${y}Z`}
+        fill={dark}
+        stroke={outline}
+        strokeWidth={0.6}
+      />
+      <path
+        d={`M27 ${y - 2} L73 ${y - 2} L73 ${y + 9} L27 ${y + 9}Z`}
+        fill={light}
+        stroke={outline}
+        strokeWidth={0.7}
+      />
+      <path d={`M28 ${y - 1} L72 ${y - 1} L72 ${y + 8} L28 ${y + 8}Z`} fill={mid} opacity={0.82} />
+      <text
+        x="50"
+        y={y + 5.9}
+        textAnchor="middle"
+        fill={ink}
+        style={{ font: '900 7.4px Archivo, sans-serif', fontStretch: '118%' }}
+      >
+        {kg} kg
+      </text>
+    </>
+  );
+}
+
+/** Division diamonds under the banner (I, II, III). */
+function Pips({ count, fill, outline }: { count: number; fill: string; outline: string }) {
+  const y = BANNER_Y;
+  const xs = Array.from({ length: count }, (_, k) => 50 + (k - (count - 1) / 2) * 10);
+  return (
+    <>
+      {xs.map((x) => (
+        <g key={x}>
+          <path
+            d={`M${x} ${y + 10} L${x + 4} ${y + 14} L${x} ${y + 18} L${x - 4} ${y + 14}Z`}
+            fill={fill}
+            stroke={outline}
+            strokeWidth={0.7}
+          />
+          <path d={`M${x} ${y + 10} L${x + 4} ${y + 14} L${x} ${y + 14.6}Z`} fill="#fff" opacity={0.5} />
+        </g>
+      ))}
+    </>
+  );
+}
+
+/** Spiked ring: more and longer spikes at each rank. */
+function spikes(tier: number, division: number): { d: string; dark: boolean }[] {
+  const n = 8 + tier * 2 + (division === 2 ? 2 : 0);
+  const len = 4 + tier * 1.4;
+  const half = 360 / n / 2.6;
+  return Array.from({ length: n }, (_, k) => {
+    const a = (360 / n) * k - 90;
+    const [x1, y1] = pol(24, a - half);
+    const [x2, y2] = pol(24 + len, a);
+    const [x3, y3] = pol(24, a + half);
+    return { d: `M${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}L${f(x3)} ${f(y3)}Z`, dark: k % 2 === 1 };
+  });
 }
 
 interface BenchBadgeProps {
@@ -123,7 +334,7 @@ interface BenchBadgeProps {
 export function BenchBadge({ kg, unlocked, size = 96 }: BenchBadgeProps) {
   const uid = useId();
   const label = `Badge bench ${kg} kg, ${benchRankLabel(kg)}, ${unlocked ? 'débloqué' : 'à débloquer'}`;
-  const numeralSize = String(kg).length > 2 ? 16.5 : 19.5;
+  const { tier, division } = benchRank(kg);
 
   if (!unlocked) {
     return (
@@ -135,44 +346,50 @@ export function BenchBadge({ kg, unlocked, size = 96 }: BenchBadgeProps) {
         aria-label={label}
         className="overflow-visible"
       >
-        <path d={SHIELD} className="fill-surface-2" />
-        <path
-          d={INNER}
+        {spikes(tier, division).map((s, k) => (
+          <path key={k} d={s.d} className="fill-surface-2" />
+        ))}
+        <circle cx={CX} cy={CY} r={25} className="fill-surface-2" />
+        <circle
+          cx={CX}
+          cy={CY}
+          r={18.5}
           fill="none"
           className="stroke-muted"
           strokeWidth={1.3}
           strokeDasharray="3 3"
           opacity={0.6}
         />
-        <text
-          x="50"
-          y="55.5"
-          textAnchor="middle"
-          className="fill-muted"
-          style={{ font: `900 ${numeralSize}px Archivo, sans-serif`, fontStretch: '125%' }}
-        >
-          {kg}
-        </text>
         <path
-          d="M46 63 h8 v6 h-8z M47.5 63 v-2 a2.5 2.5 0 0 1 5 0 v2"
+          d={`M44.5 ${CY - 1} h11 v9 h-11z M46.5 ${CY - 1} v-3 a3.5 3.5 0 0 1 7 0 v3`}
           fill="none"
           className="stroke-muted"
-          strokeWidth={1.3}
+          strokeWidth={1.5}
         />
+        <path
+          d={`M27 ${BANNER_Y - 2} L73 ${BANNER_Y - 2} L73 ${BANNER_Y + 9} L27 ${BANNER_Y + 9}Z`}
+          className="fill-surface-2"
+        />
+        <text
+          x="50"
+          y={BANNER_Y + 5.9}
+          textAnchor="middle"
+          className="fill-muted"
+          style={{ font: '900 7.4px Archivo, sans-serif', fontStretch: '118%' }}
+        >
+          {kg} kg
+        </text>
       </svg>
     );
   }
 
-  const { tier, division } = benchRank(kg);
   const p = PALETTES[tier] ?? PALETTES[0];
   if (!p) return null;
-  const [hi, mid, lo] = p.metal;
-  const goldI = tier === 2 && division === 1;
+  const [hi, mid, lo, outline] = p.frame;
   const id = (name: string) => `${uid}-${name}`;
-  const metal = `url(#${id('m')})`;
+  const light = `url(#${id('m')})`;
   const dark = `url(#${id('d')})`;
-  const wingRows = tier >= 4 ? 5 : tier === 3 ? 4 : tier === 2 ? (goldI ? 2 : 3) : 0;
-  const withRays = p.rays !== undefined && !goldI;
+  const glowFaint = tier === 2 && division === 1;
 
   return (
     <svg
@@ -184,188 +401,113 @@ export function BenchBadge({ kg, unlocked, size = 96 }: BenchBadgeProps) {
       className="overflow-visible"
     >
       <defs>
-        <linearGradient id={id('m')} x1="0" y1="0" x2=".7" y2="1">
+        <linearGradient id={id('m')} x1="0" y1="0" x2=".75" y2="1">
           <stop offset="0" stopColor={hi} />
-          <stop offset=".42" stopColor={mid} />
+          <stop offset=".45" stopColor={mid} />
           <stop offset="1" stopColor={lo} />
         </linearGradient>
-        <linearGradient id={id('d')} x1="1" y1="0" x2=".3" y2="1">
+        <linearGradient id={id('d')} x1="1" y1="0" x2=".2" y2="1">
           <stop offset="0" stopColor={mid} />
-          <stop offset="1" stopColor={lo} />
+          <stop offset="1" stopColor={outline} />
         </linearGradient>
-        <linearGradient id={id('e')} x1="0" y1="1" x2=".5" y2="0">
-          <stop offset="0" stopColor={hi} />
-          <stop offset=".5" stopColor={mid} />
-          <stop offset="1" stopColor={lo} />
-        </linearGradient>
-        <radialGradient id={id('c')} cx=".5" cy=".3" r=".8">
-          <stop offset="0" stopColor={p.core[0]} />
-          <stop offset="1" stopColor={p.core[1]} />
+        <radialGradient id={id('g')} cx=".4" cy=".3" r=".85">
+          <stop offset="0" stopColor={p.gem[0]} />
+          <stop offset=".5" stopColor={p.gem[1]} />
+          <stop offset="1" stopColor={p.gem[2]} />
         </radialGradient>
-        {p.rays && (
+        {p.glow && (
           <radialGradient id={id('h')}>
-            <stop offset="0" stopColor={p.rays} stopOpacity=".6" />
-            <stop offset="1" stopColor={p.rays} stopOpacity="0" />
+            <stop offset="0" stopColor={p.glow} stopOpacity=".75" />
+            <stop offset=".45" stopColor={p.glow} stopOpacity=".25" />
+            <stop offset="1" stopColor={p.glow} stopOpacity="0" />
           </radialGradient>
         )}
         <radialGradient id={id('f')}>
-          <stop offset=".55" stopColor="#fff" />
+          <stop offset=".35" stopColor="#fff" />
           <stop offset="1" stopColor="#fff" stopOpacity="0" />
         </radialGradient>
-        <mask id={id('o')}>
-          <circle cx="50" cy="50" r="48" fill={`url(#${id('f')})`} />
+        <mask id={id('r')}>
+          <circle cx="50" cy="46" r="58" fill={`url(#${id('f')})`} />
         </mask>
-        <clipPath id={id('k')}>
-          <path d={INNER} />
-        </clipPath>
       </defs>
 
-      {/* Halo and rays behind the precious tiers (Or I keeps only the halo). */}
-      {p.rays && <circle cx="50" cy="50" r={withRays ? 48 : 44} fill={`url(#${id('h')})`} />}
-      {withRays && (
-        <g opacity={tier >= 3 ? 0.45 : 0.3} mask={`url(#${id('o')})`} fill={p.rays}>
-          {Array.from({ length: 16 }, (_, k) => {
-            const a = k * 22.5;
-            return (
-              <path
-                key={k}
-                d={`M50 50 L${f(50 + 48 * Math.cos(rad(a - 2.6)))} ${f(50 + 48 * Math.sin(rad(a - 2.6)))} L${f(50 + 48 * Math.cos(rad(a + 2.6)))} ${f(50 + 48 * Math.sin(rad(a + 2.6)))}Z`}
-              />
-            );
-          })}
-        </g>
-      )}
-
-      {wingRows > 0 && (
+      {p.glow && (
         <>
-          <Wing side={-1} rows={wingRows} fill={metal} line={lo} />
-          <Wing side={1} rows={wingRows} fill={metal} line={lo} />
+          <circle cx="50" cy="46" r={44 + tier * 3} fill={`url(#${id('h')})`} opacity={glowFaint ? 0.6 : 1} />
+          <Rays tier={tier} division={division} glow={p.glow} mask={`url(#${id('r')})`} />
         </>
       )}
-      {tier === 1 && (
-        <>
-          <path
-            d="M26 30 L9 38 L21 44 L11 54 L26 57 Z"
-            fill={metal}
-            stroke={lo}
-            strokeWidth={0.9}
-            strokeLinejoin="round"
-          />
-          <path
-            d="M74 30 L91 38 L79 44 L89 54 L74 57 Z"
-            fill={dark}
-            stroke={lo}
-            strokeWidth={0.9}
-            strokeLinejoin="round"
-          />
-        </>
-      )}
+      <Wings tier={tier} division={division} p={p} light={light} dark={dark} />
 
-      {/* Faceted shield: light left half, dark right half, rivets on the rim. */}
-      <path d={SHIELD} fill={dark} />
-      <path d={LEFT_HALF} fill={metal} />
-      <path d={SHIELD} fill="none" stroke={lo} strokeWidth={1.1} strokeLinejoin="round" />
-      {RIVETS.map(([x, y]) => (
-        <circle key={`${x}-${y}`} cx={x} cy={y} r={1.25} fill={hi} stroke={lo} strokeWidth={0.5} />
-      ))}
-      <path d={INNER} fill={`url(#${id('c')})`} />
-      <g clipPath={`url(#${id('k')})`}>
-        <path d="M31 28 L50 22.5 L69 28 L69 36 C57 32.5 43 32.5 31 36 Z" fill="#fff" opacity={0.12} />
-      </g>
-      <path d={INNER} fill="none" stroke={`url(#${id('e')})`} strokeWidth={1.5} />
-
-      {tier >= 3 && p.gem && (
-        <>
-          <path
-            d="M33 17 L36 4 L42.5 11 L50 1 L57.5 11 L64 4 L67 17 Z"
-            fill={metal}
-            stroke={lo}
-            strokeWidth={0.9}
-            strokeLinejoin="round"
-          />
-          <path d="M33 17 L67 17 L66 20 L34 20Z" fill={dark} stroke={lo} strokeWidth={0.7} />
-          <circle cx="50" cy="8" r={2.6} fill={p.gem} stroke={lo} strokeWidth={0.5} />
-          <circle cx="38.5" cy="12" r={1.5} fill={p.gem} />
-          <circle cx="61.5" cy="12" r={1.5} fill={p.gem} />
-        </>
-      )}
-      {tier === 2 &&
-        (goldI ? (
-          <path d="M44 18 L50 11 L56 18 Z" fill={metal} stroke={lo} strokeWidth={0.9} />
-        ) : (
-          <>
-            <path
-              d="M38 18 L44 12 L50 5 L56 12 L62 18 Z"
-              fill={metal}
-              stroke={lo}
-              strokeWidth={0.9}
-              strokeLinejoin="round"
-            />
-            <circle cx="50" cy="12.5" r={2.2} fill={p.gem} stroke={lo} strokeWidth={0.5} />
-          </>
-        ))}
-
-      {/* Engraved barbell, the load and its divisions. */}
-      <g fill={p.accent} opacity={0.9}>
-        <rect x="41" y="32.4" width="18" height="1.6" />
-        <rect x="42.5" y="29.8" width="2" height="6.8" />
-        <rect x="55.5" y="29.8" width="2" height="6.8" />
-        <rect x="40" y="31" width="1.6" height="4.4" />
-        <rect x="58.4" y="31" width="1.6" height="4.4" />
-      </g>
-      <text
-        x="50"
-        y="56.5"
-        textAnchor="middle"
-        fill="#000"
-        opacity={0.45}
-        style={{ font: `900 ${numeralSize}px Archivo, sans-serif`, fontStretch: '125%' }}
-      >
-        {kg}
-      </text>
-      <text
-        x="50"
-        y="55.5"
-        textAnchor="middle"
-        fill={p.text}
-        style={{ font: `900 ${numeralSize}px Archivo, sans-serif`, fontStretch: '125%' }}
-      >
-        {kg}
-      </text>
-      <text
-        x="50"
-        y="62.8"
-        textAnchor="middle"
-        fill={p.text}
-        opacity={0.75}
-        style={{ font: '800 5.6px Archivo, sans-serif', letterSpacing: '0.26em' }}
-      >
-        KG
-      </text>
-      {Array.from({ length: division }, (_, k) => (
+      {spikes(tier, division).map((s, k) => (
         <path
           key={k}
-          d={`M42 ${66 + k * 4.4} L50 ${70 + k * 4.4} L58 ${66 + k * 4.4}`}
-          fill="none"
-          stroke={p.accent}
-          strokeWidth={2}
+          d={s.d}
+          fill={s.dark ? dark : light}
+          stroke={outline}
+          strokeWidth={0.55}
           strokeLinejoin="round"
-          strokeLinecap="round"
         />
       ))}
-      {tier >= 3 && p.gem && (
+      <circle cx={CX} cy={CY + 1.6} r={25} fill="#000" opacity={0.5} />
+      <circle cx={CX} cy={CY} r={25} fill={light} stroke={outline} strokeWidth={0.9} />
+      <circle cx={CX} cy={CY} r={21} fill={dark} />
+      {Array.from({ length: 12 }, (_, k) => {
+        const [x, y] = pol(23, k * 30);
+        return <circle key={k} cx={f(x)} cy={f(y)} r={1.1} fill={hi} stroke={outline} strokeWidth={0.35} />;
+      })}
+      <circle cx={CX} cy={CY} r={18.5} fill={`url(#${id('g')})`} stroke={outline} strokeWidth={0.7} />
+      {tier === 4 &&
+        Array.from({ length: 8 }, (_, k) => {
+          const [x1, y1] = pol(18.5, k * 45);
+          const [x2, y2] = pol(18.5, k * 45 + 45);
+          return (
+            <path
+              key={k}
+              d={`M${CX} ${CY}L${f(x1)} ${f(y1)}L${f(x2)} ${f(y2)}Z`}
+              fill={k % 2 ? '#fff' : '#0b4d7a'}
+              opacity={k % 2 ? 0.25 : 0.18}
+            />
+          );
+        })}
+      {tier === 5 && (
         <>
-          <path d="M50 83 L56 89.5 L50 98 L44 89.5 Z" fill={p.gem} stroke={lo} strokeWidth={0.8} />
-          <path d="M50 83 L56 89.5 L50 90.5 Z" fill="#fff" opacity={0.45} />
+          <path
+            d="M37 48 Q44 34 56 40 Q64 46 58 54"
+            stroke="#e1bfff"
+            strokeWidth={1.6}
+            fill="none"
+            opacity={0.7}
+          />
+          <path d="M42 54 Q50 46 57 49" stroke="#ff9be0" strokeWidth={1} fill="none" opacity={0.6} />
         </>
       )}
+      <ellipse
+        cx={CX - 5}
+        cy={CY - 8}
+        rx={8}
+        ry={4.5}
+        fill="#fff"
+        opacity={0.42}
+        transform={`rotate(-25 ${CX - 5} ${CY - 8})`}
+      />
+      {/* Engraved barbell. */}
+      <g fill={p.ink} opacity={0.9}>
+        <rect x="41" y={CY + 3.4} width="18" height="1.5" />
+        <rect x="42.4" y={CY + 0.8} width="2" height="6.7" />
+        <rect x="55.6" y={CY + 0.8} width="2" height="6.7" />
+      </g>
 
-      <Sparkle x={30} y={30} s={tier >= 2 ? 3.2 : 2.4} color="#fff" />
-      {tier >= 2 && <Sparkle x={72} y={66} s={2.4} color="#fff" />}
-      {(tier >= 3 || (tier === 2 && !goldI)) && (
+      <Crown tier={tier} p={p} light={light} dark={dark} />
+      <Banner kg={kg} light={light} mid={outline} dark={lo} outline={outline} ink={p.ink} />
+      <Pips count={division} fill={light} outline={outline} />
+
+      <Sparkle x={39} y={32} s={tier >= 2 ? 3 : 2.2} color="#fff" opacity={0.95} />
+      {tier >= 3 && p.glow && (
         <>
-          <Sparkle x={14} y={22} s={2.6} color={p.accent} />
-          <Sparkle x={86} y={24} s={2.2} color={p.accent} />
+          <Sparkle x={66} y={60} s={2.4} color="#fff" opacity={0.9} />
+          <Sparkle x={12} y={30} s={2.3} color={p.glow} />
+          <Sparkle x={88} y={26} s={2} color={p.glow} />
         </>
       )}
     </svg>

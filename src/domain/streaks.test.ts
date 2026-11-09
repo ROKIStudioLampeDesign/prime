@@ -102,19 +102,19 @@ describe('weekStreak', () => {
 });
 
 describe('bench badges', () => {
-  it('lists milestones every 10 kg from 60 to the 120 kg goal, unlocked by the best lift', () => {
+  it('lists milestones every 10 kg from 60 to 140 (one past the 130 kg goal), unlocked by the best lift', () => {
     const badges = benchBadges(80);
-    expect(badges.map((b) => b.kg)).toEqual([60, 70, 80, 90, 100, 110, 120]);
+    expect(badges.map((b) => b.kg)).toEqual([60, 70, 80, 90, 100, 110, 120, 130, 140]);
     expect(badges.filter((b) => b.unlocked).map((b) => b.kg)).toEqual([60, 70, 80]);
     expect(benchBadges(0).every((b) => !b.unlocked)).toBe(true);
   });
 
   it('keeps going two steps past the best lift beyond the goal', () => {
     expect(
-      benchBadges(125)
+      benchBadges(135)
         .map((b) => b.kg)
         .at(-1),
-    ).toBe(140);
+    ).toBe(150);
   });
 
   it('reports the milestones a session crossed', () => {
@@ -164,8 +164,8 @@ describe('benchBadgeDates', () => {
 });
 
 describe('benchRank', () => {
-  it('names each 10 kg milestone: two divisions per metal, Rubis at the goal, then Obsidienne', () => {
-    const labels = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 200].map(benchRankLabel);
+  it('names each 10 kg milestone: two divisions per metal, Rubis, Diamant at the goal, then Obsidienne', () => {
+    const labels = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 200].map(benchRankLabel);
     expect(labels).toEqual([
       'Bronze I',
       'Bronze II',
@@ -174,6 +174,7 @@ describe('benchRank', () => {
       'Or I',
       'Or II',
       'Rubis',
+      'Diamant',
       'Obsidienne I',
       'Obsidienne II',
       'Obsidienne III',
@@ -182,7 +183,8 @@ describe('benchRank', () => {
   });
 
   it('gives each tier its level of ornaments', () => {
-    expect([60, 80, 100, 120, 130].map((kg) => benchRank(kg).tier)).toEqual([0, 1, 2, 3, 4]);
+    expect([60, 80, 100, 120, 130, 140].map((kg) => benchRank(kg).tier)).toEqual([0, 1, 2, 3, 4, 5]);
     expect(benchRank(120).division).toBe(0);
+    expect(benchRank(130).division).toBe(0);
   });
 });
