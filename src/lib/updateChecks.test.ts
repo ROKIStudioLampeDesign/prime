@@ -39,4 +39,24 @@ describe('startUpdateChecks', () => {
     stop();
     expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));
   });
+
+  it('also checks each time the app comes back to the foreground, until stopped', () => {
+    const update = vi.fn(() => Promise.resolve());
+    let resume: () => void = () => undefined;
+    const unsubscribe = vi.fn();
+    const stop = startUpdateChecks(
+      { update },
+      60_000,
+      () => true,
+      (onVisible) => {
+        resume = onVisible;
+        return unsubscribe;
+      },
+    );
+    resume();
+    resume();
+    expect(update).toHaveBeenCalledTimes(2);
+    stop();
+    expect(unsubscribe).toHaveBeenCalledOnce();
+  });
 });
