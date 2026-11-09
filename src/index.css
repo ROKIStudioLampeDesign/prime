@@ -88,6 +88,10 @@
 
   --animate-sheet-in: sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --animate-fade-in: fade-in 150ms ease-out;
+  /* A rank unlocked at the end of a session: the badge pops in with a flash, a ring bursts behind. */
+  --animate-rank-in: rank-in 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-rank-burst: rank-burst 1000ms ease-out both;
+  --animate-rank-label: rank-label 400ms ease-out both;
 
   @keyframes sheet-in {
     from {
@@ -97,6 +101,44 @@
   @keyframes fade-in {
     from {
       opacity: 0;
+    }
+  }
+  @keyframes rank-in {
+    0% {
+      opacity: 0;
+      transform: scale(0.4) rotate(-12deg);
+      filter: brightness(2.5);
+    }
+    55% {
+      opacity: 1;
+      transform: scale(1.15) rotate(3deg);
+      filter: brightness(1.6);
+    }
+    75% {
+      transform: scale(0.96) rotate(0deg);
+    }
+    100% {
+      transform: scale(1);
+      filter: brightness(1);
+    }
+  }
+  @keyframes rank-burst {
+    0% {
+      opacity: 0;
+      transform: scale(0.3);
+    }
+    30% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: scale(1.8);
+    }
+  }
+  @keyframes rank-label {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
     }
   }
 }

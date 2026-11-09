@@ -1,4 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
+import type { ReactNode } from 'react';
 import { BenchBadge } from '../../components/BenchBadge';
 import type { Exercise, Workout, WorkoutSet } from '../../db/db';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
@@ -48,15 +49,46 @@ export function BenchResult({ workout, sets, exercises }: BenchResultProps) {
         <div className="mt-3">
           <p className="text-sm font-extrabold">{badges.length > 1 ? 'Nouveaux rangs' : 'Nouveau rang'}</p>
           <ul className="mt-2 flex flex-wrap gap-3">
-            {badges.map((kg) => (
+            {badges.map((kg, i) => (
               <li key={kg} className="flex flex-col items-center">
-                <BenchBadge kg={kg} unlocked size={88} />
-                <span className="text-sm font-black">{benchRankLabel(kg)}</span>
+                <RankReveal delayMs={i * RANK_STAGGER_MS}>
+                  <BenchBadge kg={kg} unlocked size={88} />
+                </RankReveal>
+                <span
+                  className="text-sm font-black motion-safe:animate-rank-label"
+                  style={{ animationDelay: `${i * RANK_STAGGER_MS + 600}ms` }}
+                >
+                  {benchRankLabel(kg)}
+                </span>
               </li>
             ))}
           </ul>
         </div>
       )}
     </section>
+  );
+}
+
+const RANK_STAGGER_MS = 350;
+
+/**
+ * Plays once when a new rank shows up: the badge pops in with a flash while a ring bursts behind
+ * it, in the band's text colour. Nothing moves when the system asks for reduced motion.
+ */
+function RankReveal({ delayMs, children }: { delayMs: number; children: ReactNode }) {
+  return (
+    <div className="relative">
+      <svg
+        viewBox="0 0 100 100"
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 size-full opacity-0 motion-safe:animate-rank-burst"
+        style={{ animationDelay: `${delayMs + 250}ms` }}
+      >
+        <circle cx="50" cy="46" r="30" fill="none" stroke="currentColor" strokeWidth="3" />
+      </svg>
+      <div className="relative motion-safe:animate-rank-in" style={{ animationDelay: `${delayMs}ms` }}>
+        {children}
+      </div>
+    </div>
   );
 }
