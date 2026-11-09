@@ -9,9 +9,9 @@ import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
-import type { LogEntry } from '../../db/db';
+import type { LogEntry, WeighedLogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
-import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
+import { deleteEntry, listEntriesForDate, updateEntry, updateQuickEntry } from '../../db/logEntries';
 import { getUnloggedDay, setUnloggedDay } from '../../db/nutritionDays';
 import type { LocalDate } from '../../domain/date';
 import { MEAL_SLOTS, roundTo, sumMacros, type MealSlot } from '../../domain/nutrition';
@@ -24,6 +24,7 @@ import { addEntryPath, useDiaryDate } from './params';
 import { portionsLabel } from './pickerItems';
 import { PortionSheet, type PortionTarget } from './PortionSheet';
 import { MealBadge } from './ProductPicker';
+import { QuickEntrySheet } from './QuickEntrySheet';
 
 export function DiaryScreen() {
   const [date, setDate] = useDiaryDate();
@@ -32,7 +33,9 @@ export function DiaryScreen() {
   const [editingId, setEditingId] = useState<number>();
   const closeEditor = () => setEditingId(undefined);
 
-  const editing = entries?.find((e) => e.id === editingId);
+  const editingAny = entries?.find((e) => e.id === editingId);
+  const editing = editingAny?.kind === 'quick' ? undefined : editingAny;
+  const editingQuick = editingAny?.kind === 'quick' ? editingAny : undefined;
   const totals = useMemo(() => sumMacros((entries ?? []).map((e) => e.macros)), [entries]);
   const today = useToday();
   const isToday = date === today;
@@ -108,6 +111,24 @@ export function DiaryScreen() {
         onSubmit={async ({ grams, portions, slot }) => {
           if (editingId === undefined) return;
           await updateEntry(editingId, portions !== undefined ? { portions, slot } : { grams, slot });
+          closeEditor();
+        }}
+        onDelete={async () => {
+          if (editingId === undefined) return;
+          await deleteEntry(editingId);
+          closeEditor();
+        }}
+        onClose={closeEditor}
+      />
+      <QuickEntrySheet
+        key={editingQuick?.id}
+        open={editingQuick !== undefined}
+        initial={editingQuick}
+        initialSlot={editingQuick?.slot ?? 'snack'}
+        submitLabel="Enregistrer"
+        onSubmit={async (value) => {
+          if (editingId === undefined) return;
+          await updateQuickEntry(editingId, value);
           closeEditor();
         }}
         onDelete={async () => {
@@ -198,7 +219,7 @@ function UnloggedMark({ date }: { date: LocalDate }) {
 }
 
 /** Edit sheet target, built only from the entry's snapshot (the food or meal may be gone). */
-function entryTarget(entry: LogEntry): PortionTarget {
+function entryTarget(entry: WeighedLogEntry): PortionTarget {
   if (entry.kind === 'food') return { name: entry.name, brand: entry.brand, per100g: entry.per100g };
   return {
     name: entry.name,
@@ -253,8 +274,11 @@ function SlotSection({ slot, entries, addTo, onSelect }: SlotSectionProps) {
                   {entry.kind === 'meal' &&
                     entry.portions !== undefined &&
                     `${portionsLabel(entry.portions)} · `}
-                  {formatGrams(roundTo(entry.grams, 0))} g · P {formatMacro('protein', entry.macros.protein)}{' '}
-                  · G {formatMacro('carbs', entry.macros.carbs)} · L {formatMacro('fat', entry.macros.fat)}
+                  {entry.kind === 'quick'
+                    ? 'Ajout rapide · '
+                    : `${formatGrams(roundTo(entry.grams, 0))} g · `}
+                  P {formatMacro('protein', entry.macros.protein)} · G{' '}
+                  {formatMacro('carbs', entry.macros.carbs)} · L {formatMacro('fat', entry.macros.fat)}
                 </p>
               </div>
               <span className="shrink-0 text-xl headline tabular-nums">

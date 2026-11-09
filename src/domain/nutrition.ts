@@ -219,3 +219,47 @@ export function defaultSlotForHour(hour: number): MealSlot {
   if (hour >= 18 && hour < 23) return 'dinner';
   return 'snack';
 }
+
+/** What a quick entry (no product: a restaurant meal…) is made of. Only calories are required. */
+export interface QuickMacrosInput {
+  kcal?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+}
+
+export type QuickMacrosField = keyof QuickMacrosInput;
+export const MAX_QUICK_KCAL = 10_000;
+export const MAX_QUICK_GRAMS = 1_000;
+
+/**
+ * Validates a quick entry. Calories are required (0 to 10 000 kcal); protein, carbs and fat are
+ * optional (0 to 1 000 g, missing = 0). Sugars and fiber are unknown, so 0.
+ */
+export function quickMacros(input: QuickMacrosInput): {
+  value?: Macros;
+  errors: Partial<Record<QuickMacrosField, 'required' | 'negative' | 'tooHigh'>>;
+} {
+  const errors: Partial<Record<QuickMacrosField, 'required' | 'negative' | 'tooHigh'>> = {};
+  const fields: QuickMacrosField[] = ['kcal', 'protein', 'carbs', 'fat'];
+  for (const field of fields) {
+    const v = input[field];
+    const max = field === 'kcal' ? MAX_QUICK_KCAL : MAX_QUICK_GRAMS;
+    if (v === undefined) {
+      if (field === 'kcal') errors[field] = 'required';
+    } else if (!Number.isFinite(v) || v < 0) errors[field] = 'negative';
+    else if (v > max) errors[field] = 'tooHigh';
+  }
+  if (Object.keys(errors).length > 0) return { errors };
+  return {
+    errors,
+    value: {
+      kcal: input.kcal ?? 0,
+      protein: input.protein ?? 0,
+      carbs: input.carbs ?? 0,
+      sugars: 0,
+      fat: input.fat ?? 0,
+      fiber: 0,
+    },
+  };
+}

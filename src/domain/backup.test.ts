@@ -162,10 +162,10 @@ describe('backup reminder', () => {
     expect(daysSinceBackup(now + DAY, now)).toBe(0);
   });
 
-  it('is due 14 days after the last export, or after first launch when never exported', () => {
-    expect(backupReminderDue({ lastExportAt: now - 13 * DAY, hasData: true, now })).toBe(false);
-    expect(backupReminderDue({ lastExportAt: now - 14 * DAY, hasData: true, now })).toBe(true);
-    expect(backupReminderDue({ firstLaunchAt: now - 20 * DAY, hasData: true, now })).toBe(true);
+  it('is due 7 days after the last export, or after first launch when never exported', () => {
+    expect(backupReminderDue({ lastExportAt: now - 6 * DAY, hasData: true, now })).toBe(false);
+    expect(backupReminderDue({ lastExportAt: now - 7 * DAY, hasData: true, now })).toBe(true);
+    expect(backupReminderDue({ firstLaunchAt: now - 8 * DAY, hasData: true, now })).toBe(true);
     expect(backupReminderDue({ firstLaunchAt: now - 2 * DAY, hasData: true, now })).toBe(false);
   });
 

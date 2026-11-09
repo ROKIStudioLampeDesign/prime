@@ -6,7 +6,7 @@ import { PrimeDB } from './db';
 import { createExercise } from './exercises';
 import { createFood } from './foods';
 import { saveGoals } from './goals';
-import { addEntry, addMealEntry } from './logEntries';
+import { addEntry, addMealEntry, addQuickEntry } from './logEntries';
 import { createMeal, summarizeWithFoods } from './meals';
 import { setUnloggedDay } from './nutritionDays';
 import { createTemplate } from './templates';
@@ -96,6 +96,15 @@ async function fill(db: PrimeDB) {
     db,
   );
   await addMealEntry({ date: d('2026-11-02'), slot: 'snack', meal, summary, serving: { grams: 120 } }, db);
+  await addQuickEntry(
+    {
+      date: d('2026-11-03'),
+      slot: 'dinner',
+      name: 'Resto',
+      macros: { kcal: 800, protein: 40, carbs: 70, sugars: 0, fat: 35, fiber: 0 },
+    },
+    db,
+  );
 
   // A custom exercise in a template without target reps.
   const customId = await createExercise(
@@ -181,7 +190,7 @@ describe('backup', () => {
     const result = await importBackup(backup.backup, 'merge', target);
     expect((await target.foods.get(1))?.name).toBe('Local'); // kept
     expect((await target.bodyWeights.toArray()).map((w) => w.kg)).toEqual([70]); // unique date conflict skipped
-    expect(await target.logEntries.count()).toBe(3);
+    expect(await target.logEntries.count()).toBe(4);
     expect(await target.meals.count()).toBe(2);
     expect(await target.workouts.count()).toBe(3);
     expect(result.added).toBeGreaterThan(0);

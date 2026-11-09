@@ -1,6 +1,6 @@
 import type { LocalDate } from '../domain/date';
 import { servingGrams, type MealSummary, type Serving } from '../domain/meal';
-import { computeMacros, type MealSlot } from '../domain/nutrition';
+import { computeMacros, type Macros, type MealSlot } from '../domain/nutrition';
 import type { DayKcal } from '../domain/streaks';
 import {
   db,
@@ -10,6 +10,8 @@ import {
   type Meal,
   type MealLogEntry,
   type PrimeDB,
+  type QuickLogEntry,
+  type WeighedLogEntry,
 } from './db';
 
 export function listEntriesForDate(date: LocalDate, database: PrimeDB = db): Promise<LogEntry[]> {
@@ -90,6 +92,49 @@ export async function addMealEntry(input: AddMealEntryInput, database: PrimeDB =
   return database.logEntries.add(entry);
 }
 
+export interface QuickEntryInput {
+  date: LocalDate;
+  slot: MealSlot;
+  /** Shown in the diary; "Ajout rapide" when left empty. */
+  name: string;
+  macros: Macros;
+}
+
+export const QUICK_ENTRY_NAME = 'Ajout rapide';
+
+/** Logs calories and macros typed in directly, without a product (a restaurant meal…). */
+export async function addQuickEntry(input: QuickEntryInput, database: PrimeDB = db): Promise<number> {
+  const now = Date.now();
+  const entry: Omit<QuickLogEntry, 'id'> = {
+    kind: 'quick',
+    date: input.date,
+    slot: input.slot,
+    name: input.name.trim() || QUICK_ENTRY_NAME,
+    macros: { ...input.macros },
+    createdAt: now,
+    updatedAt: now,
+  };
+  return database.logEntries.add(entry);
+}
+
+/** Replaces the name, macros and meal slot of a quick entry (other entries are left alone). */
+export async function updateQuickEntry(
+  id: number,
+  changes: Omit<QuickEntryInput, 'date'>,
+  database: PrimeDB = db,
+): Promise<void> {
+  await database.transaction('rw', database.logEntries, async () => {
+    const entry = await database.logEntries.get(id);
+    if (entry?.kind !== 'quick') return;
+    await database.logEntries.update(id, {
+      name: changes.name.trim() || QUICK_ENTRY_NAME,
+      macros: { ...changes.macros },
+      slot: changes.slot,
+      updatedAt: Date.now(),
+    });
+  });
+}
+
 /**
  * Changes the quantity or meal slot of an entry. Macros are recomputed from the entry's own
  * snapshot, never from the current food or meal. `portions` only applies to meal entries; setting
@@ -102,7 +147,7 @@ export async function updateEntry(
 ): Promise<void> {
   await database.transaction('rw', database.logEntries, async () => {
     const entry = await database.logEntries.get(id);
-    if (!entry) return;
+    if (!entry || entry.kind === 'quick') return;
     let grams = changes.grams ?? entry.grams;
     let portions = entry.kind === 'meal' ? entry.portions : undefined;
     if (entry.kind === 'meal') {
@@ -113,7 +158,8 @@ export async function updateEntry(
         portions = undefined;
       }
     }
-    await database.logEntries.update(id, {
+    // Typed as a weighed entry: Dexie's update type collapses the LogEntry union.
+    await database.table<WeighedLogEntry, number>('logEntries').update(id, {
       grams,
       ...(entry.kind === 'meal' && { portions }),
       slot: changes.slot ?? entry.slot,
@@ -142,6 +188,8 @@ export async function listRecentItems(limit = 30, database: PrimeDB = db): Promi
     .reverse()
     .until(() => recent.length >= limit)
     .each((entry) => {
+      // Quick entries have no product to pick again.
+      if (entry.kind === 'quick') return;
       const id = entry.kind === 'meal' ? entry.mealId : entry.foodId;
       const key = itemKey(entry.kind, id);
       if (seen.has(key)) return;

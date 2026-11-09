@@ -79,17 +79,16 @@ const macros = shape({
 
 const timestamps = { createdAt: timestamp, updatedAt: timestamp };
 
-const logEntryBase = {
+/** Fields every log entry has; a quick entry (no product) has nothing more. */
+const quickLogEntry = {
   id,
   date: localDate,
   slot: oneOf(MEAL_SLOTS),
-  grams: nonNegative,
   name: text,
-  per100g,
   macros,
   ...timestamps,
 };
-
+const logEntryBase = { ...quickLogEntry, grams: nonNegative, per100g };
 const SCHEMAS: Readonly<Record<string, Check>> = {
   settings: shape({ key: text, value: anything }),
   foods: shape({
@@ -131,7 +130,9 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
         ? shape({ ...logEntryBase, mealId: id, portionGrams: nonNegative, portions: optional(nonNegative) })(
             v,
           )
-        : false),
+        : v.kind === 'quick'
+          ? shape(quickLogEntry)(v)
+          : false),
   exercises: shape({
     id,
     name: text,

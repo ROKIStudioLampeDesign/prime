@@ -155,7 +155,7 @@ export function backupCounts(backup: BackupFile): Record<string, number> {
   return Object.fromEntries(Object.entries(backup.tables).map(([t, rows]) => [t, rows.length]));
 }
 
-export const BACKUP_REMINDER_DAYS = 14;
+export const BACKUP_REMINDER_DAYS = 7;
 const DAY_MS = 86_400_000;
 
 /** Whole days since the last export, or undefined if never exported. */

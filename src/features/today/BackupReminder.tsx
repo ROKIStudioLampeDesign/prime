@@ -1,12 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Link } from 'react-router';
+import { useState } from 'react';
 import { hasUserData } from '../../db/backup';
 import { getSetting, setSetting } from '../../db/settings';
 import { backupReminderDue, daysSinceBackup } from '../../domain/backup';
+import { shareBackup } from '../../lib/shareBackup';
 
-const SNOOZE_DAYS = 3;
+const SNOOZE_DAYS = 2;
 
-/** Gentle banner after 14 days without export: data only lives on this phone. */
+/**
+ * Weekly band above the day: data only lives on this phone. "Sauvegarder" opens the share sheet
+ * right away (Fichiers, Mail…), so a backup is one tap away.
+ */
 export function BackupReminder() {
   const state = useLiveQuery(async () => ({
     lastExportAt: await getSetting<number>('lastExportAt'),
@@ -16,33 +20,56 @@ export function BackupReminder() {
     // Taken here, not during render: re-evaluated whenever the underlying data changes.
     now: Date.now(),
   }));
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
   if (!state || !backupReminderDue(state)) return null;
   const days = daysSinceBackup(state.lastExportAt, state.now);
 
+  async function save() {
+    setBusy(true);
+    setFailed(false);
+    try {
+      await shareBackup();
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
-    <aside className="mb-4 rounded-2xl border border-line bg-surface p-4" aria-label="Rappel de sauvegarde">
-      <p className="font-semibold">Pense à sauvegarder tes données</p>
-      <p className="mt-0.5 text-sm text-muted">
-        {days === undefined
-          ? 'Tu n’as encore jamais fait de sauvegarde.'
-          : `Dernière sauvegarde il y a ${days} jours.`}{' '}
-        Tout est stocké uniquement sur ce téléphone.
-      </p>
-      <div className="mt-3 flex gap-2">
-        <Link
-          to="/settings#donnees"
-          className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-accent-fill px-4 text-sm font-semibold text-accent-fg"
-        >
-          Sauvegarder
-        </Link>
+    <aside
+      aria-label="Rappel de sauvegarde"
+      className="bleed shrink-0 border-b border-line bg-surface py-2.5"
+    >
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] leading-tight font-extrabold">Sauvegarde</p>
+          <p className="truncate text-[13px] font-medium text-muted">
+            {days === undefined ? 'Jamais faite' : `Il y a ${days} jours`}
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => void setSetting('backupReminderSnoozedUntil', Date.now() + SNOOZE_DAYS * 86_400_000)}
-          className="min-h-11 rounded-xl px-4 text-sm font-semibold text-muted active:bg-surface-2"
+          className="min-h-11 shrink-0 px-2 text-sm font-bold text-muted active:bg-surface-2"
         >
           Plus tard
         </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void save()}
+          className="flex min-h-11 shrink-0 items-center justify-center bg-accent-fill px-3 text-sm font-black text-accent-fg focus-inset active:opacity-80 disabled:opacity-60"
+        >
+          Sauvegarder
+        </button>
       </div>
+      {failed && (
+        <p role="alert" className="mt-1 text-sm font-semibold text-danger">
+          La sauvegarde a échoué. Réessaie, ou passe par Réglages.
+        </p>
+      )}
     </aside>
   );
 }

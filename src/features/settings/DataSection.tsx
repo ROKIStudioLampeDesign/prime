@@ -6,17 +6,15 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { ConfirmSheet } from '../../components/ConfirmSheet';
 import {
-  backupFileName,
-  exportBackup,
   getLastExportAt,
   importBackup,
-  markExported,
   readBackup,
   type BackupError,
   type BackupFile,
   type ImportMode,
 } from '../../db/backup';
 import { db } from '../../db/db';
+import { shareBackup } from '../../lib/shareBackup';
 import { backupCounts, BACKUP_REMINDER_DAYS, daysSinceBackup } from '../../domain/backup';
 
 const TABLE_LABELS: Record<string, string> = {
@@ -78,27 +76,10 @@ export function DataSection() {
     setBusy(true);
     setMessage(undefined);
     try {
-      const backup = await exportBackup();
-      const name = backupFileName(new Date());
-      const file = new File([JSON.stringify(backup)], name, { type: 'application/json' });
-      if (navigator.canShare?.({ files: [file] })) {
-        // iOS share sheet: "Enregistrer dans Fichiers", AirDrop, mail…
-        await navigator.share({ files: [file], title: 'Sauvegarde Prime' });
-      } else {
-        const url = URL.createObjectURL(file);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }
-      await markExported();
-      setMessage({ text: `Sauvegarde créée : ${name}` });
-    } catch (e) {
-      // Closing the share sheet is not an error worth reporting.
-      if (!(e instanceof DOMException && e.name === 'AbortError')) {
-        setMessage({ text: 'La sauvegarde a échoué.', error: true });
-      }
+      const result = await shareBackup();
+      if (result.status !== 'cancelled') setMessage({ text: `Sauvegarde créée : ${result.name}` });
+    } catch {
+      setMessage({ text: 'La sauvegarde a échoué.', error: true });
     } finally {
       setBusy(false);
     }

@@ -7,10 +7,12 @@ import { getGoals, saveGoals } from './goals';
 import {
   addEntry,
   addMealEntry,
+  addQuickEntry,
   deleteEntry,
   listEntriesForDate,
   listRecentItems,
   updateEntry,
+  updateQuickEntry,
 } from './logEntries';
 import { createMeal, deleteMeal, duplicateMeal, getMeal, summarizeWithFoods, updateMeal } from './meals';
 import { summarizeMeal } from '../domain/meal';
@@ -267,6 +269,22 @@ describe('log entries', () => {
 
     await deleteEntry(entryId, db);
     expect(await listEntriesForDate(DAY, db)).toEqual([]);
+  });
+
+  it('logs a quick entry without a product, edits it, and keeps it out of recents', async () => {
+    const macros = { kcal: 800, protein: 40, carbs: 70, sugars: 0, fat: 35, fiber: 0 };
+    const id = await addQuickEntry({ date: DAY, slot: 'dinner', name: '  ', macros }, db);
+    let [entry] = await listEntriesForDate(DAY, db);
+    expect(entry).toMatchObject({ id, kind: 'quick', name: 'Ajout rapide', slot: 'dinner', macros });
+    expect(entry).not.toHaveProperty('grams');
+
+    await updateQuickEntry(id, { name: 'Resto', slot: 'lunch', macros: { ...macros, kcal: 950 } }, db);
+    // Quantity edits only apply to weighed entries.
+    await updateEntry(id, { grams: 100 }, db);
+    [entry] = await listEntriesForDate(DAY, db);
+    expect(entry).toMatchObject({ kind: 'quick', name: 'Resto', slot: 'lunch', macros: { kcal: 950 } });
+    expect(entry).not.toHaveProperty('grams');
+    expect(await listRecentItems(10, db)).toEqual([]);
   });
 
   it('lists distinct recent foods with their last quantity', async () => {

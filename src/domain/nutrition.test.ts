@@ -5,6 +5,7 @@ import {
   estimateKcal,
   goalProgress,
   hasKcalMismatch,
+  quickMacros,
   roundMacro,
   roundMacros,
   roundTo,
@@ -225,5 +226,27 @@ describe('defaultSlotForHour', () => {
     expect(defaultSlotForHour(20)).toBe('dinner');
     expect(defaultSlotForHour(23)).toBe('snack');
     expect(defaultSlotForHour(2)).toBe('snack');
+  });
+});
+
+describe('quickMacros', () => {
+  it('needs only calories; missing macros count as 0, sugars and fiber are unknown', () => {
+    expect(quickMacros({ kcal: 800, protein: 40 }).value).toEqual({
+      kcal: 800,
+      protein: 40,
+      carbs: 0,
+      sugars: 0,
+      fat: 0,
+      fiber: 0,
+    });
+    expect(quickMacros({ kcal: 0 }).value).toEqual(ZERO_MACROS);
+  });
+
+  it('reports missing calories, negative, invalid and absurd values', () => {
+    expect(quickMacros({ protein: 40 })).toEqual({ errors: { kcal: 'required' } });
+    expect(quickMacros({ kcal: -1 }).errors).toEqual({ kcal: 'negative' });
+    expect(quickMacros({ kcal: 500, fat: Number.NaN }).errors).toEqual({ fat: 'negative' });
+    expect(quickMacros({ kcal: 10_001, carbs: 1_001 }).errors).toEqual({ kcal: 'tooHigh', carbs: 'tooHigh' });
+    expect(quickMacros({ kcal: 10_000, carbs: 1_000 }).value).toBeDefined();
   });
 });

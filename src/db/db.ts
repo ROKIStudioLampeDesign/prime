@@ -93,10 +93,21 @@ export interface MealLogEntry extends LogEntryBase {
 }
 
 /**
+ * A quick entry, without a product (a restaurant meal…): its calories and macros are typed in
+ * directly, so it has no grams nor per-100 g values.
+ */
+export interface QuickLogEntry extends Omit<LogEntryBase, 'grams' | 'per100g'> {
+  kind: 'quick';
+}
+
+/**
  * Something eaten on a day. Everything needed to display and edit it is snapshotted at log time,
  * so later edits to (or deletion of) the food, meal or ingredients never rewrite history.
  */
-export type LogEntry = FoodLogEntry | MealLogEntry;
+export type LogEntry = FoodLogEntry | MealLogEntry | QuickLogEntry;
+
+/** Entries logged from a product or a meal (they have grams and per-100 g values). */
+export type WeighedLogEntry = FoodLogEntry | MealLogEntry;
 
 export interface Exercise {
   id: number;

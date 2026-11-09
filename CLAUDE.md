@@ -97,6 +97,9 @@ Rules:
   "Produit supprimé" and excluded from totals; code must never assume `foodsById.get(...)` succeeds.
   Meal log entries (`kind: 'meal'`) snapshot the dish's per-100 g values and `portionGrams`, so
   portions → grams = portions × portionGrams and history survives meal/product edits.
+- **Quick entries** (`kind: 'quick'`, "Ajout rapide"): calories and macros typed in directly,
+  without a product, so no `grams` nor `per100g`; edited in `QuickEntrySheet`, never in recents.
+  Code handling log entries must narrow on `kind` before touching grams (`WeighedLogEntry`).
 - **Days not counted** (`nutritionDays`, "Macros pas comptées", set in Alimentation only): `under`
   or `over` the calorie goal, winning over that day's entries. Both are left out of averages;
   `over` breaks the calorie streak, `under` is skipped (neither counts nor breaks). The calendar
