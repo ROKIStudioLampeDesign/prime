@@ -190,6 +190,21 @@ describe('backup', () => {
     expect(result.skipped).toBeGreaterThanOrEqual(await source.exercises.count());
   });
 
+  it('puts back built-in exercises missing from an older backup', async () => {
+    const parsed = readBackup(JSON.stringify(await exportBackup(source)), target);
+    if (!parsed.ok) throw new Error(parsed.error);
+    const exercises = (parsed.backup.tables.exercises ?? []).filter(
+      (e) => (e as { seedId?: string }).seedId !== 'single-arm-triceps-pushdown',
+    );
+    await importBackup(
+      { ...parsed.backup, tables: { ...parsed.backup.tables, exercises } },
+      'replace',
+      target,
+    );
+    expect(await target.exercises.where('seedId').equals('single-arm-triceps-pushdown').count()).toBe(1);
+    expect(await target.exercises.count()).toBe(await source.exercises.count());
+  });
+
   it('names files by local date', () => {
     expect(backupFileName(new Date(2026, 10, 2, 23, 59))).toBe('prime-sauvegarde-2026-11-02.json');
   });

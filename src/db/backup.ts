@@ -5,7 +5,7 @@ import {
   type BackupError,
   type BackupFile,
 } from '../domain/backup';
-import { db, type PrimeDB } from './db';
+import { db, seedExercises, type PrimeDB } from './db';
 import { getSetting, setSetting } from './settings';
 
 /** Settings that describe this device rather than the user's data: never imported or replaced. */
@@ -153,6 +153,8 @@ export async function importBackup(
         }
       }
     }
+    // A backup from before a built-in exercise was added lacks it: put the missing ones back.
+    if (tables.some((t) => t.name === 'exercises')) await seedExercises(database.exercises);
   });
   return { added, skipped };
 }

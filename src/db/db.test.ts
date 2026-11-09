@@ -30,7 +30,7 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
   });
 
   it('migrates v7 → v8: a jour rouge becomes a day not counted, over the goal', async () => {

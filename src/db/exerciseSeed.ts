@@ -147,6 +147,8 @@ export const EXERCISE_SEED: readonly SeedExercise[] = [
   ex('cable-curl', 'Curl à la poulie', 'cable', ['biceps'], ['forearms']),
   ex('triceps-pushdown', 'Extension triceps à la poulie', 'cable', ['triceps']),
   ex('overhead-triceps-extension', 'Extension triceps au-dessus de la tête', 'cable', ['triceps']),
+  // Added in schema v9.
+  ex('single-arm-triceps-pushdown', 'Extension triceps unilatérale à la poulie', 'cable', ['triceps']),
   ex('skull-crusher', 'Barre au front', 'barbell', ['triceps']),
   ex(
     'close-grip-bench-press',

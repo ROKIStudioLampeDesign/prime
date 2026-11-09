@@ -378,6 +378,24 @@ export class PrimeDB extends Dexie {
           .bulkPut(red.map((date) => ({ date, status: 'over', updatedAt: now })));
       });
 
+    // v9: new built-in exercise (single-arm cable triceps pushdown).
+    this.version(9)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+        nutritionDays: 'date',
+      })
+      .upgrade((tx) => seedExercises(tx.table('exercises')));
+
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }
 }

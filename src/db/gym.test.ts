@@ -70,6 +70,25 @@ describe('exercise seed in the database', () => {
     expect(await db.exercises.where('isCustom').equals(0).count()).toBe(EXERCISE_SEED.length);
   });
 
+  it('adds the single-arm triceps pushdown on upgrade from v8', async () => {
+    const name = `prime-gym-v8-${n}`;
+    const v8 = new Dexie(name);
+    v8.version(8).stores({ exercises: '++id, &seedId, nameNormalized, isCustom' });
+    await v8
+      .table('exercises')
+      .add({ seedId: 'triceps-pushdown', name: 'Extension triceps à la poulie', isCustom: 0 });
+    v8.close();
+
+    await db.delete();
+    db = new PrimeDB(name);
+    const added = await db.exercises.where('seedId').equals('single-arm-triceps-pushdown').first();
+    expect(added).toMatchObject({
+      name: 'Extension triceps unilatérale à la poulie',
+      primaryMuscles: ['triceps'],
+    });
+    expect(await db.exercises.where('seedId').equals('triceps-pushdown').count()).toBe(1);
+  });
+
   it('seeds on upgrade from v3 and keeps existing data', async () => {
     const name = `prime-gym-v3-${n}`;
     const v3 = new Dexie(name);
@@ -87,7 +106,7 @@ describe('exercise seed in the database', () => {
     db = new PrimeDB(name);
     expect(await db.exercises.count()).toBe(EXERCISE_SEED.length);
     expect((await db.goals.get('default'))?.kcal).toBe(2000);
-    expect(db.verno).toBe(8);
+    expect(db.verno).toBe(9);
   });
 });
 
