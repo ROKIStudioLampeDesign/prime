@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { barLoading, plateCounts, platesFor } from './plates';
 
 describe('platesFor', () => {
-  it('loads the heaviest plates first, never a 25 kg plate', () => {
+  it('loads the heaviest plates first, never a 25 kg or 15 kg plate', () => {
+    expect(platesFor(15)).toEqual([10, 5]);
+    expect(platesFor(35)).toEqual([20, 10, 5]);
     expect(platesFor(40)).toEqual([20, 20]);
     expect(platesFor(50)).toEqual([20, 20, 10]);
     expect(platesFor(41.25)).toEqual([20, 20, 1.25]);

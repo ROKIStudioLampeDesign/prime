@@ -8,7 +8,6 @@ import { formatWeight } from '../../lib/format';
  */
 const PLATE: Record<PlateKg, { color: string; diameter: number; thickness: number; ink: boolean }> = {
   20: { color: 'var(--color-plate-20)', diameter: 450, thickness: 22, ink: false },
-  15: { color: 'var(--color-plate-15)', diameter: 400, thickness: 21, ink: true },
   10: { color: 'var(--color-plate-10)', diameter: 325, thickness: 21, ink: false },
   5: { color: 'var(--color-plate-5)', diameter: 228, thickness: 19, ink: true },
   2.5: { color: 'var(--color-plate-2-5)', diameter: 190, thickness: 15, ink: false },

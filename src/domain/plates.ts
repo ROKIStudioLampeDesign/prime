@@ -4,10 +4,10 @@
 export const BAR_KG = 20;
 
 /**
- * Calibrated competition (powerlifting) plates, heaviest first. No 25 kg plate: the bar is
- * always loaded with 20 kg plates and smaller.
+ * Calibrated competition (powerlifting) plates, heaviest first. No 25 kg nor 15 kg plate: the
+ * bar is always loaded with 20, 10, 5, 2.5 and 1.25 kg plates.
  */
-export const PLATE_KGS = [20, 15, 10, 5, 2.5, 1.25] as const;
+export const PLATE_KGS = [20, 10, 5, 2.5, 1.25] as const;
 export type PlateKg = (typeof PLATE_KGS)[number];
 
 /**
