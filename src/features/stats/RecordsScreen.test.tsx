@@ -76,8 +76,9 @@ describe('RecordsScreen', () => {
     await user.type(screen.getByLabelText('Charge visée'), '120');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
-    expect(await screen.findByText('Encore 20 kg · max 100 kg')).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Modifier' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'Objectif · 1 rep' }).textContent).toContain('120 kg');
+    expect(screen.queryByText(/Encore/)).toBeNull();
     expect(sheet.isConnected).toBe(false);
     expect(await axeViolations()).toEqual([]);
 

@@ -37,7 +37,7 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
               {progress.reached
                 ? `Atteint : ${formatWeight(progress.bestKg)} kg soulevés`
                 : progress.bestKg > 0
-                  ? `Encore ${formatWeight(progress.remainingKg)} kg · max ${formatWeight(progress.bestKg)} kg`
+                  ? ''
                   : 'Pas encore de charge au bench'}
             </p>
             <button

@@ -1,7 +1,6 @@
 import { BenchBadge } from '../../components/BenchBadge';
 import { benchBadgeDates, benchBadges, benchRankLabel } from '../../domain/streaks';
 import type { HistorySet } from '../../domain/strength';
-import { formatWeight } from '../../lib/format';
 import { shortDateLabel, toTime } from './chartUtils';
 
 /** Bench milestones every 10 kg: unlocked plates with their date, the next ones with what's left. */
@@ -32,13 +31,11 @@ export function BenchBadges({ bestKg, history }: { bestKg: number; history: read
               <p className={`mt-0.5 text-sm font-black ${b.unlocked ? '' : 'text-muted'}`}>
                 {benchRankLabel(b.kg)}
               </p>
-              <p className="text-xs font-bold text-muted tabular-nums">
-                {b.unlocked
-                  ? date
-                    ? shortDateLabel(toTime(date))
-                    : 'Débloqué'
-                  : `Encore ${formatWeight(b.kg - bestKg)} kg`}
-              </p>
+              {b.unlocked && (
+                <p className="text-xs font-bold text-muted tabular-nums">
+                  {date ? shortDateLabel(toTime(date)) : 'Débloqué'}
+                </p>
+              )}
             </li>
           );
         })}
