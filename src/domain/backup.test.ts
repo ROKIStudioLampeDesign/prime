@@ -40,6 +40,27 @@ describe('parseBackup', () => {
     expect(r.ok && r.backup.schemaVersion).toBe(6);
   });
 
+  it('turns the jours rouges of v7 backups into days not counted, over the goal', () => {
+    const v7 = {
+      ...valid,
+      schemaVersion: 7,
+      tables: {
+        gymDays: [
+          { date: '2026-11-07', attended: false, red: true },
+          { date: '2026-11-06', attended: true },
+        ],
+      },
+    };
+    const r = parseBackup(JSON.stringify(v7), 8);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.tables.gymDays).toEqual([
+      { date: '2026-11-07', attended: false },
+      { date: '2026-11-06', attended: true },
+    ]);
+    expect(r.backup.tables.nutritionDays).toEqual([{ date: '2026-11-07', status: 'over', updatedAt: 0 }]);
+  });
+
   it('updates built-in muscles in v6 backups, leaving custom exercises alone', () => {
     const v6 = {
       ...valid,

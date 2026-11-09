@@ -1,6 +1,13 @@
 import type { WeightPoint } from './bodyWeight';
 import type { LocalDate } from './date';
-import { GOAL_KINDS, goalProgress, sumMacros, type Goals, type Macros } from './nutrition';
+import {
+  GOAL_KINDS,
+  goalProgress,
+  sumMacros,
+  type Goals,
+  type Macros,
+  type UnloggedStatus,
+} from './nutrition';
 import { weekDays, weekStart } from './week';
 
 /** Calories are a ceiling: met just under the goal (90 to 100 %), never above it. */
@@ -15,10 +22,10 @@ export function proteinGoalMet(protein: number, goal: number): boolean {
 
 export interface DayNutrition {
   date: LocalDate;
-  /** False when no food entry exists for the day, or on a jour rouge (totals not meaningful). */
+  /** False when no food entry exists for the day, or when it is marked as not counted. */
   logged: boolean;
-  /** Marked as a jour rouge: ate badly, meals not logged. */
-  red: boolean;
+  /** Marked as not counted: under or over the calorie goal. */
+  unlogged?: UnloggedStatus;
   kcal: number;
   protein: number;
 }
@@ -36,8 +43,8 @@ export interface WeeklySummaryInput {
    * of the nutrition stats, as if not logged. Omitted: every day counts.
    */
   today?: LocalDate;
-  /** Jours rouges (any range): never counted as logged, whatever entries they have. */
-  redDays?: ReadonlySet<LocalDate>;
+  /** Days marked as not counted (any range): never counted as logged, whatever their entries. */
+  unlogged?: ReadonlyMap<LocalDate, UnloggedStatus>;
 }
 
 export interface WeeklySummary {
@@ -47,8 +54,8 @@ export interface WeeklySummary {
   volumeKg: number;
   days: DayNutrition[];
   loggedDays: number;
-  /** Jours rouges in the week. */
-  redDays: number;
+  /** Days of the week marked as not counted. */
+  unloggedDays: number;
   /** Averages over logged days only; undefined when no day is logged. */
   avgKcal?: number;
   avgProtein?: number;
@@ -73,11 +80,11 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     const entries = input.foodEntries.filter((e) => e.date === date);
     const total = sumMacros(entries.map((e) => e.macros));
     const counted = input.today === undefined || date < input.today;
-    const red = input.redDays?.has(date) ?? false;
+    const unlogged = input.unlogged?.get(date);
     return {
       date,
-      logged: counted && !red && entries.length > 0,
-      red,
+      logged: counted && unlogged === undefined && entries.length > 0,
+      ...(unlogged && { unlogged }),
       kcal: total.kcal,
       protein: total.protein,
     };
@@ -100,7 +107,7 @@ export function weeklySummary(input: WeeklySummaryInput): WeeklySummary {
     volumeKg: workouts.reduce((s, w) => s + w.volumeKg, 0),
     days,
     loggedDays: logged.length,
-    redDays: days.filter((d) => d.red).length,
+    unloggedDays: days.filter((d) => d.unlogged !== undefined).length,
     avgKcal: avg('kcal'),
     avgProtein: avg('protein'),
     kcalGoalDays:

@@ -97,6 +97,10 @@ Rules:
   "Produit supprimé" and excluded from totals; code must never assume `foodsById.get(...)` succeeds.
   Meal log entries (`kind: 'meal'`) snapshot the dish's per-100 g values and `portionGrams`, so
   portions → grams = portions × portionGrams and history survives meal/product edits.
+- **Days not counted** (`nutritionDays`, "Macros pas comptées", set in Alimentation only): `under`
+  or `over` the calorie goal, winning over that day's entries. Both are left out of averages;
+  `over` breaks the calorie streak, `under` is skipped (neither counts nor breaks). The calendar
+  shows a jour rouge (red cell) for a day not counted without a workout, and a ✓/✗ badge.
 - **Muscles:** `src/domain/muscles.ts` is the single source of truth (ids, French labels, body-map
   views, groups). Never hard-code muscle lists or labels elsewhere.
 - **Exercise library:** built-in exercises come from `src/db/exerciseSeed.ts`, inserted by `seedId`

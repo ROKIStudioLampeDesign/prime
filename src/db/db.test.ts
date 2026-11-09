@@ -30,7 +30,43 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
+  });
+
+  it('migrates v7 → v8: a jour rouge becomes a day not counted, over the goal', async () => {
+    const dbName = `prime-migration-v7-${name}`;
+    const v7 = new Dexie(dbName);
+    v7.version(7).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+    });
+    await v7.table('gymDays').bulkPut([
+      { date: '2026-11-07', attended: false, red: true },
+      { date: '2026-11-06', attended: false, rest: true },
+    ]);
+    v7.close();
+
+    const migrated = new PrimeDB(dbName);
+    try {
+      expect(await migrated.nutritionDays.toArray()).toEqual([
+        { date: '2026-11-07', status: 'over', updatedAt: expect.any(Number) as number },
+      ]);
+      expect(await migrated.gymDays.toArray()).toEqual([
+        { date: '2026-11-06', attended: false, rest: true },
+        { date: '2026-11-07', attended: false },
+      ]);
+    } finally {
+      await migrated.delete();
+    }
   });
 
   it('migrates v6 → v7: built-in muscles follow the seed, custom exercises are kept', async () => {

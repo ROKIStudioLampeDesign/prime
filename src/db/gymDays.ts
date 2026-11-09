@@ -23,11 +23,6 @@ export async function setRestDay(date: LocalDate, rest: boolean, database: Prime
   await database.gymDays.put(rest ? { date, attended: false, rest: true } : { date, attended: false });
 }
 
-/** Marks or unmarks a "jour rouge". Marking it clears manual attendance and the rest mark. */
-export async function setRedDay(date: LocalDate, red: boolean, database: PrimeDB = db): Promise<void> {
-  await database.gymDays.put(red ? { date, attended: false, red: true } : { date, attended: false });
-}
-
 const REST_SECONDS_KEY = 'restTimerSeconds';
 export const DEFAULT_REST_SECONDS = 120;
 export const REST_OPTIONS = [0, 60, 90, 120, 180] as const;

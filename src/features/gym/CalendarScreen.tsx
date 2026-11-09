@@ -8,8 +8,10 @@ import { Loading } from '../../components/Loading';
 import { iconButton, Screen } from '../../components/Screen';
 import { useToday } from '../../components/useToday';
 import { getWeeklyTarget, listGymDays } from '../../db/gymDays';
+import { listUnloggedDays } from '../../db/nutritionDays';
 import { listAllWorkouts } from '../../db/workouts';
 import { formatMonthParam, parseMonthParam, shiftMonth, type LocalDate } from '../../domain/date';
+import type { UnloggedStatus } from '../../domain/nutrition';
 import { attendedDates, monthGrid, redDates, restDates, sessionsInMonth } from '../../domain/gymCalendar';
 import { weekStreak } from '../../domain/streaks';
 import { DaySheet } from './DaySheet';
@@ -27,6 +29,7 @@ export function CalendarScreen() {
   const { year, month } = shown;
   const workouts = useLiveQuery(listAllWorkouts);
   const gymDays = useLiveQuery(listGymDays);
+  const unlogged = useLiveQuery(listUnloggedDays);
   const weeklyTarget = useLiveQuery(getWeeklyTarget);
   const [selectedDay, setSelectedDay] = useState<LocalDate>();
   // In the URL so "Commencer une séance" on the home screen can open the sheet directly.
@@ -67,12 +70,12 @@ export function CalendarScreen() {
   const red = useMemo(
     () =>
       workouts &&
-      gymDays &&
+      unlogged &&
       redDates(
         workouts.map((w) => w.date),
-        gymDays,
+        unlogged,
       ),
-    [workouts, gymDays],
+    [workouts, unlogged],
   );
 
   function goToMonth(delta: number) {
@@ -90,6 +93,7 @@ export function CalendarScreen() {
       {attended === undefined ||
       resting === undefined ||
       red === undefined ||
+      unlogged === undefined ||
       workouts === undefined ||
       gymDays === undefined ||
       weeklyTarget === undefined ? (
@@ -149,6 +153,7 @@ export function CalendarScreen() {
                       attended={attended.has(date)}
                       rest={resting.has(date)}
                       red={red.has(date)}
+                      nutrition={unlogged.get(date)}
                       isToday={date === today}
                       isFuture={date > today}
                       onClick={() => setSelectedDay(date)}
@@ -168,7 +173,6 @@ export function CalendarScreen() {
         workouts={workouts?.filter((w) => w.date === selectedDay) ?? []}
         manual={gymDays?.find((d) => d.date === selectedDay)?.attended ?? false}
         rest={selectedDay !== undefined && (resting?.has(selectedDay) ?? false)}
-        red={selectedDay !== undefined && (red?.has(selectedDay) ?? false)}
         onClose={() => setSelectedDay(undefined)}
       />
     </Screen>
@@ -190,32 +194,51 @@ interface DayCellProps {
   attended: boolean;
   rest: boolean;
   red: boolean;
+  /** Meals not counted that day: under or over the goal. */
+  nutrition: UnloggedStatus | undefined;
   isToday: boolean;
   isFuture: boolean;
   onClick: () => void;
 }
 
-function DayCell({ date, attended, rest, red, isToday, isFuture, onClick }: DayCellProps) {
+function DayCell({ date, attended, rest, red, nutrition, isToday, isFuture, onClick }: DayCellProps) {
   const day = Number(date.slice(8));
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : red ? ', jour rouge' : ''}`}
+      aria-label={`${longDay(date)}${attended ? ', séance' : rest ? ', repos' : red ? ', jour rouge' : ''}${
+        nutrition === 'over'
+          ? ', calories dépassées'
+          : nutrition === 'under'
+            ? ', sous l’objectif calories'
+            : ''
+      }`}
       aria-current={isToday ? 'date' : undefined}
-      className={`flex h-full min-h-11 items-center justify-center text-sm font-semibold tabular-nums ${
+      className={`relative flex h-full min-h-11 items-center justify-center text-sm font-semibold tabular-nums ${
         attended
           ? 'bg-gym text-on-gym'
-          : rest
-            ? 'bg-fg text-bg'
-            : red
-              ? 'bg-red-day text-on-red-day'
+          : red
+            ? 'bg-red-day text-on-red-day'
+            : rest
+              ? 'bg-fg text-bg'
               : isFuture
                 ? 'text-muted'
                 : 'text-fg active:bg-surface-2'
-      } ${isToday ? `ring-2 ring-inset ${rest && !attended ? 'ring-bg' : 'ring-fg'}` : ''}`}
+      } ${isToday ? `ring-2 ring-inset ${rest && !attended && !red ? 'ring-bg' : 'ring-fg'}` : ''}`}
     >
       {day}
+      {/* Meals not counted: ✓ stayed under the goal, ✗ went over (a red cell already says it). */}
+      {(nutrition === 'under' || (nutrition === 'over' && attended)) && (
+        <span
+          aria-hidden="true"
+          className={`absolute top-0.5 right-0.5 flex size-3.5 items-center justify-center text-[10px] leading-none font-black ${
+            nutrition === 'under' ? 'bg-paper text-ink' : 'bg-red-day text-on-red-day'
+          }`}
+        >
+          {nutrition === 'under' ? '✓' : '✗'}
+        </span>
+      )}
     </button>
   );
 }

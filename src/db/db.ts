@@ -2,7 +2,7 @@ import Dexie, { type EntityTable, type Table } from 'dexie';
 import type { LocalDate } from '../domain/date';
 import type { Equipment } from '../domain/exercise';
 import type { MuscleId } from '../domain/muscles';
-import type { Goals, Macros, MealSlot, Per100g } from '../domain/nutrition';
+import type { Goals, Macros, MealSlot, Per100g, UnloggedStatus } from '../domain/nutrition';
 import type { TemplateExercise } from '../domain/workout';
 import { normalizeText } from '../domain/search';
 import { EXERCISE_SEED } from './exerciseSeed';
@@ -152,8 +152,16 @@ export interface GymDay {
   date: LocalDate;
   attended: boolean;
   rest?: boolean;
-  /** "Jour rouge": no gym and ate badly, meals not logged. Exclusive with attended and rest. */
-  red?: boolean;
+}
+
+/**
+ * A day whose meals weren't counted (or only partly): what the user knows about it instead.
+ * It takes precedence over that day's log entries in every nutrition stat.
+ */
+export interface NutritionDay {
+  date: LocalDate;
+  status: UnloggedStatus;
+  updatedAt: number;
 }
 
 export interface Template {
@@ -232,6 +240,7 @@ export class PrimeDB extends Dexie {
   gymDays!: EntityTable<GymDay, 'date'>;
   templates!: EntityTable<Template, 'id'>;
   bodyWeights!: EntityTable<BodyWeightEntry, 'id'>;
+  nutritionDays!: EntityTable<NutritionDay, 'date'>;
 
   constructor(name = 'prime') {
     super(name);
@@ -336,6 +345,38 @@ export class PrimeDB extends Dexie {
         bodyWeights: '++id, &date',
       })
       .upgrade((tx) => syncBuiltInMuscles(tx.table('exercises')));
+
+    // v8: days whose meals weren't counted (under or over the goal). Short-lived builds marked
+    // them as a "jour rouge" on the gym day (`red`): those become "over" and lose the flag.
+    this.version(8)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+        nutritionDays: 'date',
+      })
+      .upgrade(async (tx) => {
+        const red: string[] = [];
+        await tx
+          .table('gymDays')
+          .toCollection()
+          .modify((day: Record<string, unknown>) => {
+            if (day.red === true && typeof day.date === 'string') red.push(day.date);
+            delete day.red;
+          });
+        const now = Date.now();
+        await tx
+          .table('nutritionDays')
+          .bulkPut(red.map((date) => ({ date, status: 'over', updatedAt: now })));
+      });
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

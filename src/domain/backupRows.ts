@@ -167,7 +167,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     // Legacy flag from short-lived builds (bodyweight is now simply 0 kg): accepted, ignored.
     bodyweight: optional(bool),
   }),
-  gymDays: shape({ date: localDate, attended: bool, rest: optional(bool), red: optional(bool) }),
+  gymDays: shape({ date: localDate, attended: bool, rest: optional(bool) }),
   templates: shape({
     id,
     name: text,
@@ -186,6 +186,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     ...timestamps,
   }),
   bodyWeights: shape({ id, date: localDate, kg: nonNegative, ...timestamps }),
+  nutritionDays: shape({ date: localDate, status: oneOf(['under', 'over']), updatedAt: timestamp }),
 };
 
 export type RowValidation = { ok: true } | { ok: false; table: string; index: number };

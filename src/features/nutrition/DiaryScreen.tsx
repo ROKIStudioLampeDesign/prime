@@ -7,11 +7,12 @@ import { Fab } from '../../components/Fab';
 import { PlusIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
+import { BottomSheet } from '../../components/BottomSheet';
+import { Button } from '../../components/Button';
 import type { LogEntry } from '../../db/db';
 import { getGoals } from '../../db/goals';
-import { getGymDay, setRedDay } from '../../db/gymDays';
 import { deleteEntry, listEntriesForDate, updateEntry } from '../../db/logEntries';
-import { listAllWorkouts } from '../../db/workouts';
+import { getUnloggedDay, setUnloggedDay } from '../../db/nutritionDays';
 import type { LocalDate } from '../../domain/date';
 import { MEAL_SLOTS, roundTo, sumMacros, type MealSlot } from '../../domain/nutrition';
 import { formatGrams, formatMacro } from '../../lib/format';
@@ -59,7 +60,7 @@ export function DiaryScreen() {
       ) : (
         <>
           <DailySummary totals={totals} goals={goals} />
-          {date <= today && <RedDay date={date} />}
+          {date <= today && <UnloggedMark date={date} />}
           {entries.length === 0 ? (
             <EmptyState
               title="Rien de noté ce jour-là"
@@ -121,39 +122,74 @@ export function DiaryScreen() {
 }
 
 /**
- * "Jour rouge" for the shown day: ate badly and meals not logged (no gym either). Shown as a red
- * band once marked; days with a workout can't be one.
+ * "Macros pas comptées": for a day whose meals couldn't be (fully) counted, whether it stayed
+ * under the calorie goal. The mark wins over the day's entries in every stat.
  */
-function RedDay({ date }: { date: LocalDate }) {
-  const state = useLiveQuery(async () => {
-    const [day, workouts] = await Promise.all([getGymDay(date), listAllWorkouts()]);
-    return { red: day?.red === true, worked: workouts.some((w) => w.date === date) };
-  }, [date]);
-  if (state === undefined || state.worked) return null;
-  if (!state.red) {
+function UnloggedMark({ date }: { date: LocalDate }) {
+  // `null` (not undefined) when the day has no mark, so loading stays distinguishable.
+  const status = useLiveQuery(async () => (await getUnloggedDay(date)) ?? null, [date]);
+  const [asking, setAsking] = useState(false);
+  if (status === undefined) return null;
+
+  if (status === null) {
     return (
-      <button
-        type="button"
-        onClick={() => void setRedDay(date, true)}
-        className="mt-2 min-h-11 text-sm font-extrabold text-danger active:opacity-60"
-      >
-        Marquer comme jour rouge
-      </button>
+      <>
+        <button
+          type="button"
+          onClick={() => setAsking(true)}
+          className="mt-2 min-h-11 text-sm font-extrabold text-accent active:opacity-60"
+        >
+          Macros pas comptées ?
+        </button>
+        <BottomSheet open={asking} onClose={() => setAsking(false)} title="Macros pas comptées">
+          <p className="mb-4 text-sm text-muted">
+            Tu n’as pas pu tout noter ce jour-là ? Dis si tu es resté sous ton objectif calories. Le jour
+            sortira des moyennes.
+          </p>
+          <Button
+            className="w-full"
+            onClick={async () => {
+              await setUnloggedDay(date, 'under');
+              setAsking(false);
+            }}
+          >
+            Sous l’objectif
+          </Button>
+          <Button
+            variant="secondary"
+            className="mt-2 w-full"
+            onClick={async () => {
+              await setUnloggedDay(date, 'over');
+              setAsking(false);
+            }}
+          >
+            Objectif dépassé
+          </Button>
+        </BottomSheet>
+      </>
     );
   }
+
+  const over = status === 'over';
   return (
     <section
-      aria-label="Jour rouge"
-      className="mt-3 bleed flex items-center justify-between gap-3 bg-red-day py-3 text-on-red-day"
+      aria-label="Macros pas comptées"
+      className={`mt-3 bleed flex items-center justify-between gap-3 py-3 ${
+        over ? 'bg-red-day text-on-red-day' : 'bg-paper text-ink'
+      }`}
     >
       <div>
-        <p className="text-xl leading-tight headline">Jour rouge</p>
-        <p className="text-[13px] font-semibold">Mal mangé, pas de salle. Exclu des moyennes.</p>
+        <p className="text-xl leading-tight headline">{over ? 'Objectif dépassé' : 'Sous l’objectif'}</p>
+        <p className="text-[13px] font-semibold">
+          Macros pas comptées · {over ? 'série calories cassée' : 'série calories gardée'}, hors moyennes.
+        </p>
       </div>
       <button
         type="button"
-        onClick={() => void setRedDay(date, false)}
-        className="min-h-11 shrink-0 border-2 border-on-red-day px-3 text-sm font-extrabold focus-inset active:opacity-70"
+        onClick={() => void setUnloggedDay(date, undefined)}
+        className={`min-h-11 shrink-0 border-2 px-3 text-sm font-extrabold focus-inset active:opacity-70 ${
+          over ? 'border-on-red-day' : 'border-ink'
+        }`}
       >
         Annuler
       </button>

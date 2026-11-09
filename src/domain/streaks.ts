@@ -1,4 +1,5 @@
 import { addDays, type LocalDate } from './date';
+import type { UnloggedStatus } from './nutrition';
 import { weekStart } from './week';
 
 /** Calories logged on one day (a day without entries has no row). */
@@ -11,35 +12,39 @@ export interface CalorieStreak {
   /** Consecutive days at or under the goal, ending today (or yesterday while today is empty). */
   days: number;
   /**
-   * Today: 'ok' (logged, under the goal), 'over' (it broke the streak), 'red' (marked as a jour
-   * rouge, which breaks it too) or 'empty' (not yet).
+   * Today: 'ok' (logged, under the goal), 'over' (it broke the streak, logged or not), 'skipped'
+   * (not counted but under: it neither counts nor breaks) or 'empty' (not yet).
    */
-  today: 'ok' | 'over' | 'red' | 'empty';
+  today: 'ok' | 'over' | 'skipped' | 'empty';
 }
 
 /**
  * Consecutive days whose logged calories stay at or under `goal`. A day counts only if something
  * was logged (an empty day is not a success); a day over the goal breaks the streak. Today is
- * still open: empty, it neither counts nor breaks. A jour rouge (`red`) breaks it whatever was logged.
+ * still open: empty, it neither counts nor breaks. A day marked as not counted (`unlogged`) wins
+ * over its entries: 'over' breaks the streak, 'under' is skipped (neither counts nor breaks).
  */
 export function calorieStreak(
   byDay: ReadonlyMap<LocalDate, DayKcal>,
   goal: number,
   today: LocalDate,
-  red: ReadonlySet<LocalDate> = new Set(),
+  unlogged: ReadonlyMap<LocalDate, UnloggedStatus> = new Map(),
 ): CalorieStreak {
-  const ok = (date: LocalDate) => {
+  const state = (date: LocalDate): CalorieStreak['today'] => {
+    const mark = unlogged.get(date);
+    if (mark) return mark === 'over' ? 'over' : 'skipped';
     const d = byDay.get(date);
-    return !red.has(date) && d !== undefined && d.entries > 0 && d.kcal <= goal;
+    if (d === undefined || d.entries === 0) return 'empty';
+    return d.kcal <= goal ? 'ok' : 'over';
   };
-  if (red.has(today)) return { days: 0, today: 'red' };
-  const todayRow = byDay.get(today);
-  const todayState = todayRow === undefined || todayRow.entries === 0 ? 'empty' : ok(today) ? 'ok' : 'over';
+  const todayState = state(today);
   if (todayState === 'over') return { days: 0, today: 'over' };
   let days = todayState === 'ok' ? 1 : 0;
   let cursor = addDays(today, -1);
-  while (ok(cursor)) {
-    days++;
+  for (;;) {
+    const s = state(cursor);
+    if (s === 'ok') days++;
+    else if (s !== 'skipped') break;
     cursor = addDays(cursor, -1);
   }
   return { days, today: todayState };

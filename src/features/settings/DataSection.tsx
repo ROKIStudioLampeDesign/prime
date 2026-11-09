@@ -30,6 +30,7 @@ const TABLE_LABELS: Record<string, string> = {
   exercises: 'Exercices',
   templates: 'Modèles',
   gymDays: 'Jours de salle',
+  nutritionDays: 'Jours non comptés',
   settings: 'Réglages',
 };
 

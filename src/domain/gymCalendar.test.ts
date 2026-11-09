@@ -118,13 +118,13 @@ describe('restDates', () => {
 });
 
 describe('redDates', () => {
-  it('keeps marked days without a workout', () => {
-    expect(redDates([], []).size).toBe(0);
-    const marks = [
-      { date: d('2026-11-03'), red: true },
-      { date: d('2026-11-04'), red: true },
-      { date: d('2026-11-05') },
-    ];
-    expect([...redDates([d('2026-11-04')], marks)]).toEqual(['2026-11-03']);
+  it('keeps the days not counted that have no workout', () => {
+    expect(redDates([], new Map()).size).toBe(0);
+    const unlogged = new Map([
+      [d('2026-11-03'), 'under'],
+      [d('2026-11-04'), 'over'],
+      [d('2026-11-05'), 'over'],
+    ]);
+    expect([...redDates([d('2026-11-05')], unlogged)]).toEqual(['2026-11-03', '2026-11-04']);
   });
 });

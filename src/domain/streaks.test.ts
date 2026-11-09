@@ -46,13 +46,25 @@ describe('calorieStreak', () => {
     expect(calorieStreak(byDay, 1500, today)).toEqual({ days: 0, today: 'empty' });
   });
 
-  it('breaks on a jour rouge, whatever was logged that day', () => {
+  it('breaks on a day not counted but over, whatever was logged that day', () => {
     const byDay = days({ '2026-11-02': 1400, '2026-11-03': 1400, '2026-11-04': 1400 });
-    expect(calorieStreak(byDay, 1500, today, new Set([d('2026-11-03')]))).toEqual({
+    const over = (date: string) => new Map([[d(date), 'over' as const]]);
+    expect(calorieStreak(byDay, 1500, today, over('2026-11-03'))).toEqual({ days: 1, today: 'empty' });
+    expect(calorieStreak(byDay, 1500, today, over('2026-11-05'))).toEqual({ days: 0, today: 'over' });
+  });
+
+  it('skips a day not counted but under: it neither counts nor breaks', () => {
+    const byDay = days({ '2026-11-02': 1400, '2026-11-03': 1900, '2026-11-04': 1400 });
+    const under = new Map([[d('2026-11-03'), 'under' as const]]);
+    expect(calorieStreak(byDay, 1500, today, under)).toEqual({ days: 2, today: 'empty' });
+    // Today skipped: the streak up to yesterday is kept.
+    const todayUnder = new Map([[today, 'under' as const]]);
+    expect(calorieStreak(days({ '2026-11-04': 1400 }), 1500, today, todayUnder)).toEqual({
       days: 1,
-      today: 'empty',
+      today: 'skipped',
     });
-    expect(calorieStreak(byDay, 1500, today, new Set([today]))).toEqual({ days: 0, today: 'red' });
+    // Skipped days alone make no streak.
+    expect(calorieStreak(new Map(), 1500, today, todayUnder).days).toBe(0);
   });
 
   it('crosses month and year boundaries', () => {

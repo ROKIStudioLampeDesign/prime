@@ -1,3 +1,6 @@
+/** A day whose meals weren't counted: still under the calorie goal, or over it. */
+export type UnloggedStatus = 'under' | 'over';
+
 /** Nutrient values for a quantity of food. Energy in kcal, everything else in grams. */
 export interface Macros {
   kcal: number;

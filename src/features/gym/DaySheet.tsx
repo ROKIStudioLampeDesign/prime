@@ -4,7 +4,7 @@ import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { useToday } from '../../components/useToday';
 import type { Workout } from '../../db/db';
-import { setGymDay, setRedDay, setRestDay } from '../../db/gymDays';
+import { setGymDay, setRestDay } from '../../db/gymDays';
 import { listTemplates } from '../../db/templates';
 import { createPastWorkout } from '../../db/workouts';
 import type { LocalDate } from '../../domain/date';
@@ -18,12 +18,10 @@ interface DaySheetProps {
   manual: boolean;
   /** Rest day mark (ignored when the day has a workout). */
   rest: boolean;
-  /** "Jour rouge" mark (ignored when the day has a workout). */
-  red: boolean;
   onClose: () => void;
 }
 
-export function DaySheet({ date, workouts, manual, rest, red, onClose }: DaySheetProps) {
+export function DaySheet({ date, workouts, manual, rest, onClose }: DaySheetProps) {
   const navigate = useNavigate();
   const today = useToday();
   const hasWorkout = workouts.length > 0;
@@ -95,22 +93,6 @@ export function DaySheet({ date, workouts, manual, rest, red, onClose }: DayShee
                 checked={rest}
                 onChange={(e) => void setRestDay(date, e.target.checked)}
                 className="size-6 accent-(--color-accent)"
-              />
-            </label>
-          )}
-
-          {!hasWorkout && isPastOrToday && (
-            <label className="mt-2 flex min-h-12 items-center justify-between gap-3 rounded-xl bg-bg px-4">
-              <span>
-                <span className="block">Jour rouge</span>
-                <span className="block text-xs text-muted">Pas de salle et mal mangé, repas non notés</span>
-              </span>
-              <input
-                type="checkbox"
-                role="switch"
-                checked={red}
-                onChange={(e) => void setRedDay(date, e.target.checked)}
-                className="size-6 accent-(--color-red-day)"
               />
             </label>
           )}

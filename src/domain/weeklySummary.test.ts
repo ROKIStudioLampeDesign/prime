@@ -54,19 +54,23 @@ describe('weeklySummary', () => {
     expect(s.days.find((x) => x.date === '2026-11-04')).toEqual({
       date: '2026-11-04',
       logged: false,
-      red: false,
       kcal: 0,
       protein: 0,
     });
   });
 
-  it('leaves jours rouges out of the nutrition stats and counts them', () => {
-    const red = weeklySummary({ ...base, redDays: new Set([d('2026-11-03'), d('2026-10-30')]) });
-    expect(red.redDays).toBe(1); // the other one is outside the week
-    expect(red.loggedDays).toBe(2);
-    expect(red.avgKcal).toBeCloseTo((2200 + 1800) / 2);
-    expect(red.days.find((x) => x.date === '2026-11-03')).toMatchObject({ logged: false, red: true });
-    expect(s.redDays).toBe(0);
+  it('leaves days not counted out of the nutrition stats and counts them', () => {
+    const unlogged = new Map([
+      [d('2026-11-03'), 'over' as const],
+      [d('2026-11-04'), 'under' as const],
+      [d('2026-10-30'), 'under' as const], // previous week
+    ]);
+    const week = weeklySummary({ ...base, unlogged });
+    expect(week.unloggedDays).toBe(2);
+    expect(week.loggedDays).toBe(2);
+    expect(week.avgKcal).toBeCloseTo((2200 + 1800) / 2);
+    expect(week.days.find((x) => x.date === '2026-11-03')).toMatchObject({ logged: false, unlogged: 'over' });
+    expect(s.unloggedDays).toBe(0);
   });
 
   it('leaves the day in progress (and later days) out of the nutrition stats', () => {

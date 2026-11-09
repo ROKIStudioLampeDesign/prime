@@ -53,6 +53,19 @@ export const BACKUP_MIGRATIONS: Readonly<
         ['crunch', { primaryMuscles: ['abs'], secondaryMuscles: ['obliques'] }],
       ]),
     ),
+  // v7 → v8: a "jour rouge" (`red` on a gym day) becomes a day counted as over the goal.
+  7: (tables) => {
+    const gymDays = tables.gymDays;
+    if (!Array.isArray(gymDays)) return tables;
+    const red: unknown[] = [];
+    const kept = gymDays.map((row) => {
+      if (typeof row !== 'object' || row === null || !('red' in row)) return row;
+      const { red: flag, ...rest } = row as Record<string, unknown>;
+      if (flag === true) red.push({ date: rest.date, status: 'over', updatedAt: 0 });
+      return rest;
+    });
+    return { ...tables, gymDays: kept, nutritionDays: [...(tables.nutritionDays ?? []), ...red] };
+  },
 };
 
 /** Replaces the muscles of built-in exercise rows (matched by seedId); other rows are kept. */
