@@ -9,7 +9,9 @@ import {
   prefillSets,
   prefillFromPlan,
   prefillForTemplate,
+  latestPerformances,
   templateAfterWorkout,
+  withLatestLoads,
   templateFromSets,
   type PastPerformance,
   type TemplateSet,
@@ -360,7 +362,8 @@ export async function removeExercise(
 /**
  * Ends the active workout: unvalidated (placeholder) sets are dropped. A workout started from a
  * template whose exercises were kept updates that template with the sets just done (count, loads,
- * reps), so the next session starts from them.
+ * reps). Then every template holding one of its exercises takes that exercise's latest loads and
+ * reps (`syncTemplateLoads`), so all templates show the same numbers for the same exercise.
  */
 export async function finishWorkout(workoutId: number, database: PrimeDB = db): Promise<void> {
   await database.transaction(
@@ -377,15 +380,45 @@ export async function finishWorkout(workoutId: number, database: PrimeDB = db): 
 
       const template =
         workout?.templateId === undefined ? undefined : await database.templates.get(workout.templateId);
-      if (!template) return;
-      const exercises = templateAfterWorkout(
-        template.exercises,
-        sets.map((s) => s.exerciseId),
-        completed,
-      );
-      if (exercises) await database.templates.update(template.id, { exercises, updatedAt: now });
+      if (template) {
+        const exercises = templateAfterWorkout(
+          template.exercises,
+          sets.map((s) => s.exerciseId),
+          completed,
+        );
+        if (exercises) await database.templates.update(template.id, { exercises, updatedAt: now });
+      }
+      await syncTemplateLoads(new Set(completed.map((s) => s.exerciseId)), database, now);
     },
   );
+}
+
+/**
+ * Gives every template the latest loads and reps of `exerciseIds` (every exercise when omitted),
+ * from the finished workouts. Runs inside the caller's transaction when there is one.
+ */
+export async function syncTemplateLoads(
+  exerciseIds: ReadonlySet<number> | undefined,
+  database: PrimeDB = db,
+  now = Date.now(),
+): Promise<void> {
+  const workouts = (await database.workouts.toArray()).filter((w) => w.status === 'done');
+  const done = new Set(workouts.map((w) => w.id));
+  const sets = (await database.workoutSets.toArray()).filter(
+    (s) => done.has(s.workoutId) && (exerciseIds === undefined || exerciseIds.has(s.exerciseId)),
+  );
+  const latest = latestPerformances(
+    workouts.map((w) => ({
+      workoutId: w.id,
+      startedAt: w.startedAt,
+      sets: sets.filter((s) => s.workoutId === w.id),
+    })),
+  );
+  if (latest.size === 0) return;
+  for (const template of await database.templates.toArray()) {
+    const exercises = withLatestLoads(template.exercises, latest);
+    if (exercises) await database.templates.update(template.id, { exercises, updatedAt: now });
+  }
 }
 
 export async function updateWorkoutMeta(

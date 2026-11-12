@@ -1,5 +1,6 @@
 import { MAX_TIMESTAMP_MS, validateBackupRows } from './backupRows';
 import { normalizeText } from './search';
+import { latestPerformances, withLatestLoads, type TemplateExercise } from './workout';
 
 /** Identifies Prime backup files. */
 export const BACKUP_APP = 'prime';
@@ -66,7 +67,58 @@ export const BACKUP_MIGRATIONS: Readonly<
     });
     return { ...tables, gymDays: kept, nutritionDays: [...(tables.nutritionDays ?? []), ...red] };
   },
+  // v9 → v10: templates holding the same exercise take its latest loads and reps.
+  9: syncTemplateRows,
 };
+
+const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+const rec = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+
+/** Applies `withLatestLoads` to backup rows; malformed rows are left as they are (validated later). */
+function syncTemplateRows(tables: Record<string, unknown[]>): Record<string, unknown[]> {
+  const { workouts, workoutSets, templates } = tables;
+  if (!Array.isArray(workouts) || !Array.isArray(workoutSets) || !Array.isArray(templates)) return tables;
+  const done = workouts.filter((w) => rec(w) && w.status === 'done' && num(w.id) && num(w.startedAt));
+  const history = done.flatMap((w) =>
+    rec(w) && num(w.id) && num(w.startedAt)
+      ? [
+          {
+            workoutId: w.id,
+            startedAt: w.startedAt,
+            sets: workoutSets.flatMap((s) =>
+              rec(s) &&
+              s.workoutId === w.id &&
+              num(s.exerciseId) &&
+              num(s.setNumber) &&
+              num(s.weightKg) &&
+              num(s.reps)
+                ? [
+                    {
+                      exerciseId: s.exerciseId,
+                      setNumber: s.setNumber,
+                      weightKg: s.weightKg,
+                      reps: s.reps,
+                      completed: s.completed === true,
+                    },
+                  ]
+                : [],
+            ),
+          },
+        ]
+      : [],
+  );
+  const latest = latestPerformances(history);
+  return {
+    ...tables,
+    templates: templates.map((t) => {
+      if (!rec(t) || !Array.isArray(t.exercises)) return t;
+      const wellFormed = t.exercises.every((e) => rec(e) && num(e.exerciseId) && num(e.targetSets));
+      if (!wellFormed) return t;
+      const exercises = withLatestLoads(t.exercises as TemplateExercise[], latest);
+      return exercises ? { ...t, exercises } : t;
+    }),
+  };
+}
 
 /** Replaces the muscles of built-in exercise rows (matched by seedId); other rows are kept. */
 function setBuiltInMuscles(

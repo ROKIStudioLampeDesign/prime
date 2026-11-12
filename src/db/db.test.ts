@@ -32,7 +32,60 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
+  });
+
+  it('migrates v9 → v10: templates holding the same exercise take its latest loads', async () => {
+    const dbName = `prime-migration-v9-${name}`;
+    const v9 = new Dexie(dbName);
+    v9.version(9).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+      nutritionDays: 'date',
+    });
+    const set = { order: 0, completed: true };
+    await v9.table('workouts').bulkAdd([
+      { id: 1, date: '2026-11-01', status: 'done', startedAt: 1000 },
+      { id: 2, date: '2026-11-03', status: 'done', startedAt: 3000 },
+      { id: 3, date: '2026-11-05', status: 'active', startedAt: 5000 },
+    ]);
+    await v9.table('workoutSets').bulkAdd([
+      { ...set, workoutId: 1, exerciseId: 7, setNumber: 1, weightKg: 60, reps: 8 },
+      { ...set, workoutId: 2, exerciseId: 7, setNumber: 1, weightKg: 70, reps: 6 },
+      { ...set, workoutId: 3, exerciseId: 7, setNumber: 1, weightKg: 90, reps: 1 }, // still active
+    ]);
+    const stale = { exerciseId: 7, targetSets: 1, sets: [{ weightKg: 60, reps: 8 }] };
+    await v9.table('templates').bulkAdd([
+      { id: 1, name: 'A', exercises: [stale], createdAt: 0, updatedAt: 0 },
+      {
+        id: 2,
+        name: 'B',
+        exercises: [{ ...stale, sets: [{ weightKg: 50, reps: 10 }] }],
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    ]);
+    v9.close();
+
+    const migrated = new PrimeDB(dbName);
+    try {
+      const templates = await migrated.templates.toArray();
+      expect(templates.map((t) => t.exercises[0]?.sets)).toEqual([
+        [{ weightKg: 70, reps: 6 }],
+        [{ weightKg: 70, reps: 6 }],
+      ]);
+    } finally {
+      await migrated.delete();
+    }
   });
 
   it('migrates v7 → v8: a jour rouge becomes a day not counted, over the goal', async () => {

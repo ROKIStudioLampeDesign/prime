@@ -239,6 +239,57 @@ export function templateFromSets(sets: readonly (DoneSet & { order: number })[])
 }
 
 /**
+ * The latest performance of every exercise in `history`: its completed sets in the most recent
+ * workout where it has any (see `lastPerformanceSession`).
+ */
+export function latestPerformances(history: readonly WorkoutHistoryItem[]): Map<number, PerformedSet[]> {
+  const ids = new Set(history.flatMap((w) => w.sets.map((s) => s.exerciseId)));
+  const out = new Map<number, PerformedSet[]>();
+  for (const id of ids) {
+    const last = lastPerformanceSession(history, id);
+    if (last) out.set(id, last.sets);
+  }
+  return out;
+}
+
+/**
+ * Loads and reps follow the exercise, not the template: each planned set takes the exercise's
+ * latest performance with the same set number, so every template holding the exercise shows the
+ * same numbers. The template keeps its own number of sets; exercises never performed and sets
+ * beyond the latest performance keep their plan. Undefined when nothing changes.
+ */
+export function withLatestLoads(
+  template: readonly TemplateExercise[],
+  latest: ReadonlyMap<number, readonly PerformedSet[]>,
+): TemplateExercise[] | undefined {
+  let changed = false;
+  const next = template.map((t) => {
+    const done = latest.get(t.exerciseId);
+    if (!done || done.length === 0) return t;
+    const plan =
+      t.sets && t.sets.length > 0
+        ? t.sets
+        : Array.from({ length: t.targetSets }, () => ({ weightKg: 0, reps: t.targetReps ?? 0 }));
+    const sets = plan.map((p, i) => {
+      const d = done.find((s) => s.setNumber === i + 1);
+      return d ? { weightKg: d.weightKg, reps: d.reps } : p;
+    });
+    if (t.sets && sets.every((s, i) => s.weightKg === t.sets?.[i]?.weightKg && s.reps === t.sets[i]?.reps)) {
+      return t;
+    }
+    changed = true;
+    const lastReps = sets.at(-1)?.reps ?? 0;
+    return {
+      exerciseId: t.exerciseId,
+      targetSets: sets.length,
+      ...(lastReps > 0 && { targetReps: lastReps }),
+      sets,
+    };
+  });
+  return changed ? next : undefined;
+}
+
+/**
  * The template once a workout started from it is finished: each exercise takes the sets just
  * validated (count, loads, reps), so the next session starts from them. Undefined when the
  * workout's exercises are not the template's (one added or removed): the template stays as it

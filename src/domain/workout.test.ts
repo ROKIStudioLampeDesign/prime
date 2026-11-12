@@ -10,7 +10,9 @@ import {
   previousForSet,
   restRemaining,
   stepWeight,
+  latestPerformances,
   templateAfterWorkout,
+  withLatestLoads,
   templateFromSets,
   workoutStats,
   workoutVolume,
@@ -227,6 +229,79 @@ describe('templateFromSets', () => {
       },
     ]);
     expect(templateFromSets([])).toEqual([]);
+  });
+});
+
+describe('latestPerformances', () => {
+  it('gives each exercise its most recent completed sets', () => {
+    const latest = latestPerformances(history);
+    expect(latest.get(BENCH)).toEqual([
+      { setNumber: 1, weightKg: 60, reps: 8 },
+      { setNumber: 2, weightKg: 60, reps: 7 },
+      { setNumber: 3, weightKg: 55, reps: 8 },
+    ]);
+    expect(latest.get(SQUAT)).toEqual([{ setNumber: 1, weightKg: 105, reps: 5 }]);
+    expect(latestPerformances([]).size).toBe(0);
+  });
+});
+
+describe('withLatestLoads', () => {
+  const latest = new Map([
+    [
+      BENCH,
+      [
+        { setNumber: 1, weightKg: 70, reps: 6 },
+        { setNumber: 2, weightKg: 70, reps: 5 },
+      ],
+    ],
+  ]);
+
+  it('takes the latest loads set by set and keeps the template’s set count', () => {
+    const template = [
+      {
+        exerciseId: BENCH,
+        targetSets: 3,
+        sets: [
+          { weightKg: 50, reps: 10 },
+          { weightKg: 50, reps: 10 },
+          { weightKg: 50, reps: 8 },
+        ],
+      },
+      { exerciseId: SQUAT, targetSets: 1, targetReps: 5 },
+    ];
+    expect(withLatestLoads(template, latest)).toEqual([
+      {
+        exerciseId: BENCH,
+        targetSets: 3,
+        targetReps: 8,
+        sets: [
+          { weightKg: 70, reps: 6 },
+          { weightKg: 70, reps: 5 },
+          { weightKg: 50, reps: 8 },
+        ],
+      },
+      { exerciseId: SQUAT, targetSets: 1, targetReps: 5 },
+    ]);
+  });
+
+  it('fills templates saved with only a set count, and reports no change', () => {
+    expect(withLatestLoads([{ exerciseId: BENCH, targetSets: 1, targetReps: 8 }], latest)).toEqual([
+      { exerciseId: BENCH, targetSets: 1, targetReps: 6, sets: [{ weightKg: 70, reps: 6 }] },
+    ]);
+    const synced = [
+      {
+        exerciseId: BENCH,
+        targetSets: 2,
+        targetReps: 5,
+        sets: [
+          { weightKg: 70, reps: 6 },
+          { weightKg: 70, reps: 5 },
+        ],
+      },
+    ];
+    expect(withLatestLoads(synced, latest)).toBeUndefined();
+    expect(withLatestLoads([], latest)).toBeUndefined();
+    expect(withLatestLoads(synced, new Map())).toBeUndefined();
   });
 });
 

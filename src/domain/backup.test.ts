@@ -40,6 +40,43 @@ describe('parseBackup', () => {
     expect(r.ok && r.backup.schemaVersion).toBe(6);
   });
 
+  it('gives the templates of v9 backups the latest loads of their exercises', () => {
+    const v9 = {
+      ...valid,
+      schemaVersion: 9,
+      tables: {
+        workouts: [{ id: 1, date: '2026-11-03', status: 'done', startedAt: 3000 }],
+        workoutSets: [
+          {
+            id: 1,
+            workoutId: 1,
+            exerciseId: 7,
+            order: 0,
+            setNumber: 1,
+            weightKg: 70,
+            reps: 6,
+            completed: true,
+          },
+        ],
+        templates: [
+          {
+            id: 1,
+            name: 'B',
+            exercises: [{ exerciseId: 7, targetSets: 1, sets: [{ weightKg: 50, reps: 10 }] }],
+            createdAt: 0,
+            updatedAt: 0,
+          },
+        ],
+      },
+    };
+    const r = parseBackup(JSON.stringify(v9), 10);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.backup.tables.templates?.[0]).toMatchObject({
+      exercises: [{ exerciseId: 7, sets: [{ weightKg: 70, reps: 6 }] }],
+    });
+  });
+
   it('turns the jours rouges of v7 backups into days not counted, over the goal', () => {
     const v7 = {
       ...valid,

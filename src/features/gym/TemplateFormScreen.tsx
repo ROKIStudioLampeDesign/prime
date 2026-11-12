@@ -164,8 +164,9 @@ function TemplateForm({ template, exercises }: { template?: Template; exercises:
           </h2>
           <p className="mt-1 mb-3 text-sm font-semibold text-muted">
             Les séries de chaque exercice, avec leur charge et leurs répétitions. Une charge vide ou à 0 avec
-            des reps = poids du corps ; une série vide reprend ta dernière séance. À la fin d’une séance faite
-            avec les mêmes exercices, le modèle se met à jour tout seul.
+            des reps = poids du corps ; une série vide reprend ta dernière séance. Les charges et reps suivent
+            l’exercice : après chaque séance, tous les modèles qui le contiennent reprennent tes derniers
+            chiffres.
           </p>
           {rows.length === 0 ? (
             <EmptyState title="Aucun exercice" description="Ajoute les exercices de cette séance type." />

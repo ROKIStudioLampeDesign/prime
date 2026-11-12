@@ -112,6 +112,10 @@ Rules:
   name in the seed, add a schema version whose upgrade calls `syncBuiltInNames` and a
   `BACKUP_MIGRATIONS` transform (the barbell bench press became "Bench" in v6). Built-ins are
   read-only; custom exercises can't be deleted while a workout or template uses them.
+- **Loads follow the exercise, not the template:** a template gives the exercises and set count;
+  each set is prefilled from the exercise's last finished session in any workout
+  (`prefillForTemplate`). Finishing a workout gives every template holding its exercises their
+  latest loads and reps (`syncTemplateLoads` / `withLatestLoads`), so templates never disagree.
 - **Workouts:** at most one `status: 'active'` workout. Every set edit is written to Dexie
   immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
   unvalidated sets. Durations and the rest timer are computed from stored timestamps

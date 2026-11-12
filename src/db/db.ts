@@ -3,7 +3,7 @@ import type { LocalDate } from '../domain/date';
 import type { Equipment } from '../domain/exercise';
 import type { MuscleId } from '../domain/muscles';
 import type { Goals, Macros, MealSlot, Per100g, UnloggedStatus } from '../domain/nutrition';
-import type { TemplateExercise } from '../domain/workout';
+import { latestPerformances, withLatestLoads, type TemplateExercise } from '../domain/workout';
 import { normalizeText } from '../domain/search';
 import { EXERCISE_SEED } from './exerciseSeed';
 
@@ -406,6 +406,45 @@ export class PrimeDB extends Dexie {
         nutritionDays: 'date',
       })
       .upgrade((tx) => seedExercises(tx.table('exercises')));
+
+    // v10: loads and reps follow the exercise: templates holding the same exercise take its latest
+    // performance (they used to keep the numbers of the last session done from each template).
+    this.version(10)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+        nutritionDays: 'date',
+      })
+      .upgrade(async (tx) => {
+        const workouts = (await tx.table<Workout, number>('workouts').toArray()).filter(
+          (w) => w.status === 'done',
+        );
+        const done = new Set(workouts.map((w) => w.id));
+        const sets = (await tx.table<WorkoutSet, number>('workoutSets').toArray()).filter((s) =>
+          done.has(s.workoutId),
+        );
+        const latest = latestPerformances(
+          workouts.map((w) => ({
+            workoutId: w.id,
+            startedAt: w.startedAt,
+            sets: sets.filter((s) => s.workoutId === w.id),
+          })),
+        );
+        const templates = tx.table<Template, number>('templates');
+        for (const template of await templates.toArray()) {
+          const exercises = withLatestLoads(template.exercises, latest);
+          if (exercises) await templates.update(template.id, { exercises });
+        }
+      });
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

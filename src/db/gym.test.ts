@@ -106,7 +106,7 @@ describe('exercise seed in the database', () => {
     db = new PrimeDB(name);
     expect(await db.exercises.count()).toBe(EXERCISE_SEED.length);
     expect((await db.goals.get('default'))?.kcal).toBe(2000);
-    expect(db.verno).toBe(9);
+    expect(db.verno).toBe(10);
   });
 });
 
@@ -334,16 +334,81 @@ describe('workout logging', () => {
     ]);
   });
 
-  it('leaves its template alone when an exercise was added', async () => {
+  it('keeps its exercises and set counts when an exercise was added, only the loads follow', async () => {
     const bench = await seededId('bench-press');
     const squat = await seededId('back-squat');
     const plan = [{ exerciseId: bench, targetSets: 1, targetReps: 8 }];
     const templateId = await createTemplate({ name: 'Push', exercises: plan }, db);
     const id = await startWorkout(templateId, db);
     await addExerciseToWorkout(id, squat, {}, db);
-    for (const s of await getWorkoutSets(id, db)) await setCompleted(s.id, true, 0, db);
+    for (const s of await getWorkoutSets(id, db)) {
+      await updateSet(s.id, { weightKg: 70 }, db);
+      await setCompleted(s.id, true, 0, db);
+    }
     await finishWorkout(id, db);
-    expect((await getTemplate(templateId, db))?.exercises).toEqual(plan);
+    expect((await getTemplate(templateId, db))?.exercises).toEqual([
+      { exerciseId: bench, targetSets: 1, targetReps: 8, sets: [{ weightKg: 70, reps: 8 }] },
+    ]);
+  });
+
+  it('gives every template holding an exercise its latest loads and reps', async () => {
+    const bench = await seededId('bench-press');
+    const squat = await seededId('back-squat');
+    const a = await createTemplate(
+      {
+        name: 'Push A',
+        exercises: [
+          {
+            exerciseId: bench,
+            targetSets: 2,
+            sets: [
+              { weightKg: 60, reps: 8 },
+              { weightKg: 60, reps: 8 },
+            ],
+          },
+        ],
+      },
+      db,
+    );
+    const b = await createTemplate(
+      {
+        name: 'Push B',
+        exercises: [
+          { exerciseId: squat, targetSets: 1, sets: [{ weightKg: 100, reps: 5 }] },
+          {
+            exerciseId: bench,
+            targetSets: 3,
+            sets: [
+              { weightKg: 50, reps: 10 },
+              { weightKg: 50, reps: 10 },
+              { weightKg: 50, reps: 10 },
+            ],
+          },
+        ],
+      },
+      db,
+    );
+    const id = await startWorkout(a, db);
+    const sets = await getWorkoutSets(id, db);
+    for (const [i, s] of sets.entries()) {
+      await updateSet(s.id, { weightKg: 65, reps: 7 - i }, db);
+      await setCompleted(s.id, true, 0, db);
+    }
+    await finishWorkout(id, db);
+    // B keeps its 3 sets and its squat; its first two bench sets take what was just done.
+    expect((await getTemplate(b, db))?.exercises).toEqual([
+      { exerciseId: squat, targetSets: 1, sets: [{ weightKg: 100, reps: 5 }] },
+      {
+        exerciseId: bench,
+        targetSets: 3,
+        targetReps: 10,
+        sets: [
+          { weightKg: 65, reps: 7 },
+          { weightKg: 65, reps: 6 },
+          { weightKg: 50, reps: 10 },
+        ],
+      },
+    ]);
   });
 
   it('removes exercises, deletes workouts and back-fills past days', async () => {
