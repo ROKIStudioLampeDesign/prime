@@ -15,13 +15,18 @@ interface ProductPickerProps {
   onCreateFood: (initialName: string) => void;
 }
 
-/** Searchable list of products (and meals when present): favorites and recents first. */
+/**
+ * Searchable list of meals and products. Meals come first (they are what is usually eaten),
+ * favorites and recents first within them; products follow, grouped the same way.
+ */
 export function ProductPicker({ data, onSelect, onCreateFood }: ProductPickerProps) {
   const [query, setQuery] = useState('');
   // Typing stays responsive with a long product list: ranking follows on a deferred value.
   const deferredQuery = useDeferredValue(query);
   const ranked = useMemo(() => rankItems(data.items, deferredQuery, data.recentKeys), [data, deferredQuery]);
   const hasMeals = data.items.some((i) => i.kind === 'meal');
+  const meals = ranked.filter((i) => i.kind === 'meal');
+  const foods = ranked.filter((i) => i.kind === 'food');
   const searching = query.trim() !== '';
 
   if (data.items.length === 0) {
@@ -47,23 +52,19 @@ export function ProductPicker({ data, onSelect, onCreateFood }: ProductPickerPro
           action={<Button onClick={() => onCreateFood(query)}>Créer le produit « {query.trim()} »</Button>}
         />
       ) : searching ? (
-        <ItemList items={ranked} onSelect={onSelect} />
+        <ItemList items={[...meals, ...foods]} onSelect={onSelect} />
       ) : (
         <>
-          <ItemList title="Favoris" items={ranked.filter((i) => i.favorite)} onSelect={onSelect} />
+          <ItemList title="Plats" items={meals} onSelect={onSelect} />
+          <ItemList title="Produits favoris" items={foods.filter((i) => i.favorite)} onSelect={onSelect} />
           <ItemList
-            title="Récents"
-            items={ranked.filter((i) => !i.favorite && i.recent)}
+            title="Produits récents"
+            items={foods.filter((i) => !i.favorite && i.recent)}
             onSelect={onSelect}
           />
           <ItemList
-            title="Plats"
-            items={ranked.filter((i) => !i.favorite && !i.recent && i.kind === 'meal')}
-            onSelect={onSelect}
-          />
-          <ItemList
-            title={hasMeals ? 'Produits' : 'Tous les produits'}
-            items={ranked.filter((i) => !i.favorite && !i.recent && i.kind === 'food')}
+            title={hasMeals ? 'Autres produits' : 'Tous les produits'}
+            items={foods.filter((i) => !i.favorite && !i.recent)}
             onSelect={onSelect}
           />
         </>
