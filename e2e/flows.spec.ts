@@ -229,3 +229,24 @@ test('a bench PR session warms up, then a new record unlocks its badge', async (
   await expect(streaks.getByText('Semaines à 5 séances')).toBeVisible();
   await expect(streaks.getByText('1 / 5 cette semaine')).toBeVisible();
 });
+
+test('drops a set that won’t be done, never a validated one', async ({ page }) => {
+  await page.goto('/gym');
+  await page.getByRole('button', { name: 'Commencer une séance' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Séance libre' }).click();
+  await page.getByRole('button', { name: 'Ajouter un exercice' }).click();
+  await page.getByPlaceholder('Rechercher un exercice').fill('bench');
+  await page.getByRole('button', { name: /^Bench/ }).click();
+  const bench = page.getByRole('region', { name: 'Bench' });
+  const sets = bench.getByRole('button', { name: /^Options de la série/ });
+  await expect(sets).toHaveCount(3);
+
+  await bench.getByRole('button', { name: 'Valider la série 1' }).click();
+  await bench.getByRole('button', { name: 'Retirer une série' }).click();
+  await expect(sets).toHaveCount(2);
+  await bench.getByRole('button', { name: 'Retirer une série' }).click();
+  await expect(sets).toHaveCount(1);
+  // Only the validated set is left: it can't be dropped this way.
+  await expect(bench.getByRole('button', { name: 'Retirer une série' })).toBeDisabled();
+  await expect(bench.getByRole('button', { name: 'Annuler la validation, série 1' })).toBeVisible();
+});

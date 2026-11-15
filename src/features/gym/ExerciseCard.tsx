@@ -17,7 +17,7 @@ import type { Exercise, Workout, WorkoutSet } from '../../db/db';
 import { addSet, moveExercise, removeExercise, removeSet, setCompleted, updateSet } from '../../db/workouts';
 import { getRecordsBefore } from '../../db/stats';
 import { RECORD_LABELS, sessionRecordHolders, type RecordKind } from '../../domain/strength';
-import { stepWeight } from '../../domain/workout';
+import { setToDrop, stepWeight } from '../../domain/workout';
 import { formatWeight } from '../../lib/format';
 import { musclesLabel } from './exerciseData';
 
@@ -56,6 +56,7 @@ export function ExerciseCard({
   const name = exercise?.name ?? 'Exercice inconnu';
   const menuSet = sets.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
+  const droppable = setToDrop(sets);
   const holders = records ? sessionRecordHolders(sets, records) : undefined;
 
   function cycleStep() {
@@ -130,13 +131,23 @@ export function ExerciseCard({
         ))}
       </ol>
 
-      <button
-        type="button"
-        className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface"
-        onClick={() => void addSet(workout.id, exerciseId)}
-      >
-        <PlusIcon className="size-4" strokeWidth={2.8} /> Ajouter une série
-      </button>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          disabled={droppable === undefined}
+          className="flex min-h-11 items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface disabled:opacity-40"
+          onClick={() => droppable && void removeSet(droppable.id)}
+        >
+          <MinusIcon className="size-4" strokeWidth={2.8} /> Retirer une série
+        </button>
+        <button
+          type="button"
+          className="flex min-h-11 items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface"
+          onClick={() => void addSet(workout.id, exerciseId)}
+        >
+          <PlusIcon className="size-4" strokeWidth={2.8} /> Ajouter une série
+        </button>
+      </div>
 
       <SetMenu set={menuSet} onClose={() => setMenuSetId(undefined)} />
       <ConfirmSheet

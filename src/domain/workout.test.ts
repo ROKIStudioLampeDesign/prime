@@ -11,6 +11,7 @@ import {
   restRemaining,
   stepWeight,
   latestPerformances,
+  setToDrop,
   templateAfterWorkout,
   withLatestLoads,
   templateFromSets,
@@ -452,5 +453,20 @@ describe('lastPerformanceSession', () => {
       sets: [{ setNumber: 1, weightKg: 50, reps: 5 }],
     });
     expect(lastPerformanceSession(history, 9)).toBeUndefined();
+  });
+});
+
+describe('setToDrop', () => {
+  const s = (setNumber: number, completed: boolean) => ({ setNumber, completed });
+
+  it('drops the last set not validated yet', () => {
+    expect(setToDrop([s(1, true), s(2, false), s(3, false), s(4, false)])).toEqual(s(4, false));
+    expect(setToDrop([s(3, true), s(1, false), s(2, false)])).toEqual(s(2, false));
+  });
+
+  it('never drops a validated set, nor the only set left', () => {
+    expect(setToDrop([s(1, true), s(2, true)])).toBeUndefined();
+    expect(setToDrop([s(1, false)])).toBeUndefined();
+    expect(setToDrop([])).toBeUndefined();
   });
 });

@@ -308,3 +308,14 @@ export function templateAfterWorkout(
     return sets.length === 0 ? t : entryFromSets(t.exerciseId, sets);
   });
 }
+
+/**
+ * The set "Retirer une série" removes: the last one not validated yet (a set already done is
+ * never dropped this way). Undefined when every set is validated, or only one set is left.
+ */
+export function setToDrop<T extends { setNumber: number; completed: boolean }>(
+  sets: readonly T[],
+): T | undefined {
+  if (sets.length <= 1) return undefined;
+  return [...sets].sort((a, b) => b.setNumber - a.setNumber).find((s) => !s.completed);
+}
