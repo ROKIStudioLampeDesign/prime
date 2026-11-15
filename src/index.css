@@ -503,6 +503,80 @@ html.accent-wave::view-transition-new(root) {
   }
 }
 
+/*
+ * Body map backdrop: rings in the accent spreading from behind the figure and fading out, over a
+ * faint halo. Two sets half a cycle apart, so one is always on its way. The rings fade to nothing
+ * before the layer's edges (the mask), so the layer can be clipped without a visible cut.
+ */
+@keyframes body-ring {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+@utility body-rings {
+  background: radial-gradient(42% 30% at 50% 42%, rgb(var(--a) / 0.22), transparent 75%);
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    width: 32.5rem;
+    height: 32.5rem;
+    margin: -16.25rem;
+    border-radius: 9999px;
+    background: repeating-radial-gradient(circle, transparent 0 2.25rem, rgb(var(--a) / 0.9) 2.25rem 2.44rem);
+    mask-image: radial-gradient(circle, #000 24%, transparent 68%);
+    filter: drop-shadow(0 0 5px rgb(var(--a) / 0.8));
+    animation: body-ring 4s linear infinite;
+  }
+  &::after {
+    animation-delay: 2s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::before {
+      animation: none;
+    }
+    &::after {
+      display: none;
+    }
+  }
+}
+
+/* A touch on the body map: a tight set of rings bursts from the finger and fades. */
+@keyframes ring-burst {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.12);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@utility ring-burst {
+  position: absolute;
+  width: 19rem;
+  height: 19rem;
+  border-radius: 9999px;
+  pointer-events: none;
+  background: repeating-radial-gradient(circle, transparent 0 1.15rem, rgb(var(--a) / 0.95) 1.15rem 1.34rem);
+  mask-image: radial-gradient(circle, #000 28%, transparent 70%);
+  filter: drop-shadow(0 0 6px rgb(var(--a) / 0.9));
+  animation: ring-burst 950ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  @media (prefers-reduced-motion: reduce) {
+    display: none;
+  }
+}
+
 /* A progress bar ends on a point of light. */
 @utility bar-tip {
   position: relative;

@@ -16,6 +16,8 @@ import { RecencyLegend } from './RecencyLegend';
 
 /** Horizontal distance (px) a swipe must cover to flip the body. */
 const SWIPE_PX = 50;
+/** How long a touch's rings stay mounted: their animation (`ring-burst`) is over by then. */
+const BURST_MS = 1000;
 
 export function BodyScreen() {
   const settings = useLiveQuery(getBodyMapSettings);
@@ -44,6 +46,9 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
   const [view, setView] = useState<BodyView>('front');
   const [selected, setSelected] = useState<MuscleId>();
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  // Rings bursting from each touch, positioned inside the map's box.
+  const [bursts, setBursts] = useState<{ id: number; x: number; y: number }[]>([]);
+  const lastBurst = useRef(0);
   const today = useToday();
 
   const exercisesById = useMemo(() => new Map(exercises.map((e) => [e.id, e])), [exercises]);
@@ -61,8 +66,13 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
     MUSCLE_IDS.map((m) => [m, colorForIntensity(recency[m].intensity)]),
   ) as Record<MuscleId, string>;
 
-  function onPointerDown(e: PointerEvent) {
+  function onPointerDown(e: PointerEvent<HTMLDivElement>) {
     swipeStart.current = { x: e.clientX, y: e.clientY };
+    const box = e.currentTarget.getBoundingClientRect();
+    lastBurst.current += 1;
+    const id = lastBurst.current;
+    setBursts((all) => [...all, { id, x: e.clientX - box.left, y: e.clientY - box.top }]);
+    window.setTimeout(() => setBursts((all) => all.filter((burst) => burst.id !== id)), BURST_MS);
   }
   function onPointerUp(e: PointerEvent) {
     const start = swipeStart.current;
@@ -99,11 +109,20 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
         </div>
       </div>
       <div
-        className="relative mt-2 min-h-64 flex-1 touch-pan-y select-none"
+        className="relative isolate mt-2 min-h-64 flex-1 touch-pan-y select-none"
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => (swipeStart.current = null)}
       >
+        {/* Behind the figure: rings in the colour of the moment, and a burst under each touch. */}
+        <div
+          className="pointer-events-none body-rings absolute inset-0 -z-10 overflow-hidden"
+          aria-hidden="true"
+        >
+          {bursts.map((burst) => (
+            <span key={burst.id} className="ring-burst" style={{ left: burst.x, top: burst.y }} />
+          ))}
+        </div>
         <BodyMap
           key={view}
           view={view}
