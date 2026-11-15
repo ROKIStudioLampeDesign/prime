@@ -140,17 +140,19 @@ export interface SessionSet {
  * Which completed sets of the current workout hold an all-time record, by set id. For each kind,
  * only the single best set of the session gets it, and only if it beats the record from before the
  * workout (`previous`): two sets that both beat last week's best don't both get a badge. On ties,
- * the set validated first keeps the record. No previous record for a kind: no badge.
+ * the set validated first keeps the record. No previous record for a kind: no badge. `kinds`
+ * narrows which records count (the workout screen only badges the volume record).
  */
 export function sessionRecordHolders(
   sets: readonly SessionSet[],
   previous: PersonalRecords,
+  kinds: readonly RecordKind[] = RECORD_KINDS,
 ): Map<number, RecordKind[]> {
   const done = sets
     .filter((s) => s.completed)
     .sort((a, b) => (a.completedAt ?? Infinity) - (b.completedAt ?? Infinity) || a.setNumber - b.setNumber);
   const holders = new Map<number, RecordKind[]>();
-  for (const kind of RECORD_KINDS) {
+  for (const kind of kinds) {
     const record = previous[kind];
     if (!record) continue;
     let best = record.value;

@@ -182,6 +182,14 @@ describe('sessionRecordHolders', () => {
     expect(split.get(2)).toEqual(['volume']);
   });
 
+  it('only badges the kinds asked for: one set at most with the volume alone', () => {
+    // Set 1 holds the heaviest load, set 2 the biggest volume: only set 2 is badged.
+    const holders = sessionRecordHolders([live(1, 80, 1, 10), live(2, 40, 30, 20)], previous, ['volume']);
+    expect([...holders]).toEqual([[2, ['volume']]]);
+    // A heavier single that moves less than the previous best volume gets nothing.
+    expect(sessionRecordHolders([live(1, 80, 1, 10)], previous, ['volume']).size).toBe(0);
+  });
+
   it('ignores unvalidated sets, sets that only tie, and kinds without a previous record', () => {
     expect(sessionRecordHolders([{ ...live(1, 200, 1), completed: false }], previous).size).toBe(0);
     expect(sessionRecordHolders([live(1, 72.5, 6, 10)], previous).size).toBe(0);

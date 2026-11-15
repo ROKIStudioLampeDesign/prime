@@ -22,6 +22,11 @@ import { formatWeight } from '../../lib/format';
 import { musclesLabel } from './exerciseData';
 
 const STEPS = [2.5, 1.25, 0.5];
+/**
+ * The PR badge only follows the volume of a set (kg × reps): one badge per exercise at most, on
+ * the set that moved the most, rather than one per kind of record on different sets.
+ */
+const BADGE_KINDS: readonly RecordKind[] = ['volume'];
 
 interface ExerciseCardProps {
   workout: Workout;
@@ -44,8 +49,8 @@ export function ExerciseCard({
   isLast,
   restSeconds,
 }: ExerciseCardProps) {
-  // Records from before this workout; only the session's best set per kind gets the badge, so
-  // it always means "best ever", including the sets already done today.
+  // Records from before this workout; only the session's biggest set (kg × reps) gets the badge,
+  // and only if it beats the best ever, including the sets already done today.
   const records = useLiveQuery(
     () => getRecordsBefore(exerciseId, workout),
     [exerciseId, workout.id, workout.startedAt],
@@ -57,7 +62,7 @@ export function ExerciseCard({
   const menuSet = sets.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
   const droppable = setToDrop(sets);
-  const holders = records ? sessionRecordHolders(sets, records) : undefined;
+  const holders = records ? sessionRecordHolders(sets, records, BADGE_KINDS) : undefined;
 
   function cycleStep() {
     const i = STEPS.indexOf(step);
