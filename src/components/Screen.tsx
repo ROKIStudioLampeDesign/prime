@@ -75,6 +75,8 @@ export function Screen({
             )}
             {/* Pushed screens share the row with a back button (and often actions): smaller, two lines. */}
             <h1
+              // The split first letter would otherwise be announced apart from the rest of the word.
+              aria-label={accentCountdown ? title : undefined}
               className={
                 back
                   ? 'line-clamp-2 text-[2rem] leading-[1.05] headline'
