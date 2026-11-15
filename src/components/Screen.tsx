@@ -80,7 +80,7 @@ export function Screen({
               className={
                 back
                   ? 'line-clamp-2 text-[2rem] leading-[1.05] headline'
-                  : 'truncate text-[2.5rem] leading-none headline'
+                  : `${accentCountdown ? 'whitespace-nowrap' : 'truncate'} text-[2.5rem] leading-none headline`
               }
             >
               {accentCountdown ? (

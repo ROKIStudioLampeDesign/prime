@@ -4,6 +4,7 @@ import {
   accentIndexForSlot,
   accentSlot,
   accentSlotProgress,
+  accentTapBoost,
   nextAccentChange,
 } from './accentRotation';
 
@@ -28,6 +29,38 @@ describe('accentSlot', () => {
     expect(accentSlotProgress(start)).toBe(0);
     expect(accentSlotProgress(start + ACCENT_SLOT_MS / 2)).toBe(0.5);
     expect(accentSlotProgress(start + ACCENT_SLOT_MS - 1)).toBeLessThan(1);
+  });
+});
+
+describe('accentTapBoost', () => {
+  const start = 1000 * ACCENT_SLOT_MS;
+  const tapsToChange = (from: number) => {
+    let now = from;
+    let taps = 0;
+    while (accentSlot(now) === accentSlot(from)) {
+      now += accentTapBoost(now);
+      taps += 1;
+    }
+    return { taps, now };
+  };
+
+  it('takes seven taps from the start of a half hour, landing exactly on the change', () => {
+    expect(tapsToChange(start)).toEqual({ taps: 7, now: start + ACCENT_SLOT_MS });
+  });
+
+  it('takes fewer taps when the half hour is already under way', () => {
+    expect(tapsToChange(start + ACCENT_SLOT_MS / 2).taps).toBe(4);
+    expect(tapsToChange(start + ACCENT_SLOT_MS - 1000).taps).toBe(1);
+  });
+
+  it('never skips past the change', () => {
+    const late = start + ACCENT_SLOT_MS - 1000;
+    expect(accentTapBoost(late)).toBe(1000);
+    expect(tapsToChange(late).now).toBe(start + ACCENT_SLOT_MS);
+  });
+
+  it('skips a full step right after a change', () => {
+    expect(accentTapBoost(start)).toBe(Math.ceil(ACCENT_SLOT_MS / 7));
   });
 });
 

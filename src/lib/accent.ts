@@ -1,4 +1,4 @@
-import { accentIndexForSlot } from '../domain/accentRotation';
+import { accentIndexForSlot, nextAccentChange } from '../domain/accentRotation';
 
 /**
  * The colours the app rotates through. A palette only overrides the raw accent variables of
@@ -252,20 +252,45 @@ export function showAccent(accent: AccentPalette, wave: boolean) {
 }
 
 /*
- * "Changer maintenant" (Réglages) moves the rotation forward until the app is reloaded: the
- * number of skips is added to the current slot.
+ * Tapping the letter or "Changer maintenant" (Réglages) skips time: the rotation runs on the real
+ * clock plus this boost. It is kept in localStorage rather than IndexedDB because it must be read
+ * before the first paint (a UI offset, not user data: it is in no backup).
  */
-let skips = 0;
+const BOOST_KEY = 'prime.accentBoostMs';
+
+function storedBoost(): number {
+  try {
+    const value = Number(localStorage.getItem(BOOST_KEY));
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  } catch {
+    // No storage (private mode, tests outside a browser): start from the real clock.
+    return 0;
+  }
+}
+
+let boostMs = storedBoost();
 const listeners = new Set<() => void>();
 
-export const accentSkips = () => skips;
+/** Milliseconds skipped so far. */
+export const accentBoost = () => boostMs;
 
-export function skipAccent() {
-  skips += 1;
+export function boostAccent(ms: number) {
+  boostMs += ms;
+  try {
+    localStorage.setItem(BOOST_KEY, String(boostMs));
+  } catch {
+    // Not saved: the skip lasts until the app is reloaded.
+  }
   for (const listener of listeners) listener();
 }
 
-export function subscribeAccentSkips(listener: () => void): () => void {
+/** Skips what is left of the current half hour. */
+export function skipAccent() {
+  const now = Date.now() + boostMs;
+  boostAccent(nextAccentChange(now) - now);
+}
+
+export function subscribeAccentBoost(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }

@@ -1,15 +1,16 @@
 import { useSyncExternalStore } from 'react';
 import { accentSlot, accentSlotProgress, nextAccentChange } from '../domain/accentRotation';
-import { accentForSlot, accentSkips, subscribeAccentSkips } from '../lib/accent';
+import { accentBoost, accentForSlot, subscribeAccentBoost } from '../lib/accent';
 import { useNow } from './useNow';
 
-/** How many times "Changer maintenant" moved the rotation forward since the app was loaded. */
-export const useAccentSkips = () => useSyncExternalStore(subscribeAccentSkips, accentSkips);
-
-/** The current and next colours, and how far the current half hour is. Refreshed every 15 s. */
+/**
+ * The current and next colours, and how far the current half hour is, on the rotation's own
+ * clock (the real one plus the time skipped by tapping the letter). Refreshed every second.
+ */
 export function useAccentSchedule() {
-  const now = useNow(15_000);
-  const slot = accentSlot(now) + useAccentSkips();
+  const boost = useSyncExternalStore(subscribeAccentBoost, accentBoost);
+  const now = useNow(1000) + boost;
+  const slot = accentSlot(now);
   return {
     current: accentForSlot(slot),
     next: accentForSlot(slot + 1),

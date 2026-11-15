@@ -14,6 +14,18 @@ export const nextAccentChange = (now: number) => (accentSlot(now) + 1) * ACCENT_
 /** How far into its half hour `now` is, from 0 to 1. */
 export const accentSlotProgress = (now: number) => (now - accentSlot(now) * ACCENT_SLOT_MS) / ACCENT_SLOT_MS;
 
+/** Taps on the countdown letter that skip a whole half hour. */
+export const ACCENT_TAPS_PER_SLOT = 7;
+
+/**
+ * How much time one tap skips at `now`: a seventh of a half hour, or what is left of the half
+ * hour when that is less, so a tap lands exactly on the change and never eats into the next
+ * colour's time. Later in the half hour, fewer taps are needed.
+ */
+export function accentTapBoost(now: number): number {
+  return Math.min(Math.ceil(ACCENT_SLOT_MS / ACCENT_TAPS_PER_SLOT), nextAccentChange(now) - now);
+}
+
 /** Small seeded generator (mulberry32): the same seed always gives the same sequence. */
 function seededRandom(seed: number): () => number {
   let state = seed >>> 0;
