@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { accentTapBoost, nextAccentChange } from '../domain/accentRotation';
-import { accentBoost, boostAccent, showAccent } from '../lib/accent';
+import { accentBoost, boostAccent, showAccent, startNextAccentWaveAt } from '../lib/accent';
 import { haptic } from '../lib/haptics';
 import { useAccentSchedule } from './useAccentSchedule';
 
@@ -27,16 +27,16 @@ export function AccentRotation() {
  */
 const BASELINE_EM = 0.84;
 const CAPITAL_EM = 0.76;
-/** How long an echo stays mounted: its two rings (`letter-echo`) are over by then. */
-const ECHO_MS = 800;
+/** How long an echo stays mounted: its four outlines (`letter-echo`) are over by then. */
+const ECHO_MS = 2000;
 
 /**
  * The first letter of the home title, filling up like water with the colour that comes next:
  * empty when the half hour starts, full when the app is about to change. The water is a second
  * copy of the letter, masked by a moving wave (`water-fill`).
  *
- * Tapping it skips a seventh of a half hour: the phone ticks, the water jumps up and two outlines
- * of the letter ripple away. The tap that fills the letter changes the colour.
+ * Tapping it skips a seventh of a half hour: the phone ticks, the water jumps up and outlines of
+ * the letter ripple away. The tap that fills the letter changes the colour, from the letter.
  */
 export function AccentLetter({ letter }: { letter: string }) {
   const { next, progress } = useAccentSchedule();
@@ -44,13 +44,18 @@ export function AccentLetter({ letter }: { letter: string }) {
   const lastEcho = useRef(0);
   const level = BASELINE_EM - progress * CAPITAL_EM;
 
-  function advance() {
+  function advance(event: MouseEvent<HTMLButtonElement>) {
     const now = Date.now() + accentBoost();
     const step = accentTapBoost(now);
     const changes = step >= nextAccentChange(now) - now;
+    if (changes) {
+      // The colour change grows from the letter instead of rising from the bottom.
+      const box = event.currentTarget.getBoundingClientRect();
+      startNextAccentWaveAt(box.left + box.width / 2, box.top + box.height / 2);
+    }
     boostAccent(step);
-    // A longer double pulse when the colour changes.
-    haptic(changes ? [30, 60, 50] : 20);
+    // Two ticks, like the first two outlines leaving the letter; a longer roll when the colour changes.
+    haptic(changes ? [30, 60, 50, 80, 30] : [15, 165, 15]);
     lastEcho.current += 1;
     const id = lastEcho.current;
     setEchoes((ids) => [...ids, id]);
@@ -74,13 +79,16 @@ export function AccentLetter({ letter }: { letter: string }) {
         aria-hidden="true"
       />
       {echoes.map((id) => (
-        <span
-          key={id}
-          className="letter-echo absolute inset-0"
-          style={{ '--echo': next.color } as CSSProperties}
-          data-letter={letter}
-          aria-hidden="true"
-        />
+        <span key={id} aria-hidden="true">
+          {[0, 360].map((delay) => (
+            <span
+              key={delay}
+              className="letter-echo absolute inset-0"
+              style={{ '--echo': next.color, '--echo-delay': `${delay}ms` } as CSSProperties}
+              data-letter={letter}
+            />
+          ))}
+        </span>
       ))}
     </button>
   );

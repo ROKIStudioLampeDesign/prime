@@ -233,22 +233,47 @@ function applyAccent(root: HTMLElement, accent: AccentPalette) {
   for (const [name, value] of Object.entries(accent.vars)) root.style.setProperty(`--${name}`, value);
 }
 
+/** Where the next colour change starts from, when a tap on the letter caused it. */
+let waveOrigin: { x: number; y: number } | undefined;
+
+/** The next `showAccent` grows from this point (viewport px) instead of rising from the bottom. */
+export function startNextAccentWaveAt(x: number, y: number) {
+  waveOrigin = { x, y };
+}
+
+let waves = 0;
+
 /**
- * Switches the app to a palette. With `wave`, the new colours come in as a diagonal wave rising
- * up the screen (a view transition styled in `index.css`); without it, or where view transitions
- * or motion are unavailable, the change is instant.
+ * Switches the app to a palette. With `wave`, the new colours come in behind a band of the new
+ * accent (a view transition styled in `index.css`): a swell rising from the bottom, or a ring
+ * growing from the letter when a tap caused the change. Without it, or where view transitions or
+ * motion are unavailable, the change is instant.
  */
 export function showAccent(accent: AccentPalette, wave: boolean) {
   const root = document.documentElement;
+  const origin = waveOrigin;
+  waveOrigin = undefined;
   const reducedMotion =
     typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (!wave || reducedMotion || typeof document.startViewTransition !== 'function') {
     applyAccent(root, accent);
     return;
   }
-  root.classList.add('accent-wave');
+  root.classList.remove('accent-wave', 'accent-wave-tap');
+  if (origin) {
+    root.style.setProperty('--wave-x', `${origin.x}px`);
+    root.style.setProperty('--wave-y', `${origin.y}px`);
+  }
+  root.classList.add(origin ? 'accent-wave-tap' : 'accent-wave');
+  waves += 1;
+  const id = waves;
   const transition = document.startViewTransition(() => applyAccent(root, accent));
-  void transition.finished.catch(() => undefined).then(() => root.classList.remove('accent-wave'));
+  void transition.finished
+    .catch(() => undefined)
+    .then(() => {
+      // A newer wave may have replaced this one: its classes are not ours to remove.
+      if (id === waves) root.classList.remove('accent-wave', 'accent-wave-tap');
+    });
 }
 
 /*
