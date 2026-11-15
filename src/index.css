@@ -16,48 +16,51 @@
 
 /*
  * Theme tokens ("Grand format": black page, full-width colour bands, square shapes, huge type).
+ * Three colours only: black #020106, white #f2efea, pink #ff2e8a (and shades of that pink). The
+ * light play (gradients, glows, sheen) is layered on top of these tokens further down.
  * Dark is the default; light applies only when the system asks for it.
  * Use the semantic utilities (bg-bg, bg-surface, text-fg, text-muted, border-line, text-accent)
  * instead of raw palette colours so both themes stay consistent.
  */
 @theme {
-  --color-bg: #000000;
-  --color-surface: #1a1a1a;
-  --color-surface-2: #262626;
-  --color-line: #333333;
-  --color-fg: #ffffff;
-  --color-muted: #b5b5b5;
+  --color-bg: #020106;
+  --color-surface: #15121a;
+  --color-surface-2: #221e28;
+  --color-line: #322d38;
+  --color-fg: #f2efea;
+  --color-muted: #b3aeb4;
   /* Interactive text (links) and focus rings. */
-  --color-accent: #f4e04d;
-  /* Primary actions: a yellow rectangle; text on it is accent-fg. */
-  --color-accent-fill: #f4e04d;
-  --color-accent-fg: #000000;
+  --color-accent: var(--a-main);
+  /* Primary actions: a pink rectangle; text on it is accent-fg. */
+  --color-accent-fill: var(--a-main);
+  --color-accent-fg: #020106;
   /* The bar under the active tab and sub-tab. */
-  --color-indicator: #f4e04d;
-  --color-danger: #ff6b5b;
+  --color-indicator: var(--a-main);
+  --color-danger: var(--d-main);
   /* Body map silhouette, behind the colored muscles; tendons and bones a shade lighter. */
-  --color-body: #2a2a2a;
-  --color-body-detail: #3a3a3a;
+  --color-body: #26222b;
+  --color-body-detail: #37323d;
 
   /*
-   * Domain bands: Alimentation yellow, Salle cobalt, poids / Corps / secondary figures paper
-   * (white). Text on yellow and paper is `ink` (secondary `ink/72`, warnings `danger-ink`,
-   * buttons `bg-ink text-on-ink`); text on cobalt is `on-gym`.
+   * Domain bands: Alimentation pink, Salle deep pink (the same pink in the shade, so the pink
+   * buttons still stand out on it), poids / Corps / secondary figures paper (white). Text on pink
+   * and paper is `ink` (secondary `ink/72`, warnings `danger-ink`, buttons `bg-ink text-on-ink`);
+   * text on deep pink is `on-gym`.
    */
-  --color-nutrition: #f4e04d;
-  --color-gym: #2340ff;
-  --color-on-gym: #ffffff;
-  --color-paper: #ffffff;
-  --color-ink: #000000;
-  --color-on-ink: #ffffff;
-  --color-danger-ink: #8a1510;
+  --color-nutrition: var(--a-main);
+  --color-gym: var(--g-main);
+  --color-on-gym: #f2efea;
+  --color-paper: #f2efea;
+  --color-ink: #020106;
+  --color-on-ink: #f2efea;
+  --color-danger-ink: #4a0010;
   /* Domain colours for strokes on the page background (chart lines, goal lines). */
-  --color-nutrition-strong: #f4e04d;
-  --color-gym-strong: #6b84ff;
-  --color-paper-strong: #ffffff;
+  --color-nutrition-strong: var(--a-main);
+  --color-gym-strong: var(--g-tint);
+  --color-paper-strong: #f2efea;
   /* "Jour rouge" (no gym, ate badly, meals not logged): same in both themes. */
-  --color-red-day: #d42a24;
-  --color-on-red-day: #ffffff;
+  --color-red-day: var(--rd);
+  --color-on-red-day: var(--on-rd);
 
   /* Barbell gauge (bench goal): official Olympic plate colours, steel bar. Same in both themes. */
   --color-plate-20: #1d4fd6;
@@ -144,30 +147,71 @@
 }
 
 :root {
-  /* Flat poster style: no drop shadows. */
   --float-shadow: none;
+
+  /*
+   * The accent, as raw values the tokens and the light play are built from: `--a` is its RGB
+   * channels (for glows at any opacity), then the colour itself, a lighter and a darker shade
+   * for gradients, the pale shade that starts gradient text, and the dark shade used for text on
+   * the white page. Salle is the same colour in the shade: `--g-main` (band), `--gl` (channels of
+   * the light falling on it), `--g-tint` / `--g-dark` (chart strokes, dark / light theme).
+   */
+  --a: 255 46 138;
+  --a-main: #ff2e8a;
+  --a-hi: #ffa3cf;
+  --a-lo: #d40f6c;
+  --a-text-hi: #ffc2de;
+  --a-dark: #c40c62;
+  --g-main: #7a1049;
+  --gl: 255 46 138;
+  --g-tint: #ff9bcb;
+  --g-dark: #7a1049;
+  /* Channels of the second ambient light source. */
+  --amb2: var(--a);
+  /*
+   * Warnings (dark / light theme) and "jours rouges". Red by default; a red or orange palette
+   * turns them yellow so they still stand out (`src/lib/accent.ts`).
+   */
+  --d-main: #ff6b5b;
+  --d-dark: #a8201a;
+  --rd: #d42a24;
+  --on-rd: #ffffff;
+
+  /* Light play: every pink fill is a gradient lit from its top-left corner, and glows. */
+  --grad-accent: linear-gradient(135deg, var(--a-hi) 0%, var(--a-main) 40%, var(--a-lo) 100%);
+  --grad-accent-text: linear-gradient(180deg, var(--a-text-hi) 0%, var(--a-main) 62%);
+  --glow: 0 0 22px rgb(var(--a) / 0.6), 0 0 70px rgb(var(--a) / 0.35);
+  --glow-soft: 0 0 16px rgb(var(--a) / 0.55);
+  --text-glow: 0 0 16px rgb(var(--a) / 0.9);
+  --lit-halo: drop-shadow(0 0 16px rgb(var(--a) / 0.65));
+  --ambient-opacity: 1;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --color-bg: #ffffff;
-    --color-surface: #ededed;
-    --color-surface-2: #e0e0e0;
-    --color-line: #dddddd;
-    --color-fg: #000000;
-    --color-muted: #5a5a5a;
-    --color-accent: #1f33d6;
-    --color-accent-fill: #f4e04d;
-    --color-accent-fg: #000000;
-    --color-indicator: #000000;
-    --color-danger: #a8201a;
-    --color-body: #d9d9d9;
-    --color-body-detail: #bdbdbd;
+    --color-bg: #f2efea;
+    --color-surface: #e6e2dc;
+    --color-surface-2: #d9d4cd;
+    --color-line: #d3cec7;
+    --color-fg: #020106;
+    --color-muted: #5b575c;
+    /* Pink text is too pale on the white page: links use its deep shade. */
+    --color-accent: var(--a-dark);
+    --color-danger: var(--d-dark);
+    --color-body: #d6d1ca;
+    --color-body-detail: #bcb6ae;
     /* A white band would vanish on the white page. */
-    --color-paper: #ededed;
-    --color-nutrition-strong: #8a7600;
-    --color-gym-strong: #2340ff;
-    --color-paper-strong: #000000;
+    --color-paper: #e2ddd6;
+    --color-nutrition-strong: var(--a-dark);
+    --color-gym-strong: var(--g-dark);
+    --color-paper-strong: #020106;
+
+    --grad-accent-text: linear-gradient(180deg, var(--a-lo) 0%, var(--a-dark) 100%);
+    --glow: 0 10px 30px rgb(var(--a) / 0.45);
+    --glow-soft: 0 4px 14px rgb(var(--a) / 0.4);
+    --text-glow: none;
+    --lit-halo: drop-shadow(0 4px 10px rgb(var(--a) / 0.35));
+    --ambient-opacity: 0.6;
   }
 }
 
@@ -183,6 +227,25 @@
     @apply bg-bg font-sans text-fg antialiased;
     overscroll-behavior-y: none;
   }
+  /* Ambient light: pink sources off-screen that wash over the page and drift slowly. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: -10%;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--ambient-opacity);
+    background:
+      radial-gradient(55% 32% at 12% 4%, rgb(var(--a) / 0.34), transparent 70%),
+      radial-gradient(45% 30% at 104% 52%, rgb(var(--amb2) / 0.2), transparent 70%),
+      radial-gradient(70% 26% at 30% 100%, rgb(var(--a) / 0.3), transparent 70%);
+    animation: ambient-drift 12s ease-in-out infinite alternate;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    body::before {
+      animation: none;
+    }
+  }
   button,
   a {
     touch-action: manipulation;
@@ -194,6 +257,175 @@
   }
   [role='dialog']:focus-visible {
     outline: none;
+  }
+}
+
+/*
+ * Colour change (`showAccent`): the page in its new colours comes in from the bottom as a
+ * diagonal wave, two thin ripples ahead of the front. The mask is three times the screen
+ * height and only its top edge is wavy; it slides up until it covers everything.
+ */
+@keyframes accent-wave {
+  from {
+    mask-position: 0 100vh;
+  }
+  to {
+    mask-position: 0 -70vh;
+  }
+}
+html.accent-wave::view-transition {
+  /* Taps still reach the page during the wave (a set can be validated mid-change). */
+  pointer-events: none;
+}
+html.accent-wave::view-transition-old(root) {
+  animation: none;
+}
+html.accent-wave::view-transition-new(root) {
+  animation: accent-wave 1400ms cubic-bezier(0.6, 0, 0.3, 1) both;
+  mix-blend-mode: normal;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'%3E%3Cpath d='M0,60 C15,45 30,65 50,48 C70,31 85,42 100,28 L100,300 L0,300 Z'/%3E%3Cpath d='M0,53 C15,38 30,58 50,41 C70,24 85,35 100,21 L100,19.4 C85,33.4 70,22.4 50,39.4 C30,56.4 15,36.4 0,51.4 Z'/%3E%3Cpath d='M0,46 C15,31 30,51 50,34 C70,17 85,28 100,14 L100,13.2 C85,27.2 70,16.2 50,33.2 C30,50.2 15,30.2 0,45.2 Z'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+  mask-size: 100% 300vh;
+}
+
+@keyframes ambient-drift {
+  to {
+    transform: translate3d(4%, -3%, 0) scale(1.08);
+  }
+}
+@keyframes sheen {
+  0%,
+  55% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/*
+ * Light on the colour fills, keyed on the semantic background utilities so every screen gets it
+ * without touching components (in `components`, so a utility on the element still wins).
+ */
+@layer components {
+  .bg-nutrition,
+  .bg-accent-fill,
+  .bg-accent,
+  .bg-indicator {
+    background-image:
+      radial-gradient(90% 120% at 0% 0%, rgb(255 255 255 / 0.28), transparent 55%), var(--grad-accent);
+  }
+  .bg-accent-fill {
+    box-shadow:
+      var(--glow-soft),
+      inset 0 1px 0 rgb(255 255 255 / 0.55);
+  }
+  .bg-accent {
+    box-shadow: var(--glow-soft);
+  }
+  .bg-indicator {
+    box-shadow: 0 0 14px 1px rgb(var(--a) / 0.9);
+  }
+  /* Deep pink, lit from the top-left corner and falling into the dark. */
+  .bg-gym {
+    background-image:
+      linear-gradient(135deg, rgb(var(--gl) / 0.55), transparent 62%),
+      radial-gradient(80% 100% at 100% 100%, rgb(2 1 6 / 0.55), transparent 65%);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.16);
+  }
+  /* White catching a pink light from its bottom-right corner. */
+  .bg-paper {
+    background-image: radial-gradient(85% 95% at 100% 100%, rgb(var(--a) / 0.42), transparent 62%);
+  }
+  /* Chart lines glow. */
+  .recharts-line-curve,
+  .recharts-area-curve {
+    filter: drop-shadow(0 0 6px rgb(var(--a) / 0.8));
+  }
+}
+
+/* A reflection crossing a colour band every few seconds. The band needs its own positioning. */
+@utility sheen {
+  overflow: hidden;
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(105deg, transparent 42%, rgb(255 255 255 / 0.4) 50%, transparent 58%);
+    transform: translateX(-100%);
+    animation: sheen 6s ease-in-out infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    &::after {
+      animation: none;
+    }
+  }
+}
+
+/* A pink band's light spilling onto what sits below it (give the band `relative z-1`). */
+@utility spill {
+  box-shadow: 0 18px 70px -14px rgb(var(--a) / 0.75);
+}
+
+/* Glow of a pink element that floats (FAB), and of the tab bar's top edge. */
+@utility glow {
+  box-shadow:
+    var(--glow),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+@utility glow-up {
+  box-shadow: 0 -24px 60px -24px rgb(var(--a) / 0.5);
+}
+@utility text-glow {
+  text-shadow: var(--text-glow);
+}
+
+/* Pink figures on the page: gradient ink with a halo. */
+@utility lit {
+  background-image: var(--grad-accent-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: var(--lit-halo);
+}
+
+/*
+ * Water rising in a letter (`AccentLetter`): the element is a copy of the letter in the next
+ * colour, visible only below `--level` (from the top of the line box). The mask is a wave one
+ * wavelength wide, repeated and sliding sideways.
+ */
+@keyframes water {
+  to {
+    mask-position: -0.6em var(--level);
+  }
+}
+@utility water-fill {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 300' preserveAspectRatio='none'%3E%3Cpath d='M0,5 Q15,0 30,5 T60,5 V300 H0 Z'/%3E%3C/svg%3E");
+  &::before {
+    content: attr(data-letter);
+  }
+  mask-repeat: repeat-x;
+  mask-size: 0.6em 3em;
+  mask-position: 0 var(--level);
+  animation: water 2.4s linear infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+/* A progress bar ends on a point of light. */
+@utility bar-tip {
+  position: relative;
+  &::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -1px;
+    bottom: -2px;
+    width: 3px;
+    background: #fff;
+    box-shadow: 0 0 10px 2px rgb(255 255 255 / 0.8);
   }
 }
 

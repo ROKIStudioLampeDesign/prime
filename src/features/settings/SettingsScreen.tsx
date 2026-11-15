@@ -6,6 +6,7 @@ import { ForwardIcon } from '../../components/icons';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
 import { SegmentedControl } from '../../components/SegmentedControl';
+import { useAccentSchedule } from '../../components/useAccentSchedule';
 import { getBodyMapSettings, saveBodyMapSettings, type BodyMapSettings } from '../../db/bodyMap';
 import { getGoals } from '../../db/goals';
 import {
@@ -17,6 +18,7 @@ import {
   WEEKLY_TARGET_OPTIONS,
 } from '../../db/gymDays';
 import type { Goals } from '../../domain/nutrition';
+import { skipAccent } from '../../lib/accent';
 import { formatClock, formatMacro } from '../../lib/format';
 import { BodyMapSettingsPanel } from './BodyMapSettingsPanel';
 import { DataSection } from './DataSection';
@@ -80,6 +82,34 @@ function WeeklyTargetSetting() {
           />
         </div>
       )}
+    </section>
+  );
+}
+
+/** The colour rotation: what is showing, what comes next and when, and a way to move on now. */
+function AccentSetting() {
+  const { current, next, msLeft } = useAccentSchedule();
+  const minutes = Math.max(1, Math.ceil(msLeft / 60_000));
+  return (
+    <section className="mt-6 border-b border-line pb-4" aria-labelledby="accent">
+      <h2 id="accent" className="text-[1.375rem] leading-tight headline">
+        Couleur
+      </h2>
+      <p className="mt-0.5 text-sm text-muted">
+        L’app change de couleur toutes les 30 minutes. Sur l’accueil, le « A » d’Aujourd’hui se remplit de la
+        couleur suivante : plein, ça change.
+      </p>
+      <p className="mt-3 flex items-center gap-2 text-[15px] font-bold">
+        <span className="size-4 shrink-0" style={{ backgroundColor: current.color }} aria-hidden="true" />
+        {current.label}
+      </p>
+      <p className="mt-1.5 flex items-center gap-2 text-[15px] font-bold text-muted">
+        <span className="size-4 shrink-0" style={{ backgroundColor: next.color }} aria-hidden="true" />
+        {next.label} dans {minutes} min
+      </p>
+      <Button variant="secondary" className="mt-3 w-full" onClick={skipAccent}>
+        Changer maintenant
+      </Button>
     </section>
   );
 }
@@ -148,6 +178,8 @@ export function SettingsScreen() {
           <RestTimerSetting />
 
           <WeeklyTargetSetting />
+
+          <AccentSetting />
 
           <BodyMapSetting />
 

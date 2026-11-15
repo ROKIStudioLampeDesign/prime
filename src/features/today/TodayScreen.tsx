@@ -11,7 +11,12 @@ export function TodayScreen() {
   const today = useToday();
 
   return (
-    <Screen title="Aujourd'hui" subtitle={format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })} fill>
+    <Screen
+      title="Aujourd'hui"
+      subtitle={format(fromLocalDate(today), 'EEEE d MMMM', { locale: fr })}
+      fill
+      accentCountdown
+    >
       <BackupReminder />
       {/* Full-width bands, no gaps, sharing the screen height: energy (largest), protein and weight,
           streaks, then gym. */}

@@ -24,9 +24,9 @@ import {
 } from '../../lib/format';
 
 /*
- * The home screen stacks full-width bands with no gaps: Alimentation yellow, then a paper row
- * shared by protéines and poids, then Salle cobalt. Text on yellow and paper is ink (secondary
- * ink/72); text on cobalt is on-gym.
+ * The home screen stacks full-width bands with no gaps: Alimentation pink, then a paper row
+ * shared by protéines and poids, then Salle deep pink. Text on pink and paper is ink (secondary
+ * ink/72); text on deep pink is on-gym.
  */
 const band = 'bleed flex flex-col justify-between gap-2 py-3.5 focus-inset @container';
 const bandLabel = 'text-sm font-extrabold';
@@ -57,7 +57,7 @@ function useDayNutrition(today: LocalDate) {
   }, [today]);
 }
 
-/** The yellow band: today's energy against the goal. */
+/** The pink band: today's energy against the goal. */
 export function NutritionCard({ today }: { today: LocalDate }) {
   const data = useDayNutrition(today);
   if (!data) return <Placeholder label="Calories" className="bleed h-48 grow-[3] bg-nutrition" />;
@@ -76,7 +76,10 @@ export function NutritionCard({ today }: { today: LocalDate }) {
   }
 
   return (
-    <Link to="/nutrition" className={`${band} grow-[3] bg-nutrition text-ink active:opacity-90`}>
+    <Link
+      to="/nutrition"
+      className={`${band} sheen relative z-1 grow-[3] bg-nutrition text-ink spill active:opacity-90`}
+    >
       <h2 className={`flex items-center justify-between ${bandLabel}`}>
         Calories du jour
         <ForwardIcon className="size-5" />
@@ -167,7 +170,7 @@ export function StreaksCard({ today }: { today: LocalDate }) {
               value={String(calories.days)}
               maxRem={2.5}
               unit={calories.days > 1 ? 'jours' : 'jour'}
-              className="leading-[0.9]"
+              className="leading-[0.9] [&>span:first-child]:lit"
             />
             {calories.today !== 'ok' && (
               <p
@@ -192,7 +195,7 @@ export function StreaksCard({ today }: { today: LocalDate }) {
             value={String(week.weeks)}
             maxRem={2.5}
             unit={week.weeks > 1 ? 'semaines' : 'semaine'}
-            className="leading-[0.9]"
+            className="leading-[0.9] [&>span:first-child]:lit"
           />
           <p className="mt-1 text-[13px] font-semibold text-muted tabular-nums">
             {Math.min(week.thisWeek, 7)} / {week.target} cette semaine
@@ -218,7 +221,7 @@ function WorkoutLine({ workout, now }: { workout: Workout; now?: number }) {
 const gymBand = `${band} grow-[2] bg-gym text-on-gym`;
 const gymButton =
   'mt-3 flex min-h-12 items-center justify-center bg-accent-fill px-4 text-base font-black text-accent-fg [font-stretch:112%] focus-inset active:opacity-80';
-/** Secondary action on the cobalt band: outlined, so the yellow button stays the main one. */
+/** Secondary action on the deep pink band: outlined, so the pink button stays the main one. */
 const gymSecondaryButton =
   'mt-3 flex min-h-12 items-center justify-center border-2 border-on-gym px-4 text-[15px] font-extrabold focus-inset active:opacity-70';
 
@@ -239,7 +242,7 @@ function ActiveWorkoutCard({ workout }: { workout: Workout }) {
   );
 }
 
-/** The cobalt band, last so its button stays within thumb reach. */
+/** The deep pink band, last so its button stays within thumb reach. */
 export function GymCard({ today }: { today: LocalDate }) {
   const workouts = useLiveQuery(listAllWorkouts);
   // `null` (not undefined) when the day has no mark, so loading stays distinguishable.

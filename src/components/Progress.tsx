@@ -69,9 +69,9 @@ export function ProgressRing({
 
 export function ProgressBar({ ratio, tone = 'accent' }: { ratio: number; tone?: ProgressTone }) {
   return (
-    <div className={`h-2 overflow-hidden ${onTile(tone) ? 'bg-ink/15' : 'bg-surface-2'}`} aria-hidden="true">
+    <div className={`h-2 ${onTile(tone) ? 'bg-ink/15' : 'bg-surface-2'}`} aria-hidden="true">
       <div
-        className={`h-full ${FILL[tone]} transition-[width] duration-500`}
+        className={`h-full ${FILL[tone]} ${ratio > 0 ? 'bar-tip' : ''} transition-[width] duration-500`}
         style={{ width: `${clamp01(ratio) * 100}%` }}
       />
     </div>

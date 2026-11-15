@@ -21,7 +21,7 @@ export function TabBar() {
     // Full-width bar on the page background; the active section gets a bar along its top edge.
     <nav
       aria-label="Navigation principale"
-      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg pb-safe"
+      className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/80 pb-safe glow-up backdrop-blur-xl"
     >
       <ul className="mx-auto grid h-tabbar max-w-lg grid-cols-5">
         {TABS.map(({ to, label, icon: TabIcon }) => (
@@ -31,7 +31,7 @@ export function TabBar() {
               end={to === '/'}
               className={({ isActive }) =>
                 `relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] font-extrabold active:bg-surface ${
-                  isActive ? 'text-fg' : 'text-muted'
+                  isActive ? 'text-fg text-glow' : 'text-muted'
                 }`
               }
             >

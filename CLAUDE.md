@@ -157,8 +157,12 @@ Rules:
   (`bg-bg`, `bg-surface`, `bg-surface-2`, `text-fg`, `text-muted`, `border-line`, `text-accent` for
   links and focus, `bg-accent-fill text-accent-fg` for primary actions, `bg-indicator` for the active
   tab, `text-danger`), never raw palette colours like `bg-zinc-900`. Each domain has a band colour:
-  Alimentation `bg-nutrition` (yellow), Salle `bg-gym` (cobalt, text `text-on-gym`), poids, Corps and
-  secondary figures `bg-paper`. Text on yellow and paper is `text-ink` (secondary `text-ink/72`,
+  Alimentation `bg-nutrition` (the accent), Salle `bg-gym` (the accent in the shade, text
+  `text-on-gym`), poids, Corps and secondary figures `bg-paper`. The accent rotates every 30 minutes
+  between the palettes of `src/lib/accent.ts` (`AccentRotation`, slot logic in
+  `src/domain/accentRotation.ts`); a palette only overrides the raw `--a*` / `--g*` variables of
+  `src/index.css`, never tokens. Colour fills get gradients and glows from the `components` layer in
+  `index.css` (plus the `sheen`, `spill`, `glow`, `lit` utilities). Text on the accent and paper is `text-ink` (secondary `text-ink/72`,
   warnings `text-danger-ink`, buttons `bg-ink text-on-ink`); strokes and chart lines use the
   `*-strong` variants. Bands run edge to edge with `bleed` (`edge` for a grid of cells that pad
   themselves). No radius except the round header buttons (`headerButton`) and the spinner; lists are

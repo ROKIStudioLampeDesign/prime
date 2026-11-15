@@ -177,7 +177,9 @@ interface SetRowProps {
 function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
   return (
-    <li className={`border-l-4 py-1 pr-0.5 ${set.completed ? 'border-gym bg-gym/18' : 'border-transparent'}`}>
+    <li
+      className={`border-l-4 py-1 pr-0.5 ${set.completed ? 'border-accent bg-linear-to-r from-accent/35 to-accent/5' : 'border-transparent'}`}
+    >
       <div className="flex items-center gap-1.5">
         <button
           type="button"
@@ -223,7 +225,7 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
           aria-pressed={set.completed}
           aria-label={set.completed ? `Annuler la validation, ${label}` : `Valider la ${label}`}
           className={`flex size-11 shrink-0 items-center justify-center ${
-            set.completed ? 'bg-gym text-on-gym' : 'border-2 border-fg active:bg-surface'
+            set.completed ? 'bg-accent-fill text-accent-fg' : 'border-2 border-fg active:bg-surface'
           }`}
         >
           <CheckIcon className="size-5" strokeWidth={3} />

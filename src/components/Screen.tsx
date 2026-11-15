@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { AccentLetter } from './AccentRotation';
 import { BackIcon, SettingsIcon } from './icons';
 import { useGoBack } from './useGoBack';
 
@@ -23,6 +24,8 @@ interface ScreenProps {
    * grows and scrolls instead of hiding anything behind the tab bar.
    */
   fit?: boolean;
+  /** The title's first letter fills up with the next colour until the app changes (Aujourd'hui). */
+  accentCountdown?: boolean;
   children: ReactNode;
 }
 
@@ -45,13 +48,17 @@ export function Screen({
   actions,
   fill = false,
   fit = false,
+  accentCountdown = false,
   children,
 }: ScreenProps) {
   const goBack = useGoBack(backFallback);
+  // By code point, so a title starting with an emoji or an accented capital is not cut in half.
+  const [first = '', ...others] = Array.from(title);
+  const rest = others.join('');
 
   const content = (
     <>
-      <header className="sticky top-0 z-10 bg-bg pt-safe px-safe">
+      <header className="sticky top-0 z-10 bg-bg/75 pt-safe px-safe backdrop-blur-xl">
         <div
           className={`mx-auto flex min-h-18 max-w-lg gap-3 py-2 ${subtitle ? 'items-end pb-3' : 'items-center'}`}
         >
@@ -74,7 +81,14 @@ export function Screen({
                   : 'truncate text-[2.5rem] leading-none headline'
               }
             >
-              {title}
+              {accentCountdown ? (
+                <>
+                  <AccentLetter letter={first} />
+                  {rest}
+                </>
+              ) : (
+                title
+              )}
             </h1>
           </div>
           {actions}

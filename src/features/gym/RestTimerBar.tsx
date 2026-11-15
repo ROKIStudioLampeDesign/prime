@@ -35,10 +35,10 @@ export function RestTimerBar({ workoutId, endsAt }: { workoutId: number; endsAt:
       role="timer"
       aria-live={done ? 'assertive' : 'off'}
       className={`fixed inset-x-0 bottom-[calc(var(--spacing-tabbar)+env(safe-area-inset-bottom))] z-20 px-safe ${
-        done ? 'bg-gym text-on-gym' : 'bg-accent-fill text-ink'
+        done ? 'bg-gym text-on-gym' : 'sheen bg-accent-fill text-ink'
       }`}
     >
-      {/* A band right above the tab bar: yellow while resting, cobalt (Salle) once it's time to lift. */}
+      {/* A band right above the tab bar: pink while resting, deep pink (Salle) once it's time to lift. */}
       <div className="mx-auto flex min-h-17 max-w-lg items-center gap-2 py-2">
         <div className="flex-1">
           <p className="text-xs font-extrabold">{done ? 'Repos terminé' : 'Repos'}</p>
