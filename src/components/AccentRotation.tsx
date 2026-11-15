@@ -27,16 +27,16 @@ export function AccentRotation() {
  */
 const BASELINE_EM = 0.84;
 const CAPITAL_EM = 0.76;
-/** How long an echo stays mounted: its four outlines (`letter-echo`) are over by then. */
-const ECHO_MS = 2000;
+/** How long a ripple stays mounted: its animation (`glass-ripple`) is over by then. */
+const ECHO_MS = 1100;
 
 /**
  * The first letter of the home title, filling up like water with the colour that comes next:
  * empty when the half hour starts, full when the app is about to change. The water is a second
  * copy of the letter, masked by a moving wave (`water-fill`).
  *
- * Tapping it skips a seventh of a half hour: the phone ticks, the water jumps up and outlines of
- * the letter ripple away. The tap that fills the letter changes the colour, from the letter.
+ * Tapping it skips a seventh of a half hour: the water jumps up and a disc of glass swells from
+ * behind the letter. The tap that fills the letter changes the colour, from the letter.
  */
 export function AccentLetter({ letter }: { letter: string }) {
   const { next, progress } = useAccentSchedule();
@@ -54,8 +54,8 @@ export function AccentLetter({ letter }: { letter: string }) {
       startNextAccentWaveAt(box.left + box.width / 2, box.top + box.height / 2);
     }
     boostAccent(step);
-    // Two ticks, like the first two outlines leaving the letter; a longer roll when the colour changes.
-    haptic(changes ? [30, 60, 50, 80, 30] : [15, 165, 15]);
+    // Android only: a tick, longer when the colour changes.
+    haptic(changes ? [30, 60, 50] : 20);
     lastEcho.current += 1;
     const id = lastEcho.current;
     setEchoes((ids) => [...ids, id]);
@@ -68,7 +68,7 @@ export function AccentLetter({ letter }: { letter: string }) {
       onClick={advance}
       aria-label="Avancer vers la prochaine couleur"
       // The pseudo-element widens the touch target to 44 px around the letter.
-      className="relative inline-block select-none after:absolute after:-inset-2"
+      className="relative isolate inline-block select-none after:absolute after:-inset-2"
     >
       {letter}
       <span
@@ -79,16 +79,12 @@ export function AccentLetter({ letter }: { letter: string }) {
         aria-hidden="true"
       />
       {echoes.map((id) => (
-        <span key={id} aria-hidden="true">
-          {[0, 360].map((delay) => (
-            <span
-              key={delay}
-              className="letter-echo absolute inset-0"
-              style={{ '--echo': next.color, '--echo-delay': `${delay}ms` } as CSSProperties}
-              data-letter={letter}
-            />
-          ))}
-        </span>
+        <span
+          key={id}
+          className="glass-ripple"
+          style={{ '--echo': next.color } as CSSProperties}
+          aria-hidden="true"
+        />
       ))}
     </button>
   );
