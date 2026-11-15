@@ -220,7 +220,7 @@ export const ACCENT_PALETTES: AccentPalette[] = [
 
 const FALLBACK: AccentPalette = { id: 'pink', label: 'Rose', color: '#ff2e8a', vars: {} };
 
-/** The palette of a half hour (see `accentSlot`). */
+/** The palette of a slot (see `accentSlot`). */
 export function accentForSlot(slot: number): AccentPalette {
   return ACCENT_PALETTES[accentIndexForSlot(slot, ACCENT_PALETTES.length)] ?? FALLBACK;
 }
@@ -309,7 +309,7 @@ export function boostAccent(ms: number) {
   for (const listener of listeners) listener();
 }
 
-/** Skips what is left of the current half hour. */
+/** Skips what is left of the current slot. */
 export function skipAccent() {
   const now = Date.now() + boostMs;
   boostAccent(nextAccentChange(now) - now);

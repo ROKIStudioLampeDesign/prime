@@ -158,7 +158,7 @@ Rules:
   links and focus, `bg-accent-fill text-accent-fg` for primary actions, `bg-indicator` for the active
   tab, `text-danger`), never raw palette colours like `bg-zinc-900`. Each domain has a band colour:
   Alimentation `bg-nutrition` (the accent), Salle `bg-gym` (the accent in the shade, text
-  `text-on-gym`), poids, Corps and secondary figures `bg-paper`. The accent rotates every 30 minutes
+  `text-on-gym`), poids, Corps and secondary figures `bg-paper`. The accent rotates every 10 minutes
   between the palettes of `src/lib/accent.ts` (`AccentRotation`, slot logic in
   `src/domain/accentRotation.ts`); a palette only overrides the raw `--a*` / `--g*` variables of
   `src/index.css`, never tokens. Colour fills get gradients and glows from the `components` layer in

@@ -5,8 +5,8 @@ import { haptic } from '../lib/haptics';
 import { useAccentSchedule } from './useAccentSchedule';
 
 /**
- * Keeps the app in the colour of the current half hour. The first colour is applied before paint;
- * later changes (the half hour ending while the app is open, coming back to the app, taps on the
+ * Keeps the app in the colour of the current slot. The first colour is applied before paint;
+ * later changes (the slot ending while the app is open, coming back to the app, taps on the
  * letter, "Changer maintenant") arrive as a wave.
  */
 export function AccentRotation() {
@@ -32,10 +32,10 @@ const ECHO_MS = 1100;
 
 /**
  * The first letter of the home title, filling up like water with the colour that comes next:
- * empty when the half hour starts, full when the app is about to change. The water is a second
+ * empty when the slot starts, full when the app is about to change. The water is a second
  * copy of the letter, masked by a moving wave (`water-fill`).
  *
- * Tapping it skips a seventh of a half hour: the water jumps up and a disc of glass swells from
+ * Tapping it skips a seventh of a slot: the water jumps up and a disc of glass swells from
  * behind the letter. The tap that fills the letter changes the colour, from the letter.
  */
 export function AccentLetter({ letter }: { letter: string }) {

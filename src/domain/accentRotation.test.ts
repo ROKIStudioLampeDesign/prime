@@ -9,7 +9,7 @@ import {
 } from './accentRotation';
 
 describe('accentSlot', () => {
-  it('changes exactly on the half hour', () => {
+  it('changes exactly on the slot', () => {
     const start = 1000 * ACCENT_SLOT_MS;
     expect(accentSlot(start - 1)).toBe(999);
     expect(accentSlot(start)).toBe(1000);
@@ -17,14 +17,14 @@ describe('accentSlot', () => {
     expect(accentSlot(start + ACCENT_SLOT_MS)).toBe(1001);
   });
 
-  it('gives the end of the current half hour', () => {
+  it('gives the end of the current slot', () => {
     const start = 1000 * ACCENT_SLOT_MS;
     expect(nextAccentChange(start)).toBe(start + ACCENT_SLOT_MS);
     expect(nextAccentChange(start + 1)).toBe(start + ACCENT_SLOT_MS);
     expect(nextAccentChange(start + ACCENT_SLOT_MS - 1)).toBe(start + ACCENT_SLOT_MS);
   });
 
-  it('measures progress within the half hour', () => {
+  it('measures progress within the slot', () => {
     const start = 1000 * ACCENT_SLOT_MS;
     expect(accentSlotProgress(start)).toBe(0);
     expect(accentSlotProgress(start + ACCENT_SLOT_MS / 2)).toBe(0.5);
@@ -44,11 +44,11 @@ describe('accentTapBoost', () => {
     return { taps, now };
   };
 
-  it('takes seven taps from the start of a half hour, landing exactly on the change', () => {
+  it('takes seven taps from the start of a slot, landing exactly on the change', () => {
     expect(tapsToChange(start)).toEqual({ taps: 7, now: start + ACCENT_SLOT_MS });
   });
 
-  it('takes fewer taps when the half hour is already under way', () => {
+  it('takes fewer taps when the slot is already under way', () => {
     expect(tapsToChange(start + ACCENT_SLOT_MS / 2).taps).toBe(4);
     expect(tapsToChange(start + ACCENT_SLOT_MS - 1000).taps).toBe(1);
   });

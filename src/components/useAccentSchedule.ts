@@ -4,7 +4,7 @@ import { accentBoost, accentForSlot, subscribeAccentBoost } from '../lib/accent'
 import { useNow } from './useNow';
 
 /**
- * The current and next colours, and how far the current half hour is, on the rotation's own
+ * The current and next colours, and how far the current slot is, on the rotation's own
  * clock (the real one plus the time skipped by tapping the letter). Refreshed every second.
  */
 export function useAccentSchedule() {

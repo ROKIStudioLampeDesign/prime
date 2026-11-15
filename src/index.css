@@ -267,7 +267,7 @@
  * in the middle of the pane and dissolving into light at its edges, with a thin bright line on
  * the leading edge. The new page follows behind.
  *
- * `accent-wave` (the half hour ending): the pane rises slowly from the bottom, its edge bulging
+ * `accent-wave` (the slot ending): the pane rises slowly from the bottom, its edge bulging
  * up a little in the middle. Each mask is 100vw x 300vh; the old page is what lies above its edge
  * plus the glass under it, the new page what lies below its own edge, 24vh lower.
  * `accent-wave-tap` (the letter was tapped): a ring of the same glass growing from the letter

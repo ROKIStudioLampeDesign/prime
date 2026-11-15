@@ -1,26 +1,26 @@
 /**
- * The app's colour changes every half hour. Which colour a half hour gets is derived from the
+ * The app's colour changes every ten minutes (a slot). Which colour a slot gets is derived from the
  * clock alone (no stored state): the app shows the same colour after a reload, and knows the
  * next one in advance.
  */
-export const ACCENT_SLOT_MS = 30 * 60_000;
+export const ACCENT_SLOT_MS = 10 * 60_000;
 
-/** Index of the half hour containing `now` (epoch ms). */
+/** Index of the slot containing `now` (epoch ms). */
 export const accentSlot = (now: number) => Math.floor(now / ACCENT_SLOT_MS);
 
-/** When the half hour containing `now` ends (epoch ms). */
+/** When the slot containing `now` ends (epoch ms). */
 export const nextAccentChange = (now: number) => (accentSlot(now) + 1) * ACCENT_SLOT_MS;
 
-/** How far into its half hour `now` is, from 0 to 1. */
+/** How far into its slot `now` is, from 0 to 1. */
 export const accentSlotProgress = (now: number) => (now - accentSlot(now) * ACCENT_SLOT_MS) / ACCENT_SLOT_MS;
 
-/** Taps on the countdown letter that skip a whole half hour. */
+/** Taps on the countdown letter that skip a whole slot. */
 export const ACCENT_TAPS_PER_SLOT = 7;
 
 /**
- * How much time one tap skips at `now`: a seventh of a half hour, or what is left of the half
+ * How much time one tap skips at `now`: a seventh of a slot, or what is left of the half
  * hour when that is less, so a tap lands exactly on the change and never eats into the next
- * colour's time. Later in the half hour, fewer taps are needed.
+ * colour's time. Later in the slot, fewer taps are needed.
  */
 export function accentTapBoost(now: number): number {
   return Math.min(Math.ceil(ACCENT_SLOT_MS / ACCENT_TAPS_PER_SLOT), nextAccentChange(now) - now);
