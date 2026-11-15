@@ -249,10 +249,41 @@ function view(name) {
       continue;
     }
     const sw = s.bb[2] < 2 || s.bb[3] < 2 ? 0.35 : 0.9;
-    body += `<path d="${s.d}" fill="${fill ?? color(s.muscle)}" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    // The two lumbar halves overlap across the spine and the right one is painted on top, which
+    // shifts the centre line to the left. Each half is cut at the body's axis instead.
+    let halfClip;
+    if (s.muscle === 'lower_back') {
+      const A = AXIS[name];
+      const axis = warpPoint(name, A, s.bb[1] + s.bb[3] / 2)[0];
+      // The shape also ends in a sharp point between the glutes: the clip rounds it off (`dir`
+      // points away from the axis; the curve runs from the axis up to the flank).
+      const ys = s.d
+        .match(/-?\d+(\.\d+)?/g)
+        .map(Number)
+        .filter((_, i) => i % 2);
+      const bottom = Math.max(...ys) - (Math.max(...ys) - Math.min(...ys)) * 0.17;
+      const dir = s.bb[0] + s.bb[2] / 2 < A ? -1 : 1;
+      const f = (v) => v.toFixed(2);
+      const far = axis + dir * 400;
+      halfClip =
+        `M${f(far)} -400H${f(axis)}V${f(bottom)}` +
+        `C${f(axis + dir * 5)} ${f(bottom)} ${f(axis + dir * 11)} ${f(bottom - 4)} ${f(axis + dir * 13)} ${f(bottom - 13)}` +
+        `H${f(far)}Z`;
+      const id = name + '-c' + k2++;
+      defs += `<clipPath id="${id}"><path d="${halfClip}"/></clipPath>`;
+      body += `<g clip-path="url(#${id})"><path d="${s.d}" fill="${color(s.muscle)}" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round"/></g>`;
+    } else {
+      body += `<path d="${s.d}" fill="${fill ?? color(s.muscle)}" stroke="${ink}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+    }
     art.parts.push(
       s.kind === 'muscle'
-        ? { k: 'muscle', m: s.muscle, d: s.d, ...(sw < 0.9 && { thin: true }) }
+        ? {
+            k: 'muscle',
+            m: s.muscle,
+            d: s.d,
+            ...(halfClip && { clip: halfClip }),
+            ...(sw < 0.9 && { thin: true }),
+          }
         : {
             k: s.kind === 'tendon' && !s.isHead ? 'tendon' : 'body',
             d: s.d,

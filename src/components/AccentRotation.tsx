@@ -49,7 +49,7 @@ export function AccentLetter({ letter }: { letter: string }) {
     const step = accentTapBoost(now);
     const changes = step >= nextAccentChange(now) - now;
     if (changes) {
-      // The colour change grows from the letter instead of rising from the bottom.
+      // The colour change grows from the letter instead of the bottom of the screen.
       const box = event.currentTarget.getBoundingClientRect();
       startNextAccentWaveAt(box.left + box.width / 2, box.top + box.height / 2);
     }

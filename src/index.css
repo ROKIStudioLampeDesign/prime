@@ -262,37 +262,16 @@
 
 /*
  * Colour change (`showAccent`), a view transition between the page in its old and new colours.
- * Both are masked, and between them slides a pane of liquid glass, like the edge of the iPhone's
- * notification shade: the old page seen through a milky light tinted with the new accent, clear
- * in the middle of the pane and dissolving into light at its edges, with a thin bright line on
- * the leading edge. The new page follows behind.
- *
- * `accent-wave` (the slot ending): the pane rises slowly from the bottom, its edge bulging
- * up a little in the middle. Each mask is 100vw x 300vh; the old page is what lies above its edge
- * plus the glass under it, the new page what lies below its own edge, 24vh lower.
- * `accent-wave-tap` (the letter was tapped): a ring of the same glass growing from the letter
- * (`--wave-x/y`).
+ * Both are masked, and between them grows a ring of liquid glass: the old page seen through a
+ * milky light tinted with the new accent, clear in the middle of the ring and dissolving into
+ * light at its edges, with a thin bright line on the leading edge. The new page follows inside.
+ * The ring grows from `--wave-x/y`: the letter when a tap caused the change, the bottom of the
+ * screen otherwise.
  */
 @property --wave-r {
   syntax: '<length>';
   inherits: false;
   initial-value: 0px;
-}
-@keyframes accent-wave-new {
-  from {
-    mask-position: 0 81vh;
-  }
-  to {
-    mask-position: 0 -54vh;
-  }
-}
-@keyframes accent-wave-old {
-  from {
-    mask-position: 0 -143vh;
-  }
-  to {
-    mask-position: 0 -278vh;
-  }
 }
 @keyframes accent-wave-radius {
   from {
@@ -302,13 +281,11 @@
     --wave-r: 125vmax;
   }
 }
-html.accent-wave::view-transition,
-html.accent-wave-tap::view-transition {
+html.accent-wave::view-transition {
   /* Taps still reach the page during the wave (a set can be validated mid-change). */
   pointer-events: none;
 }
-html.accent-wave::view-transition-image-pair(root),
-html.accent-wave-tap::view-transition-image-pair(root) {
+html.accent-wave::view-transition-image-pair(root) {
   isolation: auto;
   /* The light inside the glass: mostly white, tinted with the new accent. */
   background: linear-gradient(
@@ -319,24 +296,12 @@ html.accent-wave-tap::view-transition-image-pair(root) {
   );
 }
 html.accent-wave::view-transition-old(root),
-html.accent-wave::view-transition-new(root),
-html.accent-wave-tap::view-transition-old(root),
-html.accent-wave-tap::view-transition-new(root) {
+html.accent-wave::view-transition-new(root) {
+  animation: accent-wave-radius 4200ms cubic-bezier(0.3, 0, 0.3, 1) both;
   mix-blend-mode: normal;
   mask-repeat: no-repeat;
 }
 html.accent-wave::view-transition-old(root) {
-  animation: accent-wave-old 5200ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='b' x='0' y='-80%' width='100%' height='260%'%3E%3CfeGaussianBlur stdDeviation='0 3.2'/%3E%3C/filter%3E%3CclipPath id='c'%3E%3Cpath d='M0,250.4 L2,250.1 L4,249.8 L6,249.5 L8,249.2 L10,248.9 L12,248.6 L14,248.3 L16,248.0 L18,247.8 L20,247.5 L22,247.3 L24,247.0 L26,246.8 L28,246.6 L30,246.4 L32,246.2 L34,246.1 L36,245.9 L38,245.8 L40,245.7 L42,245.6 L44,245.5 L46,245.5 L48,245.5 L50,245.4 L52,245.5 L54,245.5 L56,245.5 L58,245.6 L60,245.7 L62,245.8 L64,245.9 L66,246.1 L68,246.2 L70,246.4 L72,246.6 L74,246.8 L76,247.0 L78,247.3 L80,247.5 L82,247.8 L84,248.0 L86,248.3 L88,248.6 L90,248.9 L92,249.2 L94,249.5 L96,249.8 L98,250.1 L100,250.4 L100,300 L0,300 Z'/%3E%3C/clipPath%3E%3C/defs%3E%3Cpath d='M0,0 L0,250.0 L2,249.7 L4,249.4 L6,249.1 L8,248.8 L10,248.5 L12,248.2 L14,247.9 L16,247.6 L18,247.3 L20,247.1 L22,246.8 L24,246.6 L26,246.4 L28,246.1 L30,246.0 L32,245.8 L34,245.6 L36,245.5 L38,245.4 L40,245.2 L42,245.2 L44,245.1 L46,245.0 L48,245.0 L50,245.0 L52,245.0 L54,245.0 L56,245.1 L58,245.2 L60,245.2 L62,245.4 L64,245.5 L66,245.6 L68,245.8 L70,246.0 L72,246.1 L74,246.4 L76,246.6 L78,246.8 L80,247.1 L82,247.3 L84,247.6 L86,247.9 L88,248.2 L90,248.5 L92,248.8 L94,249.1 L96,249.4 L98,249.7 L100,250.0 L100,0 Z'/%3E%3Cg clip-path='url(%23c)'%3E%3Cpath filter='url(%23b)' fill-opacity='0.86' d='M0,253.0 L2,252.7 L4,252.4 L6,252.1 L8,251.8 L10,251.5 L12,251.2 L14,250.9 L16,250.6 L18,250.3 L20,250.1 L22,249.8 L24,249.6 L26,249.4 L28,249.1 L30,249.0 L32,248.8 L34,248.6 L36,248.5 L38,248.4 L40,248.2 L42,248.2 L44,248.1 L46,248.0 L48,248.0 L50,248.0 L52,248.0 L54,248.0 L56,248.1 L58,248.2 L60,248.2 L62,248.4 L64,248.5 L66,248.6 L68,248.8 L70,249.0 L72,249.1 L74,249.4 L76,249.6 L78,249.8 L80,250.1 L82,250.3 L84,250.6 L86,250.9 L88,251.2 L90,251.5 L92,251.8 L94,252.1 L96,252.4 L98,252.7 L100,253.0 L100,265.0 L98,264.7 L96,264.4 L94,264.1 L92,263.8 L90,263.5 L88,263.2 L86,262.9 L84,262.6 L82,262.3 L80,262.1 L78,261.8 L76,261.6 L74,261.4 L72,261.1 L70,261.0 L68,260.8 L66,260.6 L64,260.5 L62,260.4 L60,260.2 L58,260.2 L56,260.1 L54,260.0 L52,260.0 L50,260.0 L48,260.0 L46,260.0 L44,260.1 L42,260.2 L40,260.2 L38,260.4 L36,260.5 L34,260.6 L32,260.8 L30,261.0 L28,261.1 L26,261.4 L24,261.6 L22,261.8 L20,262.1 L18,262.3 L16,262.6 L14,262.9 L12,263.2 L10,263.5 L8,263.8 L6,264.1 L4,264.4 L2,264.7 L0,265.0 Z'/%3E%3C/g%3E%3C/svg%3E");
-  mask-size: 100vw 300vh;
-}
-html.accent-wave::view-transition-new(root) {
-  animation: accent-wave-new 5200ms cubic-bezier(0.4, 0, 0.2, 1) both;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 300' preserveAspectRatio='none'%3E%3Cpath d='M0,300 L0,50.0 L2,49.7 L4,49.4 L6,49.1 L8,48.8 L10,48.5 L12,48.2 L14,47.9 L16,47.6 L18,47.3 L20,47.1 L22,46.8 L24,46.6 L26,46.4 L28,46.1 L30,46.0 L32,45.8 L34,45.6 L36,45.5 L38,45.4 L40,45.2 L42,45.2 L44,45.1 L46,45.0 L48,45.0 L50,45.0 L52,45.0 L54,45.0 L56,45.1 L58,45.2 L60,45.2 L62,45.4 L64,45.5 L66,45.6 L68,45.8 L70,46.0 L72,46.1 L74,46.4 L76,46.6 L78,46.8 L80,47.1 L82,47.3 L84,47.6 L86,47.9 L88,48.2 L90,48.5 L92,48.8 L94,49.1 L96,49.4 L98,49.7 L100,50.0 L100,300 Z'/%3E%3C/svg%3E");
-  mask-size: 100vw 300vh;
-}
-html.accent-wave-tap::view-transition-old(root) {
-  animation: accent-wave-radius 4200ms cubic-bezier(0.3, 0, 0.3, 1) both;
   /* From the new page outwards: light, glass clearing then dissolving again, bright line, old page. */
   mask-image: radial-gradient(
     circle at var(--wave-x) var(--wave-y),
@@ -350,8 +315,7 @@ html.accent-wave-tap::view-transition-old(root) {
     #000 calc(var(--wave-r) + 20vmax + 1px)
   );
 }
-html.accent-wave-tap::view-transition-new(root) {
-  animation: accent-wave-radius 4200ms cubic-bezier(0.3, 0, 0.3, 1) both;
+html.accent-wave::view-transition-new(root) {
   mask-image: radial-gradient(
     circle at var(--wave-x) var(--wave-y),
     #000 var(--wave-r),

@@ -38,9 +38,23 @@ describe('body art', () => {
   it('splits each deltoid into its heads with clip paths, separated by seams', () => {
     const heads = (view: BodyView) => BODY_ART[view].parts.filter((p) => p.clip).map((p) => p.m);
     expect(new Set(heads('front'))).toEqual(new Set(['chest', 'shoulders_front', 'shoulders_side']));
-    expect(new Set(heads('back'))).toEqual(new Set(['shoulders_rear', 'shoulders_side']));
+    // The two lumbar halves are clipped too (see the next test).
+    expect(new Set(heads('back'))).toEqual(new Set(['shoulders_rear', 'shoulders_side', 'lower_back']));
     expect(BODY_ART.front.seams.length).toBeGreaterThan(0);
     expect(BODY_ART.back.seams.length).toBeGreaterThan(0);
+  });
+
+  it('cuts the two lumbar halves at the same axis, as mirror images', () => {
+    const clips = BODY_ART.back.parts.filter((p) => p.m === 'lower_back').map((p) => p.clip ?? '');
+    expect(clips).toHaveLength(2);
+    const numbers = clips.map((clip) => (clip.match(/-?\d+(\.\d+)?/g) ?? []).map(Number));
+    const [left = [], right = []] = numbers;
+    // M far -400 H axis V bottom ...: both halves share the axis and the height of the cut.
+    const axis = left[2] ?? NaN;
+    expect(right[2]).toBe(axis);
+    expect(right[3]).toBe(left[3]);
+    // The far sides are mirrored around the axis.
+    expect((left[0] ?? NaN) + (right[0] ?? NaN)).toBeCloseTo(2 * axis, 5);
   });
 
   it('measures shape areas for hit ranking', () => {
