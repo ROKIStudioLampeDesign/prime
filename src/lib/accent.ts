@@ -59,7 +59,64 @@ function palette(id: string, label: string, color: string, shades: Shades): Acce
   };
 }
 
-export const ACCENT_PALETTES: AccentPalette[] = [
+/** The Salle band of a two-colour palette: a second colour instead of the accent in the shade. */
+interface Band {
+  band: string;
+  /** RGB channels of the band's light, also the second ambient light of the page. */
+  light: string;
+  tint: string;
+}
+
+const VIOLET_BAND: Band = { band: '#3d1a8a', light: '165 107 255', tint: '#cdb0ff' };
+const NIGHT_BAND: Band = { band: '#1b2a8f', light: '70 100 255', tint: '#8fa2ff' };
+const BLUE_BAND: Band = { band: '#12327d', light: '77 141 255', tint: '#a8c6ff' };
+const PINK_BAND: Band = { band: '#7a1049', light: '255 46 138', tint: '#ff9bcb' };
+
+function bandVars({ band, light, tint }: Band): Record<string, string> {
+  return { 'g-main': band, gl: light, 'g-tint': tint, 'g-dark': band, amb2: light };
+}
+
+function channels(hex: string): number[] {
+  return [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+}
+
+/** `hex` moved towards `other` by `share` (0 to 1). */
+function mix(hex: string, other: string, share: number): string {
+  const to = channels(other);
+  const mixed = channels(hex).map((c, i) => Math.round(c + ((to[i] ?? c) - c) * share));
+  return '#' + mixed.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * A two-colour palette from three colours: the bright accent, the deep Salle band and that
+ * band's light. Every other shade is derived.
+ */
+function harmony(
+  id: string,
+  label: string,
+  color: string,
+  band: string,
+  light: string,
+  warm = false,
+): AccentPalette {
+  return {
+    id,
+    label,
+    color,
+    vars: {
+      a: channels(color).join(' '),
+      'a-main': color,
+      'a-hi': mix(color, '#ffffff', 0.55),
+      'a-lo': mix(color, '#000000', 0.18),
+      'a-text-hi': mix(color, '#ffffff', 0.72),
+      'a-dark': mix(color, '#000000', 0.5),
+      ...bandVars({ band, light: channels(light).join(' '), tint: mix(light, '#ffffff', 0.45) }),
+      ...(warm ? YELLOW_SIGNALS : {}),
+    },
+  };
+}
+
+const SINGLE_PALETTES: AccentPalette[] = [
   // The stylesheet's defaults.
   { id: 'pink', label: 'Rose', color: '#ff2e8a', vars: {} },
   palette('lime', 'Lime acide', '#c6ff3d', {
@@ -216,6 +273,43 @@ export const ACCENT_PALETTES: AccentPalette[] = [
     tint: '#ff8a94',
     warm: true,
   }),
+];
+
+/** A single-colour palette with another colour on the Salle band. */
+function duo(id: string, label: string, accentId: string, band: Band): AccentPalette[] {
+  const accent = SINGLE_PALETTES.find((p) => p.id === accentId);
+  return accent ? [{ id, label, color: accent.color, vars: { ...accent.vars, ...bandVars(band) } }] : [];
+}
+
+export const ACCENT_PALETTES: AccentPalette[] = [
+  ...SINGLE_PALETTES,
+  {
+    id: 'yellow-blue',
+    label: 'Jaune et bleu',
+    color: '#f4e04d',
+    vars: {
+      a: '244 224 77',
+      'a-main': '#f4e04d',
+      'a-hi': '#fbf3b0',
+      'a-lo': '#d9bf1a',
+      'a-text-hi': '#fdf8cf',
+      'a-dark': '#1f33d6',
+      ...bandVars({ band: '#2340ff', light: '70 100 255', tint: '#6b84ff' }),
+      amb2: '35 64 255',
+    },
+  },
+  ...duo('cyan-violet', 'Cyan et violet', 'cyan', VIOLET_BAND),
+  ...duo('orange-violet', 'Orange et violet', 'orange', VIOLET_BAND),
+  ...duo('lime-night', 'Lime et bleu nuit', 'lime', NIGHT_BAND),
+  ...duo('mint-night', 'Menthe et bleu nuit', 'mint', NIGHT_BAND),
+  ...duo('lemon-pink', 'Citron et rose', 'lemon', PINK_BAND),
+  ...duo('fuchsia-blue', 'Fuchsia et bleu', 'fuchsia', BLUE_BAND),
+  harmony('coral-teal', 'Corail et sarcelle', '#ff6b6b', '#0f5e58', '#4ecdc4', true),
+  harmony('lime-mint', 'Lime et menthe', '#d4ff3f', '#0f5a45', '#94ffd8'),
+  harmony('yellow-violet', 'Jaune et violet', '#ffd400', '#4a1fb8', '#8f6bff'),
+  harmony('glacier-royal', 'Glacier et bleu roi', '#5ce1ff', '#0b3a8f', '#4d8dff'),
+  harmony('sun-petrol', 'Soleil et bleu pétrole', '#ffd23f', '#0b5563', '#2bb5c9'),
+  harmony('turquoise-plum', 'Turquoise et prune', '#19e3c4', '#5a1466', '#c64fe0'),
 ];
 
 const FALLBACK: AccentPalette = { id: 'pink', label: 'Rose', color: '#ff2e8a', vars: {} };
