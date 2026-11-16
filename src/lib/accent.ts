@@ -180,38 +180,6 @@ const SINGLE_PALETTES: AccentPalette[] = [
     bandLight: '0 150 100',
     tint: '#9effd9',
   }),
-  palette('blue', 'Bleu électrique', '#4d8dff', {
-    channels: '77 141 255',
-    light: '#b8d2ff',
-    dark: '#2f6ff0',
-    pale: '#d6e5ff',
-    text: '#1a4fc4',
-    band: '#12327d',
-    bandLight: '77 141 255',
-    tint: '#a8c6ff',
-  }),
-  palette('red', 'Rouge braise', '#ff3b30', {
-    channels: '255 59 48',
-    light: '#ffa8a3',
-    dark: '#d91a10',
-    pale: '#ffd0cc',
-    text: '#b3140c',
-    band: '#6e0f0a',
-    bandLight: '255 59 48',
-    tint: '#ff9d97',
-    warm: true,
-  }),
-  palette('coral', 'Corail', '#ff7a6b', {
-    channels: '255 122 107',
-    light: '#ffc4bc',
-    dark: '#e8523f',
-    pale: '#ffe0db',
-    text: '#b83a29',
-    band: '#70261c',
-    bandLight: '220 90 75',
-    tint: '#ffb8ae',
-    warm: true,
-  }),
   palette('turquoise', 'Turquoise', '#00d9c0', {
     channels: '0 217 192',
     light: '#a3f5ea',
@@ -252,27 +220,6 @@ const SINGLE_PALETTES: AccentPalette[] = [
     bandLight: '20 150 40',
     tint: '#9effab',
   }),
-  palette('silver', 'Argent', '#cfd6e0', {
-    channels: '207 214 224',
-    light: '#ffffff',
-    dark: '#98a3b3',
-    pale: '#ffffff',
-    text: '#4a5565',
-    band: '#2c3440',
-    bandLight: '120 135 155',
-    tint: '#e3e8ef',
-  }),
-  palette('blood', 'Rouge sang', '#d91a2a', {
-    channels: '217 26 42',
-    light: '#ff8a94',
-    dark: '#b80d1c',
-    pale: '#ffbcc2',
-    text: '#9e0a17',
-    band: '#4d060c',
-    bandLight: '217 26 42',
-    tint: '#ff8a94',
-    warm: true,
-  }),
 ];
 
 /** A single-colour palette with another colour on the Salle band. */
@@ -282,7 +229,8 @@ function duo(id: string, label: string, accentId: string, band: Band): AccentPal
 }
 
 export const ACCENT_PALETTES: AccentPalette[] = [
-  ...SINGLE_PALETTES,
+  // Citron is only the bright half of a duo, not a colour of its own in the rotation.
+  ...SINGLE_PALETTES.filter((p) => p.id !== 'lemon'),
   {
     id: 'yellow-blue',
     label: 'Jaune et bleu',
