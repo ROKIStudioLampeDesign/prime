@@ -109,6 +109,14 @@ export const router = createBrowserRouter([
         path: 'settings/goals',
         lazy: lazyScreen(() => import('../features/nutrition/GoalsScreen'), 'GoalsScreen'),
       },
+      {
+        path: 'settings/partners',
+        lazy: lazyScreen(() => import('../features/settings/PartnersScreen'), 'PartnersScreen'),
+      },
+      {
+        path: 'settings/partners/:id',
+        lazy: lazyScreen(() => import('../features/settings/PartnerScreen'), 'PartnerScreen'),
+      },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
   },

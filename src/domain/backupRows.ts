@@ -153,6 +153,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     notes: optional(text),
     templateId: optional(id),
     restEndsAt: optional(timestamp),
+    partnerId: optional(id),
   }),
   workoutSets: shape({
     id,
@@ -188,6 +189,19 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
   }),
   bodyWeights: shape({ id, date: localDate, kg: nonNegative, ...timestamps }),
   nutritionDays: shape({ date: localDate, status: oneOf(['under', 'over']), updatedAt: timestamp }),
+  partners: shape({ id, name: text, createdAt: timestamp }),
+  partnerSets: shape({
+    id,
+    workoutId: id,
+    partnerId: id,
+    exerciseId: id,
+    setNumber: id,
+    weightKg: nonNegative,
+    reps: (v) => Number.isInteger(v) && (v as number) >= 0,
+    completed: bool,
+    rpe: optional(finite),
+    completedAt: optional(timestamp),
+  }),
 };
 
 export type RowValidation = { ok: true } | { ok: false; table: string; index: number };

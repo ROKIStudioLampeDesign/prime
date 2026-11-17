@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  prefillPartnerSets,
   defaultSetCount,
   lastPerformance,
   lastPerformanceSession,
@@ -468,5 +469,44 @@ describe('setToDrop', () => {
     expect(setToDrop([s(1, true), s(2, true)])).toBeUndefined();
     expect(setToDrop([s(1, false)])).toBeUndefined();
     expect(setToDrop([])).toBeUndefined();
+  });
+});
+
+describe('prefillPartnerSets', () => {
+  const mine = [
+    { weightKg: 80, reps: 8 },
+    { weightKg: 80, reps: 7 },
+    { weightKg: 75, reps: 6 },
+  ];
+
+  it('copies the teammate’s last performance, as many sets as yours', () => {
+    const previous = [
+      { setNumber: 1, weightKg: 60, reps: 10 },
+      { setNumber: 2, weightKg: 62.5, reps: 8 },
+    ];
+    expect(prefillPartnerSets(previous, mine)).toEqual([
+      { setNumber: 1, weightKg: 60, reps: 10 },
+      { setNumber: 2, weightKg: 62.5, reps: 8 },
+      { setNumber: 3, weightKg: 62.5, reps: 8 },
+    ]);
+  });
+
+  it('starts from your values when the teammate never did the exercise', () => {
+    expect(prefillPartnerSets(undefined, mine)).toEqual([
+      { setNumber: 1, weightKg: 80, reps: 8 },
+      { setNumber: 2, weightKg: 80, reps: 7 },
+      { setNumber: 3, weightKg: 75, reps: 6 },
+    ]);
+  });
+
+  it('without sets of yours, takes their last count, else three empty sets', () => {
+    expect(prefillPartnerSets([{ setNumber: 1, weightKg: 40, reps: 12 }], [])).toEqual([
+      { setNumber: 1, weightKg: 40, reps: 12 },
+    ]);
+    expect(prefillPartnerSets(undefined, [])).toEqual([
+      { setNumber: 1, weightKg: 0, reps: 0 },
+      { setNumber: 2, weightKg: 0, reps: 0 },
+      { setNumber: 3, weightKg: 0, reps: 0 },
+    ]);
   });
 });

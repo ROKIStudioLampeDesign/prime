@@ -13,7 +13,14 @@ import {
 } from '../../components/icons';
 import { NumericInput } from '../../components/NumericInput';
 import { iconButton } from '../../components/Screen';
-import type { Exercise, Workout, WorkoutSet } from '../../db/db';
+import type { Exercise, Partner, PartnerSet, Workout, WorkoutSet } from '../../db/db';
+import {
+  addPartnerSet,
+  getPartnerRecordsBefore,
+  removePartnerSet,
+  setPartnerSetCompleted,
+  updatePartnerSet,
+} from '../../db/partners';
 import { addSet, moveExercise, removeExercise, removeSet, setCompleted, updateSet } from '../../db/workouts';
 import { getRecordsBefore } from '../../db/stats';
 import { RECORD_LABELS, sessionRecordHolders, type RecordKind } from '../../domain/strength';
@@ -38,7 +45,28 @@ interface ExerciseCardProps {
   isLast: boolean;
   /** Rest started when a set is completed (0 = no timer, e.g. editing a past workout). */
   restSeconds: number;
+  /** The teammate of the workout and their sets of this exercise, if you train with someone. */
+  partner?: { partner: Partner; sets: PartnerSet[] };
 }
+
+/** A set as the rows draw it: yours or your teammate's. */
+type AnySet = WorkoutSet | PartnerSet;
+type SetChanges = Partial<Pick<WorkoutSet, 'weightKg' | 'reps' | 'rpe'>>;
+
+/** What the rows do to a set, for you or for your teammate (their sets live in another table). */
+interface SetActions {
+  update: (id: number, changes: SetChanges) => void;
+  remove: (id: number) => void;
+}
+
+const MY_ACTIONS: SetActions = {
+  update: (id, changes) => void updateSet(id, changes),
+  remove: (id) => void removeSet(id),
+};
+const PARTNER_ACTIONS: SetActions = {
+  update: (id, changes) => void updatePartnerSet(id, changes),
+  remove: (id) => void removePartnerSet(id),
+};
 
 export function ExerciseCard({
   workout,
@@ -48,6 +76,7 @@ export function ExerciseCard({
   isFirst,
   isLast,
   restSeconds,
+  partner,
 }: ExerciseCardProps) {
   // Records from before this workout; only the session's biggest set (kg × reps) gets the badge,
   // and only if it beats the best ever, including the sets already done today.
@@ -55,14 +84,30 @@ export function ExerciseCard({
     () => getRecordsBefore(exerciseId, workout),
     [exerciseId, workout.id, workout.startedAt],
   );
+  const partnerId = partner?.partner.id;
+  const partnerRecords = useLiveQuery(
+    async () => (partnerId === undefined ? null : getPartnerRecordsBefore(partnerId, exerciseId, workout)),
+    [partnerId, exerciseId, workout.id, workout.startedAt],
+  );
   const [step, setStep] = useState(STEPS[0] ?? 2.5);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [menuSetId, setMenuSetId] = useState<number>();
+  // Whose sets the rows show: yours, or your teammate's (tabs above the rows).
+  const [forPartner, setForPartner] = useState(false);
+  const mate = forPartner && partner !== undefined;
+  const shown: AnySet[] = mate ? partner.sets : sets;
+  const actions = mate ? PARTNER_ACTIONS : MY_ACTIONS;
   const name = exercise?.name ?? 'Exercice inconnu';
-  const menuSet = sets.find((s) => s.id === menuSetId);
+  const menuSet = shown.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
-  const droppable = setToDrop(sets);
-  const holders = records ? sessionRecordHolders(sets, records, BADGE_KINDS) : undefined;
+  const droppable = setToDrop(shown);
+  const shownRecords = mate ? partnerRecords : records;
+  const holders = shownRecords ? sessionRecordHolders(shown, shownRecords, BADGE_KINDS) : undefined;
+
+  function toggle(set: AnySet) {
+    if (mate) void setPartnerSetCompleted(set.id, !set.completed, restSeconds);
+    else void setCompleted(set.id, !set.completed, restSeconds);
+  }
 
   function cycleStep() {
     const i = STEPS.indexOf(step);
@@ -110,6 +155,19 @@ export function ExerciseCard({
         </button>
       </div>
 
+      {partner && (
+        <PersonTabs
+          partnerName={partner.partner.name}
+          mine={sets}
+          theirs={partner.sets}
+          forPartner={mate}
+          onChange={(value) => {
+            setMenuSetId(undefined);
+            setForPartner(value);
+          }}
+        />
+      )}
+
       <div className="mt-3 flex items-center gap-1.5 pl-1 text-xs font-extrabold text-muted">
         <span className="w-11 text-center">Série</span>
         <button
@@ -124,37 +182,42 @@ export function ExerciseCard({
       </div>
 
       <ol className="mt-1 flex flex-col gap-1">
-        {sets.map((set) => (
+        {shown.map((set) => (
           <SetRow
             key={set.id}
             set={set}
             step={step}
+            mate={mate}
             records={holders?.get(set.id) ?? []}
-            onToggle={() => void setCompleted(set.id, !set.completed, restSeconds)}
+            onUpdate={(changes) => actions.update(set.id, changes)}
+            onToggle={() => toggle(set)}
             onMenu={() => setMenuSetId(set.id)}
           />
         ))}
       </ol>
+      {partner && (
+        <OtherSummary name={mate ? 'Toi' : partner.partner.name} sets={mate ? sets : partner.sets} />
+      )}
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <button
           type="button"
           disabled={droppable === undefined}
           className="flex min-h-11 items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface disabled:opacity-40"
-          onClick={() => droppable && void removeSet(droppable.id)}
+          onClick={() => droppable && actions.remove(droppable.id)}
         >
           <MinusIcon className="size-4" strokeWidth={2.8} /> Retirer une série
         </button>
         <button
           type="button"
           className="flex min-h-11 items-center justify-center gap-2 border-2 border-line text-[15px] font-extrabold active:bg-surface"
-          onClick={() => void addSet(workout.id, exerciseId)}
+          onClick={() => void (mate ? addPartnerSet(workout.id, exerciseId) : addSet(workout.id, exerciseId))}
         >
           <PlusIcon className="size-4" strokeWidth={2.8} /> Ajouter une série
         </button>
       </div>
 
-      <SetMenu set={menuSet} onClose={() => setMenuSetId(undefined)} />
+      <SetMenu set={menuSet} actions={actions} onClose={() => setMenuSetId(undefined)} />
       <ConfirmSheet
         open={confirmRemove}
         title={`Retirer « ${name} » ?`}
@@ -171,20 +234,25 @@ export function ExerciseCard({
 }
 
 interface SetRowProps {
-  set: WorkoutSet;
+  set: AnySet;
   step: number;
+  /** A teammate's set: drawn in paper instead of the accent. */
+  mate: boolean;
   /** All-time records this completed set holds (empty: no badge). */
   records: RecordKind[];
+  onUpdate: (changes: SetChanges) => void;
   onToggle: () => void;
   onMenu: () => void;
 }
 
-function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
+function SetRow({ set, step, mate, records, onUpdate, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
+  const done = mate
+    ? 'border-paper bg-linear-to-r from-paper/25 to-paper/5'
+    : 'border-accent bg-linear-to-r from-accent/35 to-accent/5';
+  const fill = mate ? 'bg-paper text-ink' : 'bg-accent-fill text-accent-fg';
   return (
-    <li
-      className={`border-l-4 py-1 pr-0.5 ${set.completed ? 'border-accent bg-linear-to-r from-accent/35 to-accent/5' : 'border-transparent'}`}
-    >
+    <li className={`border-l-4 py-1 pr-0.5 ${set.completed ? done : 'border-transparent'}`}>
       <div className="flex items-center gap-1.5">
         <button
           type="button"
@@ -197,7 +265,7 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
         <div className="flex w-[140px] shrink-0 items-center">
           <StepButton
             label={`Retirer ${formatWeight(step)} kg, ${label}`}
-            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, -step) })}
+            onClick={() => onUpdate({ weightKg: stepWeight(set.weightKg, -step) })}
           >
             <MinusIcon className="size-4" />
           </StepButton>
@@ -206,12 +274,12 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
             aria-label={`Poids en kg, ${label}`}
             placeholder="PDC"
             value={set.weightKg}
-            onCommit={(weightKg) => void updateSet(set.id, { weightKg })}
+            onCommit={(weightKg) => onUpdate({ weightKg })}
             className="h-11 w-full min-w-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
           />
           <StepButton
             label={`Ajouter ${formatWeight(step)} kg, ${label}`}
-            onClick={() => void updateSet(set.id, { weightKg: stepWeight(set.weightKg, step) })}
+            onClick={() => onUpdate({ weightKg: stepWeight(set.weightKg, step) })}
           >
             <PlusIcon className="size-4" />
           </StepButton>
@@ -220,7 +288,7 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
           integer
           aria-label={`Répétitions, ${label}`}
           value={set.reps}
-          onCommit={(reps) => void updateSet(set.id, { reps })}
+          onCommit={(reps) => onUpdate({ reps })}
           className="h-11 w-14 shrink-0 bg-surface text-center text-lg font-black tabular-nums outline-none focus:ring-2 focus:ring-accent focus:ring-inset"
         />
         <div className="flex-1" />
@@ -230,7 +298,7 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
           aria-pressed={set.completed}
           aria-label={set.completed ? `Annuler la validation, ${label}` : `Valider la ${label}`}
           className={`flex size-11 shrink-0 items-center justify-center ${
-            set.completed ? 'bg-accent-fill text-accent-fg' : 'border-2 border-fg active:bg-surface'
+            set.completed ? fill : 'border-2 border-fg active:bg-surface'
           }`}
         >
           <CheckIcon className="size-5" strokeWidth={3} />
@@ -240,7 +308,7 @@ function SetRow({ set, step, records, onToggle, onMenu }: SetRowProps) {
         <p className="flex flex-wrap items-center gap-x-1.5 pl-[50px] text-xs font-semibold text-muted tabular-nums">
           {records.length > 0 && (
             <span
-              className="bg-accent-fill px-1.5 py-px text-[11px] font-black text-accent-fg"
+              className={`${fill} px-1.5 py-px text-[11px] font-black`}
               title={records.map((k) => RECORD_LABELS[k]).join(', ')}
               aria-label={`Record all-time : ${records.map((k) => RECORD_LABELS[k]).join(', ')}`}
             >
@@ -278,7 +346,15 @@ function StepButton({
 const RPE_VALUES = [6, 7, 8, 9, 10];
 
 /** Per-set options: RPE and deletion. */
-function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () => void }) {
+function SetMenu({
+  set,
+  actions,
+  onClose,
+}: {
+  set: AnySet | undefined;
+  actions: SetActions;
+  onClose: () => void;
+}) {
   return (
     <BottomSheet open={set !== undefined} onClose={onClose} title={set ? `Série ${set.setNumber}` : ''}>
       {set && (
@@ -290,7 +366,7 @@ function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () =>
                 key={rpe}
                 variant={set.rpe === rpe ? 'primary' : 'secondary'}
                 className="min-h-11 px-0"
-                onClick={() => void updateSet(set.id, { rpe: set.rpe === rpe ? undefined : rpe })}
+                onClick={() => actions.update(set.id, { rpe: set.rpe === rpe ? undefined : rpe })}
               >
                 {rpe}
               </Button>
@@ -299,7 +375,7 @@ function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () =>
               variant="secondary"
               className="min-h-11 px-0 text-xs"
               disabled={set.rpe === undefined}
-              onClick={() => void updateSet(set.id, { rpe: undefined })}
+              onClick={() => actions.update(set.id, { rpe: undefined })}
             >
               Aucun
             </Button>
@@ -309,7 +385,7 @@ function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () =>
             className="mt-5 w-full"
             onClick={() => {
               onClose();
-              void removeSet(set.id);
+              actions.remove(set.id);
             }}
           >
             Supprimer la série
@@ -317,5 +393,64 @@ function SetMenu({ set, onClose }: { set: WorkoutSet | undefined; onClose: () =>
         </>
       )}
     </BottomSheet>
+  );
+}
+
+/** Toi / teammate switch: whose sets the rows show, with how many each has validated. */
+function PersonTabs({
+  partnerName,
+  mine,
+  theirs,
+  forPartner,
+  onChange,
+}: {
+  partnerName: string;
+  mine: readonly AnySet[];
+  theirs: readonly AnySet[];
+  forPartner: boolean;
+  onChange: (forPartner: boolean) => void;
+}) {
+  const tab = (label: string, sets: readonly AnySet[], value: boolean, fill: string) => {
+    const selected = forPartner === value;
+    return (
+      <button
+        type="button"
+        role="tab"
+        aria-selected={selected}
+        onClick={() => onChange(value)}
+        className={`flex min-h-11 min-w-0 items-center justify-center gap-2 px-2 text-[15px] font-black ${
+          selected ? fill : 'active:bg-surface'
+        }`}
+      >
+        <span className="truncate">{label}</span>
+        <span
+          className={`shrink-0 text-xs font-extrabold tabular-nums ${selected ? 'opacity-70' : 'text-muted'}`}
+        >
+          {sets.filter((s) => s.completed).length}/{sets.length}
+        </span>
+      </button>
+    );
+  };
+  return (
+    <div role="tablist" aria-label="Séries de" className="mt-3 grid grid-cols-2 border-2 border-fg">
+      {tab('Toi', mine, false, 'bg-accent-fill text-accent-fg')}
+      {tab(partnerName, theirs, true, 'bg-paper text-ink')}
+    </div>
+  );
+}
+
+/** One line for the person not shown: their sets as kg × reps, validated ones brighter. */
+function OtherSummary({ name, sets }: { name: string; sets: readonly AnySet[] }) {
+  if (sets.length === 0) return null;
+  return (
+    <p className="mt-2 text-[13px] font-semibold text-muted tabular-nums">
+      {name} :{' '}
+      {sets.map((s, i) => (
+        <span key={s.id} className={s.completed ? 'text-fg' : undefined}>
+          {i > 0 && ' · '}
+          {s.weightKg > 0 ? formatWeight(s.weightKg) : 'PDC'} × {s.reps}
+        </span>
+      ))}
+    </p>
   );
 }

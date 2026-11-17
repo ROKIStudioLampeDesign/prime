@@ -137,6 +137,8 @@ export interface Workout {
   notes?: string;
   /** When the current rest period ends (epoch ms); stored so the timer survives reloads. */
   restEndsAt?: number;
+  /** The teammate training alongside (their sets are `PartnerSet`s); absent when training alone. */
+  partnerId?: number;
 }
 
 export interface WorkoutSet {
@@ -145,6 +147,32 @@ export interface WorkoutSet {
   exerciseId: number;
   /** Position of the exercise within the workout (all its sets share it). */
   order: number;
+  /** 1-based, per exercise. */
+  setNumber: number;
+  weightKg: number;
+  reps: number;
+  completed: boolean;
+  rpe?: number;
+  completedAt?: number;
+}
+
+/** A friend you sometimes train with: a name, and their own sets (`PartnerSet`). */
+export interface Partner {
+  id: number;
+  name: string;
+  createdAt: number;
+}
+
+/**
+ * A teammate's set in one of your workouts. Kept apart from `WorkoutSet` so your own records,
+ * stats, prefills and templates never see them. They follow your exercise order in the workout,
+ * so they carry no `order` of their own.
+ */
+export interface PartnerSet {
+  id: number;
+  workoutId: number;
+  partnerId: number;
+  exerciseId: number;
   /** 1-based, per exercise. */
   setNumber: number;
   weightKg: number;
@@ -252,6 +280,8 @@ export class PrimeDB extends Dexie {
   templates!: EntityTable<Template, 'id'>;
   bodyWeights!: EntityTable<BodyWeightEntry, 'id'>;
   nutritionDays!: EntityTable<NutritionDay, 'date'>;
+  partners!: EntityTable<Partner, 'id'>;
+  partnerSets!: EntityTable<PartnerSet, 'id'>;
 
   constructor(name = 'prime') {
     super(name);
@@ -445,6 +475,24 @@ export class PrimeDB extends Dexie {
           if (exercises) await templates.update(template.id, { exercises });
         }
       });
+
+    // v11: teammates and their sets.
+    this.version(11).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+      nutritionDays: 'date',
+      partners: '++id, name',
+      partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+    });
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }

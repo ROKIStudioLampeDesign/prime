@@ -173,6 +173,13 @@ export function SettingsScreen() {
               <span className="text-sm font-bold text-muted">{goalsSummary(goals)}</span>
               <ForwardIcon className="size-5 text-muted" />
             </Link>
+            <Link
+              to="/settings/partners"
+              className="flex min-h-16 items-center gap-3 border-t border-line py-3 active:opacity-60"
+            >
+              <span className="flex-1 text-xl headline">Coéquipiers</span>
+              <ForwardIcon className="size-5 text-muted" />
+            </Link>
           </section>
 
           <RestTimerSetting />

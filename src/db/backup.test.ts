@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createPartner, setPartnerSetCompleted, updatePartnerSet } from './partners';
 import type { LocalDate } from '../domain/date';
 import { backupFileName, exportBackup, importBackup, readBackup } from './backup';
 import { upsertBodyWeight } from './bodyWeights';
@@ -74,6 +75,18 @@ async function fill(db: PrimeDB) {
   const firstSet = await db.workoutSets.where('workoutId').equals(workoutId).first();
   if (firstSet) await setCompleted(firstSet.id, true, 0, db);
   await finishWorkout(workoutId, db);
+
+  // A workout with a teammate: their sets, an RPE, one validated.
+  const lucas = await createPartner('Lucas', db);
+  const duoId = await startWorkout(undefined, db, lucas);
+  await addExerciseToWorkout(duoId, bench, { setCount: 2 }, db);
+  const mateSet = await db.partnerSets.where('workoutId').equals(duoId).first();
+  if (!mateSet) throw new Error('partner set');
+  await updatePartnerSet(mateSet.id, { weightKg: 60, reps: 10, rpe: 8 }, db);
+  await setPartnerSetCompleted(mateSet.id, true, 0, db);
+  const duoSet = await db.workoutSets.where('workoutId').equals(duoId).first();
+  if (duoSet) await setCompleted(duoSet.id, true, 0, db);
+  await finishWorkout(duoId, db);
 
   // A dish with photo and cooked weight, logged by portions and by grams.
   const stewId = await createMeal(
@@ -192,7 +205,7 @@ describe('backup', () => {
     expect((await target.bodyWeights.toArray()).map((w) => w.kg)).toEqual([70]); // unique date conflict skipped
     expect(await target.logEntries.count()).toBe(4);
     expect(await target.meals.count()).toBe(2);
-    expect(await target.workouts.count()).toBe(3);
+    expect(await target.workouts.count()).toBe(4);
     expect(result.added).toBeGreaterThan(0);
     // Built-in exercises exist on both sides with the same ids: all skipped, none duplicated.
     expect(await target.exercises.count()).toBe(await source.exercises.count());

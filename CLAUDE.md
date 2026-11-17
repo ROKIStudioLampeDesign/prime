@@ -120,6 +120,11 @@ Rules:
   immediately (the database _is_ the draft), so a reload never loses a session. Finishing drops
   unvalidated sets. Durations and the rest timer are computed from stored timestamps
   (`startedAt`, `restEndsAt`), never by counting interval ticks (timers stop while the phone is locked).
+- **Teammates** (`partners`, Réglages › Coéquipiers): a workout may have one `partnerId`, picked in
+  the start sheet. Their sets live in `partnerSets` (`src/db/partners.ts`), never in `workoutSets`,
+  so your records, stats, prefills and templates can't see them. They follow your exercises (added,
+  removed, finished, deleted with them) and are prefilled from their own last session
+  (`prefillPartnerSets`). In the workout, each exercise has Toi / teammate tabs.
 - **Body map:** the figure is generated data, `src/features/body/bodyArt.json` (typed by
   `bodyArt.ts`), built by `scripts/body-art` (see its README) from a CC BY-SA 4.0 Commons chart:
   never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit in

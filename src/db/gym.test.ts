@@ -106,7 +106,7 @@ describe('exercise seed in the database', () => {
     db = new PrimeDB(name);
     expect(await db.exercises.count()).toBe(EXERCISE_SEED.length);
     expect((await db.goals.get('default'))?.kcal).toBe(2000);
-    expect(db.verno).toBe(10);
+    expect(db.verno).toBe(11);
   });
 });
 

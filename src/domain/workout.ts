@@ -319,3 +319,20 @@ export function setToDrop<T extends { setNumber: number; completed: boolean }>(
   if (sets.length <= 1) return undefined;
   return [...sets].sort((a, b) => b.setNumber - a.setNumber).find((s) => !s.completed);
 }
+
+/**
+ * Initial sets for a teammate on an exercise: as many as yours, each copying the same set of
+ * their own last performance (fallback: its last set). Without any history of theirs, they start
+ * from your values, which are quicker to adjust than empty fields.
+ */
+export function prefillPartnerSets(
+  previous: readonly PerformedSet[] | undefined,
+  mine: readonly SetValues[],
+): PerformedSet[] {
+  const count = mine.length > 0 ? mine.length : defaultSetCount(previous);
+  return Array.from({ length: count }, (_, i) => {
+    const setNumber = i + 1;
+    const p = previousForSet(previous, setNumber) ?? mine[i] ?? mine[mine.length - 1];
+    return { setNumber, weightKg: p?.weightKg ?? 0, reps: p?.reps ?? 0 };
+  });
+}

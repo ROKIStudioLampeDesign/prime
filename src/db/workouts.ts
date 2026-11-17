@@ -22,6 +22,7 @@ import {
 } from '../domain/workout';
 import { db, type PrimeDB, type Workout, type WorkoutSet } from './db';
 import { BENCH_SEED_ID } from './exerciseSeed';
+import { addPartnerExercise } from './partners';
 import { createTemplate } from './templates';
 
 export function getWorkout(id: number, database: PrimeDB = db): Promise<Workout | undefined> {
@@ -108,7 +109,7 @@ export async function addExerciseToWorkout(
 ): Promise<boolean> {
   return database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.exercises],
+    [database.workouts, database.workoutSets, database.exercises, database.partnerSets],
     async () => {
       const workout = await database.workouts.get(workoutId);
       if (!workout) throw new Error(`Workout ${workoutId} not found`);
@@ -136,6 +137,8 @@ export async function addExerciseToWorkout(
           completed: false,
         })),
       );
+      // The teammate, if any, gets their own sets of it.
+      await addPartnerExercise(workout, exerciseId, database);
       return true;
     },
   );
@@ -145,10 +148,14 @@ export async function addExerciseToWorkout(
  * Starts a workout (from a template, or empty). If one is already active, returns it instead:
  * there is never more than one active workout.
  */
-export async function startWorkout(templateId?: number, database: PrimeDB = db): Promise<number> {
+export async function startWorkout(
+  templateId?: number,
+  database: PrimeDB = db,
+  partnerId?: number,
+): Promise<number> {
   return database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.templates, database.exercises],
+    [database.workouts, database.workoutSets, database.templates, database.exercises, database.partnerSets],
     async () => {
       const active = await getActiveWorkout(database);
       if (active) return active.id;
@@ -159,6 +166,7 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
         status: 'active',
         startedAt: now,
         ...(template && { name: template.name, templateId: template.id }),
+        ...(partnerId !== undefined && { partnerId }),
       });
       for (const te of template?.exercises ?? []) {
         await addExerciseToWorkout(
@@ -185,7 +193,7 @@ export async function startWorkout(templateId?: number, database: PrimeDB = db):
 export async function startPrBenchWorkout(targetKg: number, database: PrimeDB = db): Promise<number> {
   return database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.templates, database.exercises],
+    [database.workouts, database.workoutSets, database.templates, database.exercises, database.partnerSets],
     async () => {
       const active = await getActiveWorkout(database);
       if (active) return active.id;
@@ -216,7 +224,7 @@ export async function createPastWorkout(
 ): Promise<number> {
   return database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.templates, database.exercises],
+    [database.workouts, database.workoutSets, database.templates, database.exercises, database.partnerSets],
     async () => {
       const template = templateId !== undefined ? await database.templates.get(templateId) : undefined;
       // Noon avoids landing on another day around DST changes; duration is unknown.
@@ -353,8 +361,13 @@ export async function removeExercise(
   exerciseId: number,
   database: PrimeDB = db,
 ): Promise<void> {
-  await database.transaction('rw', database.workoutSets, async () => {
+  await database.transaction('rw', [database.workoutSets, database.partnerSets], async () => {
     await database.workoutSets.where({ exerciseId, workoutId }).delete();
+    await database.partnerSets
+      .where('workoutId')
+      .equals(workoutId)
+      .filter((s) => s.exerciseId === exerciseId)
+      .delete();
     await applyExerciseOrder(workoutId, await exerciseOrder(workoutId, database), database);
   });
 }
@@ -368,12 +381,17 @@ export async function removeExercise(
 export async function finishWorkout(workoutId: number, database: PrimeDB = db): Promise<void> {
   await database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.templates],
+    [database.workouts, database.workoutSets, database.templates, database.partnerSets],
     async () => {
       const workout = await database.workouts.get(workoutId);
       const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
       const completed = sets.filter((s) => s.completed);
       await database.workoutSets.bulkDelete(sets.filter((s) => !s.completed).map((s) => s.id));
+      await database.partnerSets
+        .where('workoutId')
+        .equals(workoutId)
+        .filter((s) => !s.completed)
+        .delete();
       await applyExerciseOrder(workoutId, await exerciseOrder(workoutId, database), database);
       const now = Date.now();
       await database.workouts.update(workoutId, { status: 'done', endedAt: now, restEndsAt: undefined });
@@ -434,10 +452,15 @@ export async function updateWorkoutMeta(
 }
 
 export async function deleteWorkout(workoutId: number, database: PrimeDB = db): Promise<void> {
-  await database.transaction('rw', [database.workouts, database.workoutSets], async () => {
-    await database.workoutSets.where('workoutId').equals(workoutId).delete();
-    await database.workouts.delete(workoutId);
-  });
+  await database.transaction(
+    'rw',
+    [database.workouts, database.workoutSets, database.partnerSets],
+    async () => {
+      await database.workoutSets.where('workoutId').equals(workoutId).delete();
+      await database.partnerSets.where('workoutId').equals(workoutId).delete();
+      await database.workouts.delete(workoutId);
+    },
+  );
 }
 
 /** Saves the workout's exercises (with set counts and last reps) as a new template. */

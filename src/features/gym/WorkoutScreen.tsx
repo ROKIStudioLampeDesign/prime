@@ -11,8 +11,9 @@ import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { useNow } from '../../components/useNow';
 import { useWakeLock } from '../../components/useWakeLock';
-import type { Workout, WorkoutSet } from '../../db/db';
+import type { PartnerSet, Workout, WorkoutSet } from '../../db/db';
 import { getRestSeconds } from '../../db/gymDays';
+import { getPartner, getPartnerSets } from '../../db/partners';
 import {
   addExerciseToWorkout,
   deleteWorkout,
@@ -22,7 +23,7 @@ import {
   updateWorkoutMeta,
 } from '../../db/workouts';
 import { isLocalDate } from '../../domain/date';
-import { workoutStats } from '../../domain/workout';
+import { workoutStats, workoutVolume } from '../../domain/workout';
 import { formatInteger } from '../../lib/format';
 import { ExerciseCard } from './ExerciseCard';
 import { ExerciseList } from './ExerciseList';
@@ -39,6 +40,13 @@ export function WorkoutScreen() {
   const sets = useLiveQuery(() => getWorkoutSets(workoutId), [workoutId]);
   const exercises = useExercisesById();
   const restSeconds = useLiveQuery(getRestSeconds);
+  const partnerId = workout ? workout.partnerId : undefined;
+  // The teammate and their sets (null when training alone).
+  const partner = useLiveQuery(async () => {
+    if (partnerId === undefined) return null;
+    const [found, partnerSets] = await Promise.all([getPartner(partnerId), getPartnerSets(workoutId)]);
+    return found ? { partner: found, sets: partnerSets } : null;
+  }, [partnerId, workoutId]);
   const [picking, setPicking] = useState(false);
   const [confirm, setConfirm] = useState<'finish' | 'abandon' | 'delete'>();
   const [savingTemplate, setSavingTemplate] = useState(false);
@@ -54,7 +62,13 @@ export function WorkoutScreen() {
     return [...byExercise.entries()].map(([exerciseId, exSets]) => ({ exerciseId, sets: exSets }));
   }, [sets]);
 
-  if (workout === undefined || sets === undefined || exercises === undefined || restSeconds === undefined) {
+  if (
+    workout === undefined ||
+    sets === undefined ||
+    exercises === undefined ||
+    restSeconds === undefined ||
+    partner === undefined
+  ) {
     return (
       <Screen title="Séance" back backFallback="/gym">
         <Loading />
@@ -129,11 +143,21 @@ export function WorkoutScreen() {
         ) : (
           <Stat label="Durée" value={String(Math.floor(stats.durationMs / 60_000))} unit="min" />
         )}
-        <Stat
-          label="Séries"
-          value={active ? `${stats.completedSets}/${sets.length}` : String(stats.completedSets)}
-        />
-        <Stat label="Volume" value={formatInteger(stats.volumeKg)} unit="kg" />
+        {partner ? (
+          <>
+            {/* Training together: each one's volume instead of the set count. */}
+            <Stat label="Toi" value={formatInteger(stats.volumeKg)} unit="kg" />
+            <Stat label={partner.partner.name} value={formatInteger(workoutVolume(partner.sets))} unit="kg" />
+          </>
+        ) : (
+          <>
+            <Stat
+              label="Séries"
+              value={active ? `${stats.completedSets}/${sets.length}` : String(stats.completedSets)}
+            />
+            <Stat label="Volume" value={formatInteger(stats.volumeKg)} unit="kg" />
+          </>
+        )}
       </dl>
 
       {groups.length === 0 ? (
@@ -153,6 +177,9 @@ export function WorkoutScreen() {
               isFirst={i === 0}
               isLast={i === groups.length - 1}
               restSeconds={active ? restSeconds : 0}
+              {...(partner && {
+                partner: { partner: partner.partner, sets: setsOf(partner.sets, g.exerciseId) },
+              })}
             />
           ))}
         </div>
@@ -268,4 +295,9 @@ function DetailsForm({ workout }: { workout: Workout }) {
       </div>
     </section>
   );
+}
+
+/** A teammate's sets of one exercise, in set order. */
+function setsOf(sets: readonly PartnerSet[], exerciseId: number): PartnerSet[] {
+  return sets.filter((s) => s.exerciseId === exerciseId).sort((a, b) => a.setNumber - b.setNumber);
 }
