@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router';
 import type { ComponentType, SVGProps } from 'react';
-import { BodyIcon, GymIcon, NutritionIcon, StatsIcon, TodayIcon } from './icons';
+import { BodyIcon, GymIcon, NutritionIcon, PrIcon, StatsIcon } from './icons';
 
 interface Tab {
   to: string;
@@ -9,7 +9,7 @@ interface Tab {
 }
 
 const TABS: Tab[] = [
-  { to: '/', label: "Aujourd'hui", icon: TodayIcon },
+  { to: '/', label: "Aujourd'hui", icon: PrIcon },
   { to: '/nutrition', label: 'Alimentation', icon: NutritionIcon },
   { to: '/gym', label: 'Salle', icon: GymIcon },
   { to: '/body', label: 'Corps', icon: BodyIcon },
@@ -29,9 +29,10 @@ export function TabBar() {
             <NavLink
               to={to}
               end={to === '/'}
+              // Icons only: the name is for screen readers. The active icon lights up in the accent.
               className={({ isActive }) =>
-                `relative flex h-full min-h-11 flex-col items-center justify-center gap-1 text-[11px] font-extrabold active:bg-surface ${
-                  isActive ? 'text-fg text-glow' : 'text-muted'
+                `relative flex h-full min-h-11 items-center justify-center active:bg-surface ${
+                  isActive ? 'text-accent' : 'text-muted'
                 }`
               }
             >
@@ -40,8 +41,11 @@ export function TabBar() {
                   {isActive && (
                     <span className="absolute inset-x-[18%] -top-px h-1 bg-indicator" aria-hidden="true" />
                   )}
-                  <TabIcon />
-                  <span className="max-w-full truncate px-0.5">{label}</span>
+                  <TabIcon
+                    className={`size-7.5 ${isActive ? 'drop-shadow-[0_0_6px_var(--color-accent)]' : ''}`}
+                    strokeWidth={isActive ? 2.4 : 1.8}
+                  />
+                  <span className="sr-only">{label}</span>
                 </>
               )}
             </NavLink>

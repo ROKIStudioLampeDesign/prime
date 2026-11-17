@@ -21,11 +21,21 @@ function Icon({ children, ...props }: IconProps) {
   );
 }
 
-export const TodayIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <rect x="3.5" y="5" width="17" height="15.5" rx="2.5" />
-    <path d="M3.5 10h17M8 3v4M16 3v4" />
-  </Icon>
+/** "PR" in wide, heavy letters (the app's logo), for the Aujourd'hui tab. Fills with currentColor. */
+export const PrIcon = (p: IconProps) => (
+  <svg viewBox="0 0 26 26" width={24} height={24} aria-hidden="true" {...p}>
+    <text
+      x="13"
+      y="19"
+      textAnchor="middle"
+      fontSize="15"
+      fontWeight="900"
+      fill="currentColor"
+      style={{ fontFamily: 'inherit', fontStretch: '125%' }}
+    >
+      PR
+    </text>
+  </svg>
 );
 
 export const NutritionIcon = (p: IconProps) => (
