@@ -23,6 +23,7 @@ import {
 } from '../../domain/weeklySummary';
 import { formatInteger, formatMacro, formatWeightChange } from '../../lib/format';
 import { axisProps, niceTicks } from './chartUtils';
+import { PerfComparisonSection } from './PerfComparisonSection';
 import { BandTile, ChartEmpty, StatsTabs } from './shared';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -53,8 +54,17 @@ export function WeekScreen() {
   const unlogged = useLiveQuery(listUnloggedDays);
   const isCurrent = start === weekStart(today);
 
+  // Changing week keeps the Perfs mode (`perfs`).
   const go = (date: LocalDate) =>
-    setParams(date === weekStart(today) ? {} : { week: date }, { replace: true });
+    setParams(
+      (current) => {
+        const out = new URLSearchParams(current);
+        if (date === weekStart(today)) out.delete('week');
+        else out.set('week', date);
+        return out;
+      },
+      { replace: true },
+    );
 
   return (
     <Screen title="Stats">
@@ -176,6 +186,8 @@ export function WeekScreen() {
                 pas comptés (barre pleine : rouge si dépassé, pâle si sous l’objectif). Calories : objectif
                 atteint juste en dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
               </p>
+
+              <PerfComparisonSection weekOf={start} today={today} />
             </>
           );
         })()

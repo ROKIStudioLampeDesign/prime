@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  monthBounds,
   addDays,
   daysBetween,
   formatMonthParam,
@@ -95,5 +96,14 @@ describe('daysBetween', () => {
     expect(daysBetween(ld('2026-03-28'), ld('2026-03-30'))).toBe(2);
     expect(daysBetween(ld('2026-10-24'), ld('2026-10-26'))).toBe(2);
     expect(daysBetween(ld('2026-11-05'), ld('2026-11-03'))).toBe(-2);
+  });
+});
+
+describe('monthBounds', () => {
+  it('gives the first and last day, leap years and December included', () => {
+    expect(monthBounds({ year: 2026, month: 11 })).toEqual({ from: '2026-11-01', to: '2026-11-30' });
+    expect(monthBounds({ year: 2026, month: 12 })).toEqual({ from: '2026-12-01', to: '2026-12-31' });
+    expect(monthBounds({ year: 2028, month: 2 })).toEqual({ from: '2028-02-01', to: '2028-02-29' });
+    expect(monthBounds({ year: 2026, month: 2 })).toEqual({ from: '2026-02-01', to: '2026-02-28' });
   });
 });

@@ -65,3 +65,10 @@ export function shiftMonth({ year, month }: YearMonth, delta: number): YearMonth
   const index = year * 12 + (month - 1) + delta;
   return { year: Math.floor(index / 12), month: (((index % 12) + 12) % 12) + 1 };
 }
+
+/** First and last day of a calendar month (28 to 31 days, leap years included). */
+export function monthBounds({ year, month }: YearMonth): { from: LocalDate; to: LocalDate } {
+  const next = shiftMonth({ year, month }, 1);
+  const from = `${formatMonthParam({ year, month })}-01` as LocalDate;
+  return { from, to: addDays(`${formatMonthParam(next)}-01` as LocalDate, -1) };
+}
