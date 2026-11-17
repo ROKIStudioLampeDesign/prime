@@ -1,6 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useToday } from '../../components/useToday';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { EmptyState } from '../../components/EmptyState';
 import { Fab } from '../../components/Fab';
@@ -63,7 +63,23 @@ export function DiaryScreen() {
       ) : (
         <>
           <DailySummary totals={totals} goals={goals} />
-          {date <= today && <UnloggedMark date={date} />}
+          {date <= today && (
+            <UnloggedMark
+              date={date}
+              aside={
+                // The meals left can only be planned for today, against a calorie goal.
+                isToday &&
+                goals.kcal !== undefined && (
+                  <Link
+                    to={`/nutrition/adjust?date=${date}`}
+                    className="mt-2 flex min-h-11 items-center text-sm font-extrabold text-accent active:opacity-60"
+                  >
+                    Ajuster mes repas
+                  </Link>
+                )
+              }
+            />
+          )}
           {entries.length === 0 ? (
             <EmptyState
               title="Rien de noté ce jour-là"
@@ -146,7 +162,7 @@ export function DiaryScreen() {
  * "Macros pas comptées": for a day whose meals couldn't be (fully) counted, whether it stayed
  * under the calorie goal. The mark wins over the day's entries in every stat.
  */
-function UnloggedMark({ date }: { date: LocalDate }) {
+function UnloggedMark({ date, aside }: { date: LocalDate; aside?: ReactNode }) {
   // `null` (not undefined) when the day has no mark, so loading stays distinguishable.
   const status = useLiveQuery(async () => (await getUnloggedDay(date)) ?? null, [date]);
   const [asking, setAsking] = useState(false);
@@ -155,13 +171,16 @@ function UnloggedMark({ date }: { date: LocalDate }) {
   if (status === null) {
     return (
       <>
-        <button
-          type="button"
-          onClick={() => setAsking(true)}
-          className="mt-2 min-h-11 text-sm font-extrabold text-accent active:opacity-60"
-        >
-          Macros pas comptées ?
-        </button>
+        <div className="flex flex-wrap items-center justify-between gap-x-4">
+          <button
+            type="button"
+            onClick={() => setAsking(true)}
+            className="mt-2 min-h-11 text-sm font-extrabold text-accent active:opacity-60"
+          >
+            Macros pas comptées ?
+          </button>
+          {aside}
+        </div>
         <BottomSheet open={asking} onClose={() => setAsking(false)} title="Macros pas comptées">
           <p className="mb-4 text-sm text-muted">
             Tu n’as pas pu tout noter ce jour-là ? Dis si tu es resté sous ton objectif calories. Le jour

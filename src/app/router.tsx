@@ -30,6 +30,10 @@ export const router = createBrowserRouter([
       { index: true, element: <TodayScreen /> },
       { path: 'nutrition', element: <DiaryScreen /> },
       { path: 'nutrition/add', element: <AddEntryScreen /> },
+      {
+        path: 'nutrition/adjust',
+        lazy: lazyScreen(() => import('../features/nutrition/AdjustMealsScreen'), 'AdjustMealsScreen'),
+      },
       { path: 'nutrition/foods', element: <FoodsScreen /> },
       {
         path: 'nutrition/foods/new',

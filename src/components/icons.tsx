@@ -148,3 +148,11 @@ export const TrashIcon = (p: IconProps) => (
     <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10 11v5M14 11v5" />
   </Icon>
 );
+
+/** Padlock, closed (quantity fixed) or open. */
+export const LockIcon = ({ locked = false, ...p }: IconProps & { locked?: boolean }) => (
+  <Icon {...p}>
+    <rect x="5" y="10.5" width="14" height="10" rx="1.5" />
+    <path d={locked ? 'M8 10.5V7a4 4 0 0 1 8 0v3.5' : 'M8 10.5V7a4 4 0 0 1 7.6-1.8'} />
+  </Icon>
+);
