@@ -31,6 +31,7 @@
         background: #020106;
       }
       #splash svg {
+        border-radius: 22.5%;
         width: 33vw;
         max-width: 160px;
         height: auto;
@@ -44,13 +45,49 @@
     <div id="root">
       <div id="splash" aria-label="Prime" role="img">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true">
-          <rect width="512" height="512" fill="#ff2e8a" />
-          <g fill="#020106">
-            <rect x="64" y="232" width="384" height="48" />
-            <rect x="120" y="136" width="64" height="240" />
-            <rect x="328" y="136" width="64" height="240" />
-            <rect x="80" y="176" width="40" height="160" />
-            <rect x="392" y="176" width="40" height="160" />
+          <defs>
+            <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#ff3347" />
+              <stop offset="0.55" stop-color="#c4101f" />
+              <stop offset="1" stop-color="#2a0006" />
+            </linearGradient>
+            <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#4a3a40" />
+              <stop offset="0.35" stop-color="#050203" />
+              <stop offset="1" stop-color="#050203" />
+            </linearGradient>
+            <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff" stop-opacity="0.55" />
+              <stop offset="0.48" stop-color="#fff" stop-opacity="0.08" />
+              <stop offset="0.5" stop-color="#fff" stop-opacity="0" />
+            </linearGradient>
+            <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="22" />
+            </filter>
+            <g id="letters">
+              <path
+                fill-rule="evenodd"
+                d="M86 178H198A48 48 0 0 1 198 274H140V330H86ZM140 216H192A10 10 0 0 1 192 236H140Z"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M266 178H380A48 48 0 0 1 380 274L430 330H372L322 274H320V330H266ZM320 216H374A10 10 0 0 1 374 236H320Z"
+              />
+            </g>
+            <clipPath id="tile"><rect width="512" height="512" /></clipPath>
+          </defs>
+          <g clip-path="url(#tile)">
+            <rect width="512" height="512" fill="url(#field)" />
+            <use
+              href="#letters"
+              fill="#2a0006"
+              opacity="0.55"
+              filter="url(#soft)"
+              transform="translate(256 300) scale(1.6) translate(-258 -254)"
+            />
+            <use href="#letters" fill="url(#ink)" />
+            <use href="#letters" fill="none" stroke="#ff8a94" stroke-opacity="0.35" stroke-width="2" />
+            <rect width="512" height="512" fill="url(#sheen)" opacity="0.55" />
           </g>
         </svg>
       </div>

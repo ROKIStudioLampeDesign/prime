@@ -43,10 +43,10 @@ export default defineConfig({
   headLinkOptions: { preset: '2023' },
   preset: {
     ...minimal2023Preset,
-    // The artwork is full-bleed (its own yellow background) and its dumbbell already sits inside
-    // the maskable safe zone, so no extra padding: the icon fills the home screen tile.
-    maskable: { ...minimal2023Preset.maskable, padding: 0, resizeOptions: { background: '#ff2e8a' } },
-    apple: { ...minimal2023Preset.apple, padding: 0, resizeOptions: { background: '#ff2e8a' } },
+    // The artwork is full-bleed (its own red field) and its "PR" already sits inside the
+    // maskable safe zone, so no extra padding: the icon fills the home screen tile.
+    maskable: { ...minimal2023Preset.maskable, padding: 0, resizeOptions: { background: '#c4101f' } },
+    apple: { ...minimal2023Preset.apple, padding: 0, resizeOptions: { background: '#c4101f' } },
     // Launch images: the logo, a third of the screen wide, on the page colour of each theme (the
     // same as the logo `index.html` shows until the app has loaded).
     appleSplashScreens: createAppleSplashScreens(
