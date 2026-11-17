@@ -47,6 +47,13 @@ export function formatSignedBodyWeight(kg: number): string {
 }
 
 /** "12 450" */
+const euros = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+
+/** "12,30 €" from euro cents. */
+export function formatEuros(cents: number): string {
+  return euros.format(cents / 100);
+}
+
 export function formatInteger(n: number): string {
   return integer.format(n);
 }

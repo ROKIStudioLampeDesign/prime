@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { addShoppingItem, finishShopping, listShoppingItems, updateShoppingItem } from './shopping';
 import { createPartner, setPartnerSetCompleted, updatePartnerSet } from './partners';
 import type { LocalDate } from '../domain/date';
 import { backupFileName, exportBackup, importBackup, readBackup } from './backup';
@@ -87,6 +88,16 @@ async function fill(db: PrimeDB) {
   const duoSet = await db.workoutSets.where('workoutId').equals(duoId).first();
   if (duoSet) await setCompleted(duoSet.id, true, 0, db);
   await finishWorkout(duoId, db);
+
+  // Shopping: a product with a remembered price, and a hand-typed line still on the list.
+  await addShoppingItem({ name: 'Avoine', foodId, neededG: 500 }, db);
+  await addShoppingItem({ name: 'Gingembre' }, db);
+  const [oatsLine] = await listShoppingItems(db);
+  if (!oatsLine) throw new Error('shopping');
+  await updateShoppingItem(oatsLine.id, { boughtG: 1000, priceCents: 189, checked: true }, db);
+  await finishShopping(db);
+  const [ginger] = await listShoppingItems(db);
+  if (ginger) await updateShoppingItem(ginger.id, { neededG: 30, priceCents: 120, boughtG: 45 }, db);
 
   // A dish with photo and cooked weight, logged by portions and by grams.
   const stewId = await createMeal(

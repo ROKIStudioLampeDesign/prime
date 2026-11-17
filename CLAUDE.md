@@ -127,6 +127,11 @@ Rules:
   (`prefillPartnerSets`). In the workout, each exercise has Toi / teammate tabs; you are in the
   accent, the teammate in the Salle colour (`bg-gym`), the second colour of the duo palettes (only
   two-colour palettes rotate).
+- **Shopping** (Alimentation › Courses, `src/db/shopping.ts`, maths in `src/domain/shopping.ts`):
+  `shoppingItems` are products of the app or hand-typed ingredients (no `foodId`); "Depuis mes plats"
+  turns dishes × servings per day × days, minus what is left at home, into lines. In the shop
+  (`?magasin=1`) each line gets the grams taken and the price paid (euro cents); finishing keeps the
+  price per kg in `shoppingPrices` (keyed by product or normalized name) to estimate the next list.
 - **Body map:** the figure is generated data, `src/features/body/bodyArt.json` (typed by
   `bodyArt.ts`), built by `scripts/body-art` (see its README) from a CC BY-SA 4.0 Commons chart:
   never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit in

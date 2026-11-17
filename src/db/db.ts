@@ -183,6 +183,34 @@ export interface PartnerSet {
 }
 
 /**
+ * A line of the shopping list (Alimentation › Courses): a product of the app, or any ingredient
+ * typed by hand (no `foodId`). In the shop, what was taken: quantity and price paid.
+ */
+export interface ShoppingItem {
+  id: number;
+  name: string;
+  /** The product it stands for, when picked from Produits or a dish. */
+  foodId?: number;
+  /** How much to buy, when known (g). */
+  neededG?: number;
+  /** Quantity actually taken in the shop (g). */
+  boughtG?: number;
+  /** Price paid for it, in euro cents. */
+  priceCents?: number;
+  /** Taken (in the basket). */
+  checked: boolean;
+  createdAt: number;
+}
+
+/** Last price paid for a product, per kg, to estimate the next shopping. */
+export interface ShoppingPrice {
+  /** `food:<id>` for a product of the app, `name:<normalized name>` for a hand-typed one. */
+  key: string;
+  centsPerKg: number;
+  updatedAt: number;
+}
+
+/**
  * Manual marks for a day: attended (a gym day without a logged workout) or a planned rest day.
  * The two are exclusive. A day with a workout counts as attended regardless, and is never a rest
  * day. `rest` is optional and not indexed, so rows written before it existed stay valid.
@@ -282,6 +310,8 @@ export class PrimeDB extends Dexie {
   nutritionDays!: EntityTable<NutritionDay, 'date'>;
   partners!: EntityTable<Partner, 'id'>;
   partnerSets!: EntityTable<PartnerSet, 'id'>;
+  shoppingItems!: EntityTable<ShoppingItem, 'id'>;
+  shoppingPrices!: EntityTable<ShoppingPrice, 'key'>;
 
   constructor(name = 'prime') {
     super(name);
@@ -492,6 +522,26 @@ export class PrimeDB extends Dexie {
       nutritionDays: 'date',
       partners: '++id, name',
       partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+    });
+
+    // v12: shopping list and the prices paid.
+    this.version(12).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+      nutritionDays: 'date',
+      partners: '++id, name',
+      partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+      shoppingItems: '++id, createdAt',
+      shoppingPrices: 'key',
     });
 
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));

@@ -31,6 +31,14 @@ export const router = createBrowserRouter([
       { path: 'nutrition', element: <DiaryScreen /> },
       { path: 'nutrition/add', element: <AddEntryScreen /> },
       {
+        path: 'nutrition/courses',
+        lazy: lazyScreen(() => import('../features/nutrition/ShoppingScreen'), 'ShoppingScreen'),
+      },
+      {
+        path: 'nutrition/courses/plats',
+        lazy: lazyScreen(() => import('../features/nutrition/ShoppingPlanScreen'), 'ShoppingPlanScreen'),
+      },
+      {
         path: 'nutrition/adjust',
         lazy: lazyScreen(() => import('../features/nutrition/AdjustMealsScreen'), 'AdjustMealsScreen'),
       },

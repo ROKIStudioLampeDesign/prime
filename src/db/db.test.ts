@@ -32,7 +32,39 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(11);
+    expect(db.verno).toBe(12);
+  });
+
+  it('migrates v11 → v12: data is kept, the shopping list starts empty', async () => {
+    const dbName = `prime-migration-v11-${name}`;
+    const v11 = new Dexie(dbName);
+    v11.version(11).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+      nutritionDays: 'date',
+      partners: '++id, name',
+      partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+    });
+    await v11.table('partners').add({ name: 'Lucas', createdAt: 1 });
+    v11.close();
+
+    const migrated = new PrimeDB(dbName);
+    try {
+      expect(await migrated.partners.count()).toBe(1);
+      expect(await migrated.shoppingItems.count()).toBe(0);
+      expect(await migrated.shoppingPrices.count()).toBe(0);
+    } finally {
+      await migrated.delete();
+    }
   });
 
   it('migrates v10 → v11: workouts are kept, teammates start empty', async () => {

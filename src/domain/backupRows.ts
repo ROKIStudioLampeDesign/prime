@@ -190,6 +190,17 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
   bodyWeights: shape({ id, date: localDate, kg: nonNegative, ...timestamps }),
   nutritionDays: shape({ date: localDate, status: oneOf(['under', 'over']), updatedAt: timestamp }),
   partners: shape({ id, name: text, createdAt: timestamp }),
+  shoppingItems: shape({
+    id,
+    name: text,
+    foodId: optional(id),
+    neededG: optional(nonNegative),
+    boughtG: optional(nonNegative),
+    priceCents: optional((v) => Number.isInteger(v) && (v as number) >= 0),
+    checked: bool,
+    createdAt: timestamp,
+  }),
+  shoppingPrices: shape({ key: text, centsPerKg: nonNegative, updatedAt: timestamp }),
   partnerSets: shape({
     id,
     workoutId: id,
