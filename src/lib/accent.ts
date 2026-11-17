@@ -307,9 +307,14 @@ export function showAccent(accent: AccentPalette, wave: boolean) {
   waves += 1;
   const id = waves;
   const transition = document.startViewTransition(() => applyAccent(root, accent));
+  // While the wave runs, the page outside the ring is a frozen picture of the old one: a touch
+  // would seem lost. Any touch ends the wave at once, so the page answers it.
+  const skip = () => transition.skipTransition();
+  window.addEventListener('pointerdown', skip, { capture: true, once: true });
   void transition.finished
     .catch(() => undefined)
     .then(() => {
+      window.removeEventListener('pointerdown', skip, { capture: true });
       // A newer wave may have replaced this one: the class is then still in use.
       if (id === waves) root.classList.remove('accent-wave');
     });
