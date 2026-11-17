@@ -96,7 +96,7 @@ function AccentSetting() {
         Couleur
       </h2>
       <p className="mt-0.5 text-sm text-muted">
-        L’app change de couleur toutes les 10 minutes. Sur l’accueil, le « A » d’Aujourd’hui se remplit de la
+        L’app change de couleur toutes les 30 minutes. Sur l’accueil, le « A » d’Aujourd’hui se remplit de la
         couleur suivante : plein, ça change. Touche-le pour avancer (7 fois pour un changement complet).
       </p>
       <p className="mt-3 flex items-center gap-2 text-[15px] font-bold">

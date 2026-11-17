@@ -3,7 +3,7 @@
  * clock alone (no stored state): the app shows the same colour after a reload, and knows the
  * next one in advance.
  */
-export const ACCENT_SLOT_MS = 10 * 60_000;
+export const ACCENT_SLOT_MS = 30 * 60_000;
 
 /** Index of the slot containing `now` (epoch ms). */
 export const accentSlot = (now: number) => Math.floor(now / ACCENT_SLOT_MS);

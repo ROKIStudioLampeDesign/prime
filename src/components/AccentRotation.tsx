@@ -1,13 +1,14 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
-import { accentTapBoost, nextAccentChange } from '../domain/accentRotation';
-import { accentBoost, boostAccent, showAccent, startNextAccentWaveAt } from '../lib/accent';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
+import { accentSlot, accentTapBoost, nextAccentChange } from '../domain/accentRotation';
+import { accentBoost, accentForSlot, boostAccent, showAccent, startNextAccentWaveAt } from '../lib/accent';
 import { haptic } from '../lib/haptics';
 import { useAccentSchedule } from './useAccentSchedule';
 
 /**
  * Keeps the app in the colour of the current slot. The first colour is applied before paint;
- * later changes (the slot ending while the app is open, coming back to the app, taps on the
- * letter, "Changer maintenant") arrive as a wave.
+ * changes seen while the app is on screen (the slot ending, taps on the letter, "Changer
+ * maintenant") arrive as a wave. A change that happened while the app was in the background is
+ * applied as soon as it comes back, without a wave.
  */
 export function AccentRotation() {
   const { current } = useAccentSchedule();
@@ -17,6 +18,24 @@ export function AccentRotation() {
     showAccent(current, shown.current !== undefined);
     shown.current = current.id;
   }, [current]);
+
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState !== 'visible') return;
+      // The rendered schedule still holds the colour from before the app went away: apply the
+      // current one now, so the next render finds it already shown.
+      const accent = accentForSlot(accentSlot(Date.now() + accentBoost()));
+      if (shown.current === accent.id) return;
+      showAccent(accent, false);
+      shown.current = accent.id;
+    }
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pageshow', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pageshow', onVisible);
+    };
+  }, []);
 
   return null;
 }
