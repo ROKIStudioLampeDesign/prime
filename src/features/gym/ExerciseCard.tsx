@@ -236,7 +236,7 @@ export function ExerciseCard({
 interface SetRowProps {
   set: AnySet;
   step: number;
-  /** A teammate's set: drawn in paper instead of the accent. */
+  /** A teammate's set: drawn in the Salle colour (the duo's second colour) instead of the accent. */
   mate: boolean;
   /** All-time records this completed set holds (empty: no badge). */
   records: RecordKind[];
@@ -248,9 +248,9 @@ interface SetRowProps {
 function SetRow({ set, step, mate, records, onUpdate, onToggle, onMenu }: SetRowProps) {
   const label = `série ${set.setNumber}`;
   const done = mate
-    ? 'border-paper bg-linear-to-r from-paper/25 to-paper/5'
+    ? 'border-gym-strong bg-linear-to-r from-gym-strong/30 to-gym-strong/5'
     : 'border-accent bg-linear-to-r from-accent/35 to-accent/5';
-  const fill = mate ? 'bg-paper text-ink' : 'bg-accent-fill text-accent-fg';
+  const fill = mate ? 'bg-gym text-on-gym' : 'bg-accent-fill text-accent-fg';
   return (
     <li className={`border-l-4 py-1 pr-0.5 ${set.completed ? done : 'border-transparent'}`}>
       <div className="flex items-center gap-1.5">
@@ -434,7 +434,7 @@ function PersonTabs({
   return (
     <div role="tablist" aria-label="Séries de" className="mt-3 grid grid-cols-2 border-2 border-fg">
       {tab('Toi', mine, false, 'bg-accent-fill text-accent-fg')}
-      {tab(partnerName, theirs, true, 'bg-paper text-ink')}
+      {tab(partnerName, theirs, true, 'bg-gym text-on-gym')}
     </div>
   );
 }

@@ -228,9 +228,11 @@ function duo(id: string, label: string, accentId: string, band: Band): AccentPal
   return accent ? [{ id, label, color: accent.color, vars: { ...accent.vars, ...bandVars(band) } }] : [];
 }
 
+/**
+ * Only two-colour palettes rotate: you take the accent, a teammate the Salle colour. The single
+ * colours above are the bright halves of the duos built on them.
+ */
 export const ACCENT_PALETTES: AccentPalette[] = [
-  // Citron is only the bright half of a duo, not a colour of its own in the rotation.
-  ...SINGLE_PALETTES.filter((p) => p.id !== 'lemon'),
   {
     id: 'yellow-blue',
     label: 'Jaune et bleu',

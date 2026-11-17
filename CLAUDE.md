@@ -124,7 +124,9 @@ Rules:
   the start sheet. Their sets live in `partnerSets` (`src/db/partners.ts`), never in `workoutSets`,
   so your records, stats, prefills and templates can't see them. They follow your exercises (added,
   removed, finished, deleted with them) and are prefilled from their own last session
-  (`prefillPartnerSets`). In the workout, each exercise has Toi / teammate tabs.
+  (`prefillPartnerSets`). In the workout, each exercise has Toi / teammate tabs; you are in the
+  accent, the teammate in the Salle colour (`bg-gym`), the second colour of the duo palettes (only
+  two-colour palettes rotate).
 - **Body map:** the figure is generated data, `src/features/body/bodyArt.json` (typed by
   `bodyArt.ts`), built by `scripts/body-art` (see its README) from a CC BY-SA 4.0 Commons chart:
   never hand-edit the JSON, change `build.cjs` / `mapping.json` and regenerate. Keep the credit in
