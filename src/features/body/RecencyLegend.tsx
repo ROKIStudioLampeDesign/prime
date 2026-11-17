@@ -17,8 +17,8 @@ export function RecencyLegend({ thresholds }: { thresholds: RecencyThresholds })
     <figure className="bg-surface p-3" aria-label="Légende des couleurs">
       <div className="relative mx-2 mt-1 mb-5">
         <div className="h-3" style={{ background: `linear-gradient(to right, ${stops.join(', ')})` }} />
-        <Marker left={pos(thresholds.freshDays)} label={`≤ ${thresholds.freshDays} j`} />
-        <Marker left={pos(thresholds.staleDays)} label={`≥ ${thresholds.staleDays} j`} />
+        <Marker left={pos(thresholds.freshDays)} label={`${thresholds.freshDays} j`} />
+        <Marker left={pos(thresholds.staleDays)} label={`${thresholds.staleDays} j`} />
       </div>
     </figure>
   );

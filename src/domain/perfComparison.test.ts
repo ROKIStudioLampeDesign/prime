@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import { bestSet, compareFirstAndLast, comparePeriods, trendCounts } from './perfComparison';
+import { bestSet, comparePeriods, compareWithMonthBefore, trendCounts } from './perfComparison';
 import type { HistorySet } from './strength';
 
 const d = (s: string) => s as LocalDate;
@@ -102,30 +102,36 @@ describe('comparePeriods', () => {
   });
 });
 
-describe('compareFirstAndLast', () => {
-  const november = { from: d('2026-11-01'), to: d('2026-11-30') };
-
-  it('compares the first and last session of the month, across month boundaries', () => {
+describe('compareWithMonthBefore', () => {
+  it('compares the last session with the one closest to a month before it', () => {
     const history = new Map([
       [
         1,
         [
-          ...session('2026-10-31', [[200, 1]]), // October: ignored
-          ...session('2026-11-02', [[70, 8]]),
-          ...session('2026-11-15', [[90, 1]]), // middle sessions don't matter
-          ...session('2026-11-30', [[72.5, 8]]),
-          ...session('2026-12-01', [[10, 1]]), // December: ignored
+          ...session('2026-09-20', [[200, 1]]), // too far back: 2026-10-21 is closer to the target
+          ...session('2026-10-21', [[70, 8]]),
+          ...session('2026-11-05', [[90, 1]]), // under 21 days before the last: ignored
+          ...session('2026-11-20', [[72.5, 8]]),
+          ...session('2026-12-01', [[10, 1]]), // after `until`: ignored
         ],
       ],
-      [2, session('2026-11-05', [[50, 5]])], // a single session: nothing to compare
+      [2, session('2026-11-05', [[50, 5]])], // a single session: new
+      [3, [...session('2026-11-01', [[40, 10]]), ...session('2026-11-15', [[45, 10]])]], // 14 days apart: new
     ]);
-    const rows = compareFirstAndLast(history, november);
-    expect(rows[0]).toMatchObject({
-      exerciseId: 1,
-      trend: 'up',
-      before: { weightKg: 70 },
-      after: { weightKg: 72.5 },
-    });
-    expect(rows[1]).toMatchObject({ exerciseId: 2, trend: 'new' });
+    const rows = compareWithMonthBefore(history, d('2026-11-22'));
+    const byId = new Map(rows.map((r) => [r.exerciseId, r]));
+    expect(byId.get(1)).toMatchObject({ trend: 'up', before: { weightKg: 70 }, after: { weightKg: 72.5 } });
+    expect(byId.get(2)?.trend).toBe('new');
+    expect(byId.get(3)?.trend).toBe('new');
+  });
+
+  it('works across a year boundary and leaves out exercises not done yet', () => {
+    const history = new Map([
+      [1, [...session('2025-12-05', [[60, 5]]), ...session('2026-01-04', [[55, 5]])]],
+      [2, session('2026-01-10', [[30, 10]])],
+    ]);
+    const rows = compareWithMonthBefore(history, d('2026-01-05'));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ exerciseId: 1, trend: 'down' });
   });
 });

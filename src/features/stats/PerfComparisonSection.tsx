@@ -6,10 +6,10 @@ import { Loading } from '../../components/Loading';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { listExercises } from '../../db/exercises';
 import { listExerciseHistory } from '../../db/stats';
-import { addDays, fromLocalDate, monthBounds, type LocalDate } from '../../domain/date';
+import { addDays, fromLocalDate, type LocalDate } from '../../domain/date';
 import {
-  compareFirstAndLast,
   comparePeriods,
+  compareWithMonthBefore,
   trendCounts,
   type BestSet,
   type PerfComparison,
@@ -43,7 +43,7 @@ const TREND_COLOR = { up: 'text-accent', down: 'text-danger', same: '', new: 'te
 
 /**
  * Your performance exercise by exercise: the best set of the shown week against the week before,
- * or the first session of the month against the last one. Only finished workouts, only your sets.
+ * or your last session against the one about a month before. Only finished workouts, only your sets.
  */
 export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; today: LocalDate }) {
   const [params, setParams] = useSearchParams();
@@ -51,10 +51,9 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
   const history = useLiveQuery(listExerciseHistory);
   const exercises = useLiveQuery(listExercises);
 
-  // The month of the shown week's last day, or of today for the current week.
+  // Month mode looks back from the shown week's last day, or from today for the current week.
   const end = weekEnd(weekOf);
   const monthDay = end > today ? today : end;
-  const month = { year: Number(monthDay.slice(0, 4)), month: Number(monthDay.slice(5, 7)) };
 
   function setMode(next: Mode) {
     setParams(
@@ -71,7 +70,7 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
   const period =
     mode === 'week'
       ? `${format(fromLocalDate(weekOf), 'd MMM', { locale: fr })} – ${format(fromLocalDate(end), 'd MMM', { locale: fr })} contre la semaine d’avant`
-      : `${format(fromLocalDate(monthBounds(month).from), 'MMMM yyyy', { locale: fr })} : première séance contre la dernière`;
+      : 'Ta dernière séance de chaque exercice contre celle d’il y a un mois';
 
   return (
     <section className="mt-8" aria-labelledby="perfs">
@@ -94,7 +93,7 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
                   { from: weekOf, to: end },
                   { from: addDays(weekOf, -7), to: addDays(weekOf, -1) },
                 )
-              : compareFirstAndLast(history, monthBounds(month));
+              : compareWithMonthBefore(history, monthDay);
           if (rows.length === 0) {
             return (
               <p className="mt-4 border-2 border-dashed border-line px-6 py-8 text-center text-sm font-semibold text-muted">
@@ -118,9 +117,11 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
                 <thead className="text-xs font-extrabold text-muted">
                   <tr>
                     <th className="py-1 font-extrabold">Exercice</th>
-                    <th className="py-1 text-right font-extrabold">{mode === 'week' ? 'Avant' : 'Début'}</th>
                     <th className="py-1 text-right font-extrabold">
-                      {mode === 'week' ? 'Cette sem.' : 'Fin'}
+                      {mode === 'week' ? 'Avant' : 'Il y a 1 mois'}
+                    </th>
+                    <th className="py-1 text-right font-extrabold">
+                      {mode === 'week' ? 'Cette sem.' : 'Dernière'}
                     </th>
                     <th className="py-1 text-right font-extrabold">1RM est.</th>
                   </tr>

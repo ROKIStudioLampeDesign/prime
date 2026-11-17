@@ -1,4 +1,4 @@
-import type { LocalDate } from './date';
+import { addDays, daysBetween, type LocalDate } from './date';
 import type { HistorySet } from './strength';
 
 /** The best set of an exercise over a period, as compared in Stats › Semaine › Perfs. */
@@ -86,25 +86,44 @@ export function comparePeriods(
   return out;
 }
 
+/** "A month before" the last session: this many days earlier. */
+export const MONTH_DAYS = 30;
+/** A session counts as "a month before" only if it is at least this many days older. */
+export const MIN_GAP_DAYS = 21;
+
 /**
- * Every exercise done in [from, to] (e.g. a month): its best set in the last session of the
- * period against its best set in the first one. A single session gives nothing to compare.
+ * Every exercise done up to `until`: its best set in its last session against its best set in
+ * the session closest to a month before that one (at least `MIN_GAP_DAYS` older; the older one
+ * wins a tie). Without such a session, the exercise is new.
  */
-export function compareFirstAndLast(
+export function compareWithMonthBefore(
   history: ReadonlyMap<number, readonly HistorySet[]>,
-  period: { from: LocalDate; to: LocalDate },
+  until: LocalDate,
 ): PerfComparison[] {
   const out: PerfComparison[] = [];
   for (const [exerciseId, sets] of history) {
-    const inside = sets.filter((s) => inRange(s.date, period.from, period.to));
-    const sessions = [...new Set(inside.map((s) => s.workoutId))]
-      .map((id) => inside.filter((s) => s.workoutId === id))
+    const upTo = sets.filter((s) => s.date <= until);
+    const sessions = [...new Set(upTo.map((s) => s.workoutId))]
+      .map((id) => upTo.filter((s) => s.workoutId === id))
       .sort((a, b) => (a[0]?.startedAt ?? 0) - (b[0]?.startedAt ?? 0));
-    const first = sessions[0];
     const last = sessions[sessions.length - 1];
+    const lastDate = last?.[0]?.date;
     const after = last && bestSet(last);
-    if (!first || !last || !after) continue;
-    out.push(compare(exerciseId, first === last ? undefined : bestSet(first), after));
+    if (!lastDate || !after) continue;
+    const target = addDays(lastDate, -MONTH_DAYS);
+    const latestAllowed = addDays(lastDate, -MIN_GAP_DAYS);
+    let before: (typeof sessions)[number] | undefined;
+    let bestGap = Infinity;
+    for (const session of sessions) {
+      const date = session[0]?.date;
+      if (!date || date > latestAllowed) continue;
+      const gap = Math.abs(daysBetween(target, date));
+      if (gap < bestGap) {
+        bestGap = gap;
+        before = session;
+      }
+    }
+    out.push(compare(exerciseId, before && bestSet(before), after));
   }
   return out;
 }
