@@ -80,35 +80,3 @@ export function weekStreak(attended: ReadonlySet<LocalDate>, today: LocalDate, t
   }
   return { weeks, thisWeek, target };
 }
-
-/** Smallest plate step on a barbell: loads are rounded to it. */
-const LOAD_STEP_KG = 2.5;
-const roundLoad = (kg: number) => Math.round(kg / LOAD_STEP_KG) * LOAD_STEP_KG;
-
-/** Warm-up ramp before a heavy single: % of the target × reps. */
-const WARMUP: readonly (readonly [number, number])[] = [
-  [0.5, 5],
-  [0.7, 3],
-  [0.85, 1],
-  [0.92, 1],
-];
-
-/**
- * Sets of a bench PR session: the empty bar × 10, a ramp to ~92 % of the target, then one single
- * at the target. Loads are rounded to 2.5 kg; ramp steps that would repeat a load are skipped.
- */
-export function prBenchPlan(targetKg: number, barKg = 20): { weightKg: number; reps: number }[] {
-  const sets = [{ weightKg: barKg, reps: 10 }];
-  for (const [ratio, reps] of WARMUP) {
-    const weightKg = roundLoad(targetKg * ratio);
-    const last = sets[sets.length - 1];
-    if (weightKg > (last?.weightKg ?? 0) && weightKg < targetKg) sets.push({ weightKg, reps });
-  }
-  sets.push({ weightKg: roundLoad(targetKg), reps: 1 });
-  return sets;
-}
-
-/** Default PR target: the best lift + 2.5 kg (rounded), or the empty bar with no history. */
-export function defaultPrTarget(bestKg: number, barKg = 20): number {
-  return bestKg > 0 ? roundLoad(bestKg + LOAD_STEP_KG) : barKg;
-}

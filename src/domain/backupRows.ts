@@ -154,6 +154,7 @@ const SCHEMAS: Readonly<Record<string, Check>> = {
     templateId: optional(id),
     restEndsAt: optional(timestamp),
     partnerId: optional(id),
+    prAttempts: optional(arrayOf(shape({ exerciseId: id, targetKg: nonNegative }))),
   }),
   workoutSets: shape({
     id,

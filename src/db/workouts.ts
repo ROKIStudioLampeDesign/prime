@@ -1,6 +1,6 @@
 import { fromLocalDate, todayLocalDate, type LocalDate } from '../domain/date';
 import { moveItem } from '../domain/meal';
-import { prBenchPlan } from '../domain/streaks';
+import { prAttemptPlan, prAttemptSetsAfter } from '../domain/lifts';
 import {
   defaultSetCount,
   lastPerformance,
@@ -21,7 +21,6 @@ import {
   type WorkoutStats,
 } from '../domain/workout';
 import { db, type PrimeDB, type Workout, type WorkoutSet } from './db';
-import { BENCH_SEED_ID } from './exerciseSeed';
 import { addPartnerExercise } from './partners';
 import { createTemplate } from './templates';
 
@@ -101,7 +100,7 @@ export async function addExerciseToWorkout(
     plan?: readonly TemplateSet[];
     /**
      * The plan comes from a template: the exercise's last performance (in any workout) wins over
-     * its loads and reps. Otherwise (e.g. the PR bench ramp), the plan always wins.
+     * its loads and reps. Otherwise (e.g. a PR attempt ramp), the plan always wins.
      */
     fromTemplate?: boolean;
   } = {},
@@ -187,27 +186,52 @@ export async function startWorkout(
 }
 
 /**
- * Starts a bench PR session: the bench with a warm-up ramp and one single at `targetKg`
- * (`prBenchPlan`). If a workout is already active, returns it unchanged.
+ * Adds a PR attempt to a workout: a warm-up ramp and one single at `targetKg` (`prAttemptPlan`).
+ * A new exercise gets the whole plan; one already in the workout keeps its sets and gets the
+ * warm-up sets above its heaviest validated load, then the single. The workout remembers the
+ * target (`prAttempts`, one per exercise: a new attempt on it replaces the target).
  */
-export async function startPrBenchWorkout(targetKg: number, database: PrimeDB = db): Promise<number> {
-  return database.transaction(
+export async function addPrAttempt(
+  workoutId: number,
+  exerciseId: number,
+  targetKg: number,
+  database: PrimeDB = db,
+): Promise<void> {
+  await database.transaction(
     'rw',
-    [database.workouts, database.workoutSets, database.templates, database.exercises, database.partnerSets],
+    [database.workouts, database.workoutSets, database.exercises, database.partnerSets],
     async () => {
-      const active = await getActiveWorkout(database);
-      if (active) return active.id;
-      const bench = await database.exercises.where('seedId').equals(BENCH_SEED_ID).first();
-      if (!bench) throw new Error('Built-in bench missing');
-      const now = Date.now();
-      const id = await database.workouts.add({
-        date: todayLocalDate(new Date(now)),
-        status: 'active',
-        startedAt: now,
-        name: 'PR bench',
-      });
-      await addExerciseToWorkout(id, bench.id, { plan: prBenchPlan(targetKg) }, database);
-      return id;
+      const workout = await database.workouts.get(workoutId);
+      if (!workout) throw new Error(`Workout ${workoutId} not found`);
+      const plan = prAttemptPlan(targetKg);
+      const sets = await database.workoutSets.where('workoutId').equals(workoutId).toArray();
+      const own = sets.filter((s) => s.exerciseId === exerciseId);
+      if (own.length === 0) {
+        await addExerciseToWorkout(workoutId, exerciseId, { plan }, database);
+      } else {
+        const warmKg = own.reduce(
+          (max, s) => (s.completed && s.reps > 0 ? Math.max(max, s.weightKg) : max),
+          0,
+        );
+        const order = own[0]?.order ?? 0;
+        const last = own.reduce((max, s) => Math.max(max, s.setNumber), 0);
+        await database.workoutSets.bulkAdd(
+          prAttemptSetsAfter(plan, warmKg).map((p, i) => ({
+            workoutId,
+            exerciseId,
+            order,
+            setNumber: last + i + 1,
+            weightKg: p.weightKg,
+            reps: p.reps,
+            completed: false,
+          })),
+        );
+      }
+      const prAttempts = [
+        ...(workout.prAttempts ?? []).filter((a) => a.exerciseId !== exerciseId),
+        { exerciseId, targetKg },
+      ];
+      await database.workouts.update(workoutId, { prAttempts });
     },
   );
 }

@@ -200,16 +200,20 @@ test('log a day from a template: its exercises and sets, loads and reps left emp
   await expect(bench.getByText(/Dernière fois/)).toHaveCount(0);
 });
 
-test('a bench PR session warms up, then a new record unlocks its badge', async ({ page }) => {
+test('a PR attempt added mid-workout warms up, then a new record unlocks its badge', async ({ page }) => {
   await page.goto('/gym');
   await page.getByRole('button', { name: 'Commencer une séance' }).click();
-  const sheet = page.getByRole('dialog', { name: 'Commencer une séance' });
-  await sheet.getByRole('button', { name: 'Séance PR bench' }).click();
-  await sheet.getByLabel('Charge visée pour 1 rep').fill('60');
-  await sheet.getByRole('button', { name: 'Lancer la tentative' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Séance libre' }).click();
   await expect(page).toHaveURL(/\/gym\/workout\/\d+$/);
 
+  await page.getByRole('button', { name: 'Tentative PR' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Tentative PR' });
+  await expect(sheet.getByRole('radio', { name: 'Bench' })).toHaveAttribute('aria-checked', 'true');
+  await sheet.getByLabel('Charge visée pour 1 rep').fill('60');
+  await sheet.getByRole('button', { name: 'Ajouter à la séance' }).click();
+
   const bench = page.getByRole('region', { name: 'Bench' });
+  await expect(bench.getByText('Tentative PR · 60 kg')).toBeVisible();
   await expect(bench.getByLabel('Poids en kg, série 1')).toHaveValue('20');
   await expect(bench.getByLabel('Poids en kg, série 6')).toHaveValue('60');
   await bench.getByRole('button', { name: 'Valider la série 6' }).click();

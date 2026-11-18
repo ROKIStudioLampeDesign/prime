@@ -27,6 +27,7 @@ import { workoutStats, workoutVolume } from '../../domain/workout';
 import { formatInteger } from '../../lib/format';
 import { ExerciseCard } from './ExerciseCard';
 import { ExerciseList } from './ExerciseList';
+import { PrAttemptSheet } from './PrAttemptSheet';
 import { RestTimerBar } from './RestTimerBar';
 import { SaveTemplateSheet } from './SaveTemplateSheet';
 import { useExercisesById } from './exerciseData';
@@ -48,6 +49,7 @@ export function WorkoutScreen() {
     return found ? { partner: found, sets: partnerSets } : null;
   }, [partnerId, workoutId]);
   const [picking, setPicking] = useState(false);
+  const [prOpen, setPrOpen] = useState(false);
   const [confirm, setConfirm] = useState<'finish' | 'abandon' | 'delete'>();
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
@@ -185,9 +187,23 @@ export function WorkoutScreen() {
         </div>
       )}
 
-      <Button variant="secondary" className="mt-2 w-full" onClick={() => setPicking(true)}>
-        <PlusIcon className="size-5" /> Ajouter un exercice
-      </Button>
+      <div className="mt-2 flex flex-col gap-2">
+        <Button variant="secondary" onClick={() => setPicking(true)}>
+          <PlusIcon className="size-5" /> Ajouter un exercice
+        </Button>
+        {active && (
+          <Button variant="secondary" onClick={() => setPrOpen(true)}>
+            Tentative PR
+          </Button>
+        )}
+      </div>
+      <PrAttemptSheet
+        open={prOpen}
+        onClose={() => setPrOpen(false)}
+        workoutId={workout.id}
+        sets={sets}
+        exercises={exercises}
+      />
 
       <DetailsForm key={workout.id} workout={workout} />
 

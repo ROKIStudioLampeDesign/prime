@@ -147,7 +147,10 @@ Rules:
   _before_ the current workout (`getRecordsBefore`). The Records tab follows one lift picked in
   `?lift=` (Bench, Squat, Deadlift, Power clean, Snatch: `TRACKED_LIFTS`, `src/domain/lifts.ts`), each
   with its own badge scale, pictogram (`LiftBadge`) and goal (`liftGoals.ts`, a setting per lift);
-  Progression still covers every exercise. Body weight: one entry per day (upsert).
+  Progression still covers every exercise. A PR attempt is added inside any active workout
+  ("Tentative PR", `addPrAttempt`): a warm-up ramp and a single on one of those lifts, the target
+  kept in `workout.prAttempts`; the summary gives a verdict per lift (`LiftResults`). Body weight:
+  one entry per day (upsert).
 - **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
   lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
   saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly

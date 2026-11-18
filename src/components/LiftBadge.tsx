@@ -5,7 +5,7 @@ import { liftRank, liftRankLabel, TRACKED_LIFTS, type LiftId } from '../domain/l
  * A lift milestone drawn as an original ranked-game emblem, the "orbe couronné": a glossy orb
  * with the lift engraved (see LiftGlyph), set in a spiked ring, over a banner with the load. Each rank adds
  * ornaments: Bronze plain, Argent side blades, Or wings and a golden aura (rays on Or II), Rubis a
- * crown, Diamant a jewelled crown, facets and an icy halo, Obsidienne dark wings
+ * crown, Diamant a jewelled crown, facets and an icy halo, Radiant dark wings
  * and violet flames. The spikes grow with the rank; diamonds under the banner mark divisions.
  * Locked: a grey emblem with a padlock.
  */
@@ -78,7 +78,7 @@ function Sparkle({
   );
 }
 
-/** Rays (from Or II) and Obsidienne's flames behind the emblem; the halo is drawn by the caller. */
+/** Rays (from Or II) and Radiant's flames behind the emblem; the halo is drawn by the caller. */
 function Rays({
   tier,
   division,
@@ -197,7 +197,7 @@ function Wings({
   return <>{feathers}</>;
 }
 
-/** Rubis: crown. Diamant: taller, jewelled. Obsidienne: spiked horns. */
+/** Rubis: crown. Diamant: taller, jewelled. Radiant: spiked horns. */
 function Crown({ tier, p, light, dark }: { tier: number; p: Palette; light: string; dark: string }) {
   const outline = p.frame[3];
   const y = 18;

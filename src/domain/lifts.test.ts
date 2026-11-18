@@ -8,6 +8,9 @@ import {
   liftBadgesCrossed,
   liftRank,
   liftRankLabel,
+  defaultPrTarget,
+  prAttemptPlan,
+  prAttemptSetsAfter,
   parseLiftParam,
   TRACKED_LIFTS,
 } from './lifts';
@@ -66,7 +69,7 @@ describe('liftBadges', () => {
     ).toEqual([60, 80]);
   });
 
-  it('keeps going two milestones past the best lift beyond Obsidienne I', () => {
+  it('keeps going two milestones past the best lift beyond Radiant I', () => {
     expect(liftBadges(bench, 135).at(-1)?.kg).toBe(150);
     expect(liftBadges(squat, 200).at(-1)?.kg).toBe(225);
   });
@@ -80,7 +83,7 @@ describe('liftBadges', () => {
 });
 
 describe('liftRank', () => {
-  it('names each bench milestone: two divisions per metal, Rubis, Diamant, then Obsidienne', () => {
+  it('names each bench milestone: two divisions per metal, Rubis, Diamant, then Radiant', () => {
     const labels = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 200].map((kg) =>
       liftRankLabel(bench, kg),
     );
@@ -93,10 +96,10 @@ describe('liftRank', () => {
       'Or II',
       'Rubis',
       'Diamant',
-      'Obsidienne I',
-      'Obsidienne II',
-      'Obsidienne III',
-      'Obsidienne III',
+      'Radiant I',
+      'Radiant II',
+      'Radiant III',
+      'Radiant III',
     ]);
   });
 
@@ -130,5 +133,44 @@ describe('liftBadgeDates', () => {
 
   it('returns nothing without history', () => {
     expect(liftBadgeDates([], [60]).size).toBe(0);
+  });
+});
+
+describe('PR attempt plan', () => {
+  it('ramps from the empty bar to a single at the target, loads rounded to 2.5 kg', () => {
+    expect(prAttemptPlan(82.5)).toEqual([
+      { weightKg: 20, reps: 10 },
+      { weightKg: 42.5, reps: 5 },
+      { weightKg: 57.5, reps: 3 },
+      { weightKg: 70, reps: 1 },
+      { weightKg: 75, reps: 1 },
+      { weightKg: 82.5, reps: 1 },
+    ]);
+  });
+
+  it('skips ramp steps at or under the bar for light targets', () => {
+    expect(prAttemptPlan(30)).toEqual([
+      { weightKg: 20, reps: 10 },
+      { weightKg: 25, reps: 1 },
+      { weightKg: 27.5, reps: 1 },
+      { weightKg: 30, reps: 1 },
+    ]);
+  });
+
+  it('defaults the target to the best lift + 2.5 kg', () => {
+    expect(defaultPrTarget(80)).toBe(82.5);
+    expect(defaultPrTarget(0)).toBe(20);
+  });
+
+  it('skips the warm-up already done this session, never the attempt', () => {
+    const plan = prAttemptPlan(82.5);
+    expect(prAttemptSetsAfter(plan, 0)).toEqual(plan);
+    expect(prAttemptSetsAfter(plan, 60)).toEqual([
+      { weightKg: 70, reps: 1 },
+      { weightKg: 75, reps: 1 },
+      { weightKg: 82.5, reps: 1 },
+    ]);
+    expect(prAttemptSetsAfter(plan, 90)).toEqual([{ weightKg: 82.5, reps: 1 }]);
+    expect(prAttemptSetsAfter([], 50)).toEqual([]);
   });
 });

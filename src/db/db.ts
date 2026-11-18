@@ -139,6 +139,13 @@ export interface Workout {
   restEndsAt?: number;
   /** The teammate training alongside (their sets are `PartnerSet`s); absent when training alone. */
   partnerId?: number;
+  /** PR attempts added to this workout (`addPrAttempt`): the exercise and the load aimed at for 1 rep. */
+  prAttempts?: PrAttempt[];
+}
+
+export interface PrAttempt {
+  exerciseId: number;
+  targetKg: number;
 }
 
 export interface WorkoutSet {

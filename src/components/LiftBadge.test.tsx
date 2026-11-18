@@ -32,7 +32,7 @@ describe('LiftBadge', () => {
     expect(new Set(markup).size).toBe(LIFT_IDS.length);
   });
 
-  it('adds ornaments with each rank, up to Obsidienne', () => {
+  it('adds ornaments with each rank, up to Radiant', () => {
     // One load per rank (divisions add pips, so they aren't compared).
     const loads = [60, 80, 100, 120, 130, 140];
     const { container } = render(

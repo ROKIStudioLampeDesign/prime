@@ -98,6 +98,7 @@ export function ExerciseCard({
   const shown: AnySet[] = mate ? partner.sets : sets;
   const actions = mate ? PARTNER_ACTIONS : MY_ACTIONS;
   const name = exercise?.name ?? 'Exercice inconnu';
+  const prTarget = workout.prAttempts?.find((a) => a.exerciseId === exerciseId)?.targetKg;
   const menuSet = shown.find((s) => s.id === menuSetId);
   const completedCount = sets.filter((s) => s.completed).length;
   const droppable = setToDrop(shown);
@@ -118,6 +119,11 @@ export function ExerciseCard({
     <section aria-label={name} className="py-4">
       <div className="flex items-start gap-1">
         <div className="min-w-0 flex-1 pt-1">
+          {prTarget !== undefined && (
+            <p className="mb-1.5 inline-block bg-nutrition px-2 py-0.5 text-[13px] font-black text-ink tabular-nums">
+              Tentative PR · {formatWeight(prTarget)} kg
+            </p>
+          )}
           <h2 className="line-clamp-2 text-[1.3125rem] leading-tight headline">{name}</h2>
           {exercise && (
             <p className="mt-0.5 truncate text-[13px] font-semibold text-muted">

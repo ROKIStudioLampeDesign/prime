@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import { calorieStreak, defaultPrTarget, prBenchPlan, weekStreak, type DayKcal } from './streaks';
+import { calorieStreak, weekStreak, type DayKcal } from './streaks';
 
 const d = (s: string) => s as LocalDate;
 const days = (rows: Record<string, number>) =>
@@ -87,32 +87,5 @@ describe('weekStreak', () => {
   it('stops at a week under the target and ignores future days', () => {
     const attended = new Set([...week('2026-10-19', 5), ...week('2026-10-26', 4), d('2026-11-20')]);
     expect(weekStreak(attended, d('2026-11-03'), 5).weeks).toBe(0);
-  });
-});
-
-describe('PR bench plan', () => {
-  it('ramps from the empty bar to a single at the target, loads rounded to 2.5 kg', () => {
-    expect(prBenchPlan(82.5)).toEqual([
-      { weightKg: 20, reps: 10 },
-      { weightKg: 42.5, reps: 5 },
-      { weightKg: 57.5, reps: 3 },
-      { weightKg: 70, reps: 1 },
-      { weightKg: 75, reps: 1 },
-      { weightKg: 82.5, reps: 1 },
-    ]);
-  });
-
-  it('skips ramp steps at or under the bar for light targets', () => {
-    expect(prBenchPlan(30)).toEqual([
-      { weightKg: 20, reps: 10 },
-      { weightKg: 25, reps: 1 },
-      { weightKg: 27.5, reps: 1 },
-      { weightKg: 30, reps: 1 },
-    ]);
-  });
-
-  it('defaults the target to the best lift + 2.5 kg', () => {
-    expect(defaultPrTarget(80)).toBe(82.5);
-    expect(defaultPrTarget(0)).toBe(20);
   });
 });

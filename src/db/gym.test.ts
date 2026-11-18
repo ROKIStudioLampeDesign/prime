@@ -6,6 +6,7 @@ import { EXERCISE_SEED } from './exerciseSeed';
 import { createTemplate, duplicateTemplate, getTemplate } from './templates';
 import {
   addExerciseToWorkout,
+  addPrAttempt,
   addSet,
   createPastWorkout,
   deleteWorkout,
@@ -428,6 +429,52 @@ describe('workout logging', () => {
 
     const past = await createPastWorkout('2026-10-15' as LocalDate, undefined, db);
     expect(await getWorkout(past, db)).toMatchObject({ date: '2026-10-15', status: 'done' });
+  });
+});
+
+describe('PR attempts', () => {
+  const loads = (sets: { weightKg: number; reps: number }[]) => sets.map((s) => [s.weightKg, s.reps]);
+
+  it('adds a lift not in the workout yet: warm-up ramp then one single at the target', async () => {
+    const id = await startWorkout(undefined, db);
+    const bench = await seededId('bench-press');
+    await addPrAttempt(id, bench, 82.5, db);
+    expect(loads(await getWorkoutSets(id, db))).toEqual([
+      [20, 10],
+      [42.5, 5],
+      [57.5, 3],
+      [70, 1],
+      [75, 1],
+      [82.5, 1],
+    ]);
+    expect((await getWorkout(id, db))?.prAttempts).toEqual([{ exerciseId: bench, targetKg: 82.5 }]);
+  });
+
+  it('after the lift was trained, keeps its sets and adds only the warm-up above them', async () => {
+    const id = await startWorkout(undefined, db);
+    const squat = await seededId('back-squat');
+    await addExerciseToWorkout(id, squat, { setCount: 2 }, db);
+    const [first, second] = await getWorkoutSets(id, db);
+    if (!first || !second) throw new Error('sets');
+    await updateSet(first.id, { weightKg: 80, reps: 5 }, db);
+    await setCompleted(first.id, true, 0, db);
+    // Not validated: doesn't count as warm-up.
+    await updateSet(second.id, { weightKg: 100, reps: 5 }, db);
+
+    await addPrAttempt(id, squat, 120, db);
+    const sets = await getWorkoutSets(id, db);
+    expect(sets.map((s) => s.setNumber)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(new Set(sets.map((s) => s.order)).size).toBe(1);
+    expect(loads(sets.slice(2))).toEqual([
+      [85, 3],
+      [102.5, 1],
+      [110, 1],
+      [120, 1],
+    ]);
+
+    // A second attempt on the same lift replaces the target.
+    await addPrAttempt(id, squat, 122.5, db);
+    expect((await getWorkout(id, db))?.prAttempts).toEqual([{ exerciseId: squat, targetKg: 122.5 }]);
   });
 });
 

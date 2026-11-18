@@ -2,7 +2,6 @@ import type { LocalDate } from '../domain/date';
 import { personalRecords, type HistorySet, type PersonalRecords } from '../domain/strength';
 import { workoutVolume } from '../domain/workout';
 import { db, type LogEntry, type PrimeDB, type Workout } from './db';
-import { BENCH_SEED_ID } from './exerciseSeed';
 
 /**
  * Completed sets of finished workouts, grouped by exercise (oldest first). The active workout is
@@ -47,11 +46,9 @@ export async function getRecordsBefore(
   return personalRecords(history);
 }
 
-/** Heaviest bench load lifted for at least one rep in a finished workout (0 without one). */
-export async function getBenchBestKg(database: PrimeDB = db): Promise<number> {
-  const bench = await database.exercises.where('seedId').equals(BENCH_SEED_ID).first();
-  if (!bench) return 0;
-  const history = (await listExerciseHistory(database)).get(bench.id) ?? [];
+/** Heaviest load lifted for at least one rep in a finished workout (0 without one). */
+export async function getBestKg(exerciseId: number, database: PrimeDB = db): Promise<number> {
+  const history = (await listExerciseHistory(database)).get(exerciseId) ?? [];
   return personalRecords(history).weight?.weightKg ?? 0;
 }
 
