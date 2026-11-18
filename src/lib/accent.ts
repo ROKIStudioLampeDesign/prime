@@ -263,6 +263,10 @@ export const ACCENT_PALETTES: AccentPalette[] = [
   harmony('periwinkle-burgundy', 'Pervenche et bordeaux', '#8f9bff', '#5e0f1e', '#d0384f'),
   harmony('straw-brick', 'Jaune paille et brique', '#f6d86b', '#7a2412', '#e0583a'),
   harmony('sand-fir', 'Sable et vert sapin', '#e8c99b', '#123f2c', '#3fa06e'),
+  harmony('red-fir', 'Rouge et vert sapin', '#ff3b3b', '#0f4a32', '#2fb878', true),
+  harmony('red-ochre', 'Rouge et ocre', '#ff2f2f', '#6b4300', '#d99a1a', true),
+  // A red Salle band: warnings turn yellow too, so a red signal never blends into it.
+  harmony('mint-red', 'Menthe et rouge', '#4dffb8', '#7d1016', '#ff3b45', true),
 ];
 
 const FALLBACK: AccentPalette = { id: 'pink', label: 'Rose', color: '#ff2e8a', vars: {} };
