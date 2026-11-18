@@ -3,27 +3,13 @@ import type { Plugin } from 'vite';
 import { appleSplashScreenSizes, type AppleDeviceName } from '@vite-pwa/assets-generator/config';
 
 /**
- * iPhones from the 12 on, one per screen size (devices sharing a size share an image): iOS shows
- * the matching launch image while a home screen app opens.
+ * Every iPhone the generator knows, one image per screen size (devices sharing a size share an
+ * image): iOS shows the matching launch image while a home screen app opens. A phone without a
+ * match gets the icon on a black screen instead, so none is left out.
  */
-const IPHONES: AppleDeviceName[] = [
-  'iPhone 12 mini',
-  'iPhone 12',
-  'iPhone 12 Pro Max',
-  'iPhone 14 Plus',
-  'iPhone 14 Pro',
-  'iPhone 14 Pro Max',
-  'iPhone 15',
-  'iPhone 15 Plus',
-  'iPhone 16 Pro',
-  'iPhone 16 Pro Max',
-  'iPhone 16e',
-  'iPhone 17',
-  'iPhone 17 Pro',
-  'iPhone 17 Pro Max',
-  'iPhone Air',
-  'iPhone SE 4.7"',
-];
+const IPHONES = (Object.keys(appleSplashScreenSizes) as AppleDeviceName[]).filter((name) =>
+  name.startsWith('iPhone'),
+);
 
 /** The "PR" of the logo (`public/favicon.svg`), centred on (258, 254) in its 512 grid. */
 const LETTERS =

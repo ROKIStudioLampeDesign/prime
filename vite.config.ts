@@ -36,6 +36,8 @@ export default defineConfig({
         // The manifest is added by the plugin itself; globbing it too creates a conflicting precache entry.
         // wasm: the barcode decoder, so scanning works offline too.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm}'],
+        // iOS keeps the launch images when the app is added to the home screen: no need to cache them.
+        globIgnores: ['apple-splash-*.png'],
         navigateFallback: '/index.html',
         // Control the page on first install (offline-ready right away). Updates still wait for
         // the user's "Mettre à jour" because skipWaiting stays off in prompt mode.
