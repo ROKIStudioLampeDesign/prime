@@ -213,6 +213,34 @@ Rules:
   verification…).
 - **Propose ideas now and then:** a one-line improvement idea, never implemented unasked.
 
+## Mockups (design proposals)
+
+Never draw a fake interface: show the real app repainted, or a throwaway page that loads the
+app's real stylesheet. Mockups live in `mockups/` (git-ignored), served by the dev server
+(`.claude/launch.json` config `dev`, started with the browser panel's `preview_start`, not Bash) at
+`http://localhost:5173/mockups/x.html`, same origin as the app (same IndexedDB, demo data via
+Réglages › « Charger des données de démo », DOM access to iframes). Run Prettier on them.
+
+- **Palettes:** a grid of `<iframe>` of the app (375 × 812, `transform: scale(var(--z))`), each
+  repainted by writing the raw `--a*` / `--g*` variables on `contentDocument.documentElement.style`,
+  re-applied by a `MutationObserver` on its `style` attribute (the rotation rewrites it). Frames get
+  their `src` only near the screen (`IntersectionObserver`, `rootMargin: 300px`): 40 apps at once
+  crash the panel. Buttons switch every frame's route (`/`, `/nutrition`, `/gym`,
+  `/gym/workout/1`, `/stats`) and the zoom; `?duos` / `?rotation` filter the list. Each option has
+  a number, its swatches and hex codes.
+- **New screens:** `<link rel="stylesheet" href="/src/index.css">` (Tailwind compiles mockups'
+  classes too), markup copied from the real DOM (`outerHTML`), one 375 × 812 phone per variant
+  (« A. Onglets », « B. Alterné »…) with two lines of rationale, the user's real figures when known.
+- **Logos/icons:** inline SVG shown large, then at 60 px on a fake dark and light home screen
+  (`border-radius: 22.5%`). Final icon text as `<path>` (sharp/librsvg has no Archivo); check the
+  PNGs in `dist/` with Read.
+- **Showing it:** resize the panel to 1300 × 1000 for the grid, screenshot; freeze view transitions
+  via `document.getAnimations()`. End with the panel back on the desktop preset. Show only the
+  final state; the user picks by number, implement only after their choice.
+- **Traps:** unused `@theme` variables are not emitted (use the raw `--g-tint`, not
+  `--color-gym-strong`); bust `/favicon.svg` caching with `?v=2`; on Windows write scripts with the
+  Write tool (heredocs with apostrophes break under Git Bash).
+
 ## Definition of done
 
 A change is done only when all of these hold:

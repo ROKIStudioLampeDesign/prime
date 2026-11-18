@@ -44,3 +44,6 @@ desktop.ini
 # Playwright
 playwright-report/
 test-results/
+
+# Throwaway mockups served by the dev server (see CLAUDE.md)
+/mockups/
