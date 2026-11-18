@@ -239,6 +239,11 @@
       radial-gradient(55% 32% at 12% 4%, rgb(var(--a) / 0.34), transparent 70%),
       radial-gradient(45% 30% at 104% 52%, rgb(var(--amb2) / 0.2), transparent 70%),
       radial-gradient(70% 26% at 30% 100%, rgb(var(--a) / 0.3), transparent 70%);
+    /*
+     * Fades in from the top of the screen (the box starts 10% above it): against the opaque
+     * status bar, light reaching the very top would draw a hard line.
+     */
+    mask-image: linear-gradient(to bottom, transparent 8.5%, #000 24%);
     animation: ambient-drift 12s ease-in-out infinite alternate;
   }
   @media (prefers-reduced-motion: reduce) {

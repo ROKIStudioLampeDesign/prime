@@ -3,11 +3,14 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { appleSplash } from './appleSplash.ts';
 
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Full-screen launch images (the assets generator only puts the icon on a plain colour).
+    appleSplash(),
     VitePWA({
       // 'prompt': a new version waits for the user (UpdatePrompt) instead of reloading mid-workout.
       registerType: 'prompt',
