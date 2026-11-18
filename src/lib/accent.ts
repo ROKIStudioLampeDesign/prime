@@ -260,6 +260,11 @@ export const ACCENT_PALETTES: AccentPalette[] = [
   harmony('glacier-royal', 'Glacier et bleu roi', '#5ce1ff', '#0b3a8f', '#4d8dff'),
   harmony('sun-petrol', 'Soleil et bleu pétrole', '#ffd23f', '#0b5563', '#2bb5c9'),
   harmony('turquoise-plum', 'Turquoise et prune', '#19e3c4', '#5a1466', '#c64fe0'),
+  harmony('saffron-indigo', 'Safran et indigo', '#ffb000', '#2a1d7a', '#6b5cff'),
+  harmony('cream-chocolate', 'Crème et chocolat', '#f3e6c8', '#4a2a14', '#c08050'),
+  harmony('periwinkle-burgundy', 'Pervenche et bordeaux', '#8f9bff', '#5e0f1e', '#d0384f'),
+  harmony('straw-brick', 'Jaune paille et brique', '#f6d86b', '#7a2412', '#e0583a'),
+  harmony('sand-fir', 'Sable et vert sapin', '#e8c99b', '#123f2c', '#3fa06e'),
 ];
 
 const FALLBACK: AccentPalette = { id: 'pink', label: 'Rose', color: '#ff2e8a', vars: {} };
