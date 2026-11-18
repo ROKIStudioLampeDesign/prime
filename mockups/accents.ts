@@ -42,6 +42,14 @@ const filter = FILTERS.find((f) => f.key && params.has(f.key)) ?? FILTERS[0];
 let screen = params.get('ecran') ?? '/';
 let size = SIZES.find((s) => s.key === params.get('taille')) ?? SIZES[0];
 
+// An empty database (a fresh browser) gets the demo data, so the phones show something.
+if ((await db.workouts.count()) === 0 && (await db.logEntries.count()) === 0) {
+  const { loadDemoData, loadGymDemoData, loadBodyWeightDemoData } = await import('../src/db/demo');
+  await loadDemoData();
+  await loadGymDemoData();
+  await loadBodyWeightDemoData();
+}
+
 const lastWorkout = await db.workouts.orderBy('startedAt').last();
 const SCREENS = [
   { label: 'Accueil', path: '/' },
