@@ -1,12 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { useSearchParams } from 'react-router';
 import { Loading } from '../../components/Loading';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import { listExercises } from '../../db/exercises';
 import { listExerciseHistory } from '../../db/stats';
-import { addDays, fromLocalDate, type LocalDate } from '../../domain/date';
+import { addDays, type LocalDate } from '../../domain/date';
 import {
   comparePeriods,
   compareWithMonthBefore,
@@ -14,13 +12,12 @@ import {
   type BestSet,
   type PerfComparison,
 } from '../../domain/perfComparison';
-import { weekEnd } from '../../domain/week';
 import { formatWeight, formatWeightChange } from '../../lib/format';
 import { BandTile } from './shared';
 
 type Mode = 'week' | 'month';
 const MODES = [
-  { value: 'week' as const, label: 'Semaine' },
+  { value: 'week' as const, label: '7 jours' },
   { value: 'month' as const, label: 'Mois' },
 ];
 
@@ -42,18 +39,14 @@ function deltaLabel(row: PerfComparison): string {
 const TREND_COLOR = { up: 'text-accent', down: 'text-danger', same: '', new: 'text-muted' };
 
 /**
- * Your performance exercise by exercise: the best set of the shown week against the week before,
+ * Your performance exercise by exercise: the best set of the last 7 days against the 7 days before,
  * or your last session against the one about a month before. Only finished workouts, only your sets.
  */
-export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; today: LocalDate }) {
+export function PerfComparisonSection({ today }: { today: LocalDate }) {
   const [params, setParams] = useSearchParams();
   const mode: Mode = params.get('perfs') === 'mois' ? 'month' : 'week';
   const history = useLiveQuery(listExerciseHistory);
   const exercises = useLiveQuery(listExercises);
-
-  // Month mode looks back from the shown week's last day, or from today for the current week.
-  const end = weekEnd(weekOf);
-  const monthDay = end > today ? today : end;
 
   function setMode(next: Mode) {
     setParams(
@@ -67,20 +60,14 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
     );
   }
 
-  const period =
-    mode === 'week'
-      ? `${format(fromLocalDate(weekOf), 'd MMM', { locale: fr })} – ${format(fromLocalDate(end), 'd MMM', { locale: fr })} contre la semaine d’avant`
-      : 'Ta dernière séance de chaque exercice contre celle d’il y a un mois (ou ta première, si plus récente)';
-
   return (
-    <section className="mt-8" aria-labelledby="perfs">
+    <section aria-labelledby="perfs">
       <h2 id="perfs" className="text-[1.375rem] leading-tight headline">
         Perfs
       </h2>
       <div className="mt-2">
         <SegmentedControl label="Comparer" options={MODES} value={mode} onChange={setMode} />
       </div>
-      <p className="mt-2 text-[13px] font-bold text-muted first-letter:uppercase">{period}</p>
 
       {history === undefined || exercises === undefined ? (
         <Loading />
@@ -90,10 +77,10 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
             mode === 'week'
               ? comparePeriods(
                   history,
-                  { from: weekOf, to: end },
-                  { from: addDays(weekOf, -7), to: addDays(weekOf, -1) },
+                  { from: addDays(today, -6), to: today },
+                  { from: addDays(today, -13), to: addDays(today, -7) },
                 )
-              : compareWithMonthBefore(history, monthDay);
+              : compareWithMonthBefore(history, today);
           if (rows.length === 0) {
             return (
               <p className="mt-4 border-2 border-dashed border-line px-6 py-8 text-center text-sm font-semibold text-muted">
@@ -121,7 +108,7 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
                       {mode === 'week' ? 'Avant' : 'Il y a 1 mois'}
                     </th>
                     <th className="py-1 text-right font-extrabold">
-                      {mode === 'week' ? 'Cette sem.' : 'Dernière'}
+                      {mode === 'week' ? '7 jours' : 'Dernière'}
                     </th>
                     <th className="py-1 text-right font-extrabold">1RM est.</th>
                   </tr>
@@ -145,10 +132,6 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
                   ))}
                 </tbody>
               </table>
-              <p className="mt-3 text-xs font-semibold text-muted">
-                Meilleure série de chaque exercice, jugée sur le 1RM estimé (aux répétitions pour les
-                exercices au poids du corps). Seules tes séances terminées comptent.
-              </p>
             </>
           );
         })()

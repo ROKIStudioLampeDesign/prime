@@ -147,7 +147,10 @@ Rules:
   _before_ the current workout (`getRecordsBefore`). The Records tab follows one lift picked in
   `?lift=` (Bench, Squat, Deadlift, Power clean, Snatch: `TRACKED_LIFTS`, `src/domain/lifts.ts`), each
   with its own badge scale, pictogram (`LiftBadge`) and goal (`liftGoals.ts`, a setting per lift);
-  Progression still covers every exercise. A PR attempt is added inside any active workout
+  a menu opens any other exercise (`?exercise=`). Records charts the best reached so far
+  (`bestSoFar`: never a drop). Progression shows recent records, weekly volume and perfs against
+  the 7 days or the month before; Bilan (`/stats/week`) is the weekly summary. No explanatory
+  footnotes under charts. A PR attempt is added inside any active workout
   ("Tentative PR", `addPrAttempt`): a warm-up ramp and a single on one of those lifts, the target
   kept in `workout.prAttempts`; the summary gives a verdict per lift (`LiftResults`). Body weight:
   one entry per day (upsert).

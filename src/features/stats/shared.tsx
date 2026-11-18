@@ -10,7 +10,7 @@ const STATS_TABS = [
   { to: '/stats', label: 'Poids', end: true },
   { to: '/stats/progress', label: 'Progression' },
   { to: '/stats/records', label: 'Records' },
-  { to: '/stats/week', label: 'Semaine' },
+  { to: '/stats/week', label: 'Bilan' },
 ];
 
 export function StatsTabs() {

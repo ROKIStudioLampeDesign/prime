@@ -43,12 +43,42 @@ describe('RecordsScreen', () => {
     renderWithRouter(<RecordsScreen />);
     expect(await screen.findByRole('heading', { name: 'Bench' })).toBeTruthy();
     expect(screen.getByText('Charge max · 60 kg × 8')).toBeTruthy();
-    expect(screen.queryByText(/1RM/)).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Squat' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Bench' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('link', { name: 'Voir la progression' }).getAttribute('href')).toBe(
-      `/stats/progress?exercise=${bench}`,
-    );
+    expect(screen.getByRole('heading', { name: 'Évolution du record' })).toBeTruthy();
+    // The tracked lifts have their own tabs, not a place in the other exercises.
+    const others = screen.queryByRole('combobox', { name: 'Autre exercice' });
+    expect(others).toBeNull();
+    expect(await axeViolations()).toEqual([]);
+  });
+
+  it('opens any other exercise from the menu, with its chart and records but no badges', async () => {
+    const curl = await seededId('barbell-curl');
+    const workoutId = await db.workouts.add({
+      date: '2026-11-02' as LocalDate,
+      status: 'done',
+      startedAt: 1,
+      endedAt: 2,
+    });
+    await db.workoutSets.add({
+      workoutId,
+      exerciseId: curl,
+      order: 0,
+      setNumber: 1,
+      completed: true,
+      weightKg: 30,
+      reps: 10,
+    });
+
+    renderWithRouter(<RecordsScreen />, { route: '/stats/records' });
+    const select = await screen.findByRole<HTMLSelectElement>('combobox', { name: 'Autre exercice' });
+    await userEvent.setup().selectOptions(select, String(curl));
+
+    expect(await screen.findByText('Charge max · 30 kg × 10')).toBeTruthy();
+    expect(select.value).toBe(String(curl));
+    expect(screen.getByRole('heading', { name: 'Évolution du record' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Badges' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Bench' }).getAttribute('aria-current')).toBeNull();
     expect(await axeViolations()).toEqual([]);
   });
 

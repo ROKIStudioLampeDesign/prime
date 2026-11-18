@@ -1,10 +1,9 @@
 /** @vitest-environment jsdom */
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { db } from '../../db/db';
-import { BENCH_SEED_ID } from '../../db/exerciseSeed';
-import type { LocalDate } from '../../domain/date';
-import { renderWithRouter } from '../../test/utils';
+import { addDays, todayLocalDate, type LocalDate } from '../../domain/date';
+import { axeViolations, renderWithRouter } from '../../test/utils';
 import { ProgressionScreen } from './ProgressionScreen';
 
 async function seededId(seedId: string): Promise<number> {
@@ -13,21 +12,16 @@ async function seededId(seedId: string): Promise<number> {
   return exercise.id;
 }
 
-async function logSet(exerciseId: number, startedAt: number) {
-  const workoutId = await db.workouts.add({
-    date: '2026-11-02' as LocalDate,
-    status: 'done',
-    startedAt,
-    endedAt: startedAt + 1,
-  });
+async function logSet(exerciseId: number, date: LocalDate, weightKg: number, startedAt: number) {
+  const workoutId = await db.workouts.add({ date, status: 'done', startedAt, endedAt: startedAt + 1 });
   await db.workoutSets.add({
     workoutId,
     exerciseId,
     order: 0,
     setNumber: 1,
     completed: true,
-    weightKg: 60,
-    reps: 8,
+    weightKg,
+    reps: 5,
   });
 }
 
@@ -36,23 +30,24 @@ describe('ProgressionScreen', () => {
     await Promise.all([db.workouts.clear(), db.workoutSets.clear()]);
   });
 
-  it('shows the bench by default, even when another exercise was trained more recently', async () => {
-    const bench = await seededId(BENCH_SEED_ID);
-    const squat = await seededId('back-squat');
-    await logSet(bench, 1000);
-    await logSet(squat, 2000);
-
+  it('says what to do before the first finished workout', async () => {
     renderWithRouter(<ProgressionScreen />);
-    const select = await screen.findByRole<HTMLSelectElement>('combobox', { name: 'Exercice' });
-    expect(select.value).toBe(String(bench));
+    expect(await screen.findByText('Pas encore de données')).toBeTruthy();
   });
 
-  it('falls back to the most recent exercise without bench history', async () => {
+  it('lists recent records, the weekly volume and the perfs', async () => {
+    const today = todayLocalDate(new Date());
     const squat = await seededId('back-squat');
-    await logSet(squat, 2000);
+    await logSet(squat, addDays(today, -40), 100, 1);
+    await logSet(squat, addDays(today, -3), 110, 2);
 
     renderWithRouter(<ProgressionScreen />);
-    const select = await screen.findByRole<HTMLSelectElement>('combobox', { name: 'Exercice' });
-    expect(select.value).toBe(String(squat));
+    const list = await screen.findByRole('list');
+    expect(within(list).getByText('Squat (barre)')).toBeTruthy();
+    expect(within(list).getByText('110 kg')).toBeTruthy();
+    expect(within(list).getByRole('link').getAttribute('href')).toBe('/stats/records?lift=squat');
+    expect(screen.getByRole('heading', { name: /Volume hebdo/ })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Perfs' })).toBeTruthy();
+    expect(await axeViolations()).toEqual([]);
   });
 });

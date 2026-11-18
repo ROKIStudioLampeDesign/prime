@@ -1,7 +1,7 @@
 import { addDays, daysBetween, type LocalDate } from './date';
 import type { HistorySet } from './strength';
 
-/** The best set of an exercise over a period, as compared in Stats › Semaine › Perfs. */
+/** The best set of an exercise over a period, as compared in Stats › Progression › Perfs. */
 export interface BestSet {
   weightKg: number;
   reps: number;

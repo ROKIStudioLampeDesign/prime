@@ -1,243 +1,193 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BigNumber } from '../../components/BigNumber';
+import { Link, Navigate, useSearchParams } from 'react-router';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '../../components/EmptyState';
 import { Loading } from '../../components/Loading';
 import { Screen } from '../../components/Screen';
-import { SegmentedControl } from '../../components/SegmentedControl';
+import { useToday } from '../../components/useToday';
 import type { Exercise } from '../../db/db';
-import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { listExercises } from '../../db/exercises';
 import { listExerciseHistory } from '../../db/stats';
-import {
-  MAX_REPS_FOR_1RM,
-  personalRecords,
-  RECORD_KINDS,
-  RECORD_LABELS,
-  bestSoFar,
-  sessionProgression,
-  type HistorySet,
-  type ProgressMetric,
-  type RecordKind,
-} from '../../domain/strength';
-import { formatWeight } from '../../lib/format';
-import { axisProps, niceTicks, shortDateLabel, timeTicks, toTime } from './chartUtils';
-import { recordDetail } from './labels';
-import { ChartEmpty, RecordRow, StatsTabs, TooltipBox } from './shared';
+import { addDays, type LocalDate } from '../../domain/date';
+import { LIFT_IDS, TRACKED_LIFTS } from '../../domain/lifts';
+import { recentRecords, weeklyVolumes } from '../../domain/progressOverview';
+import type { HistorySet } from '../../domain/strength';
+import { formatInteger, formatWeight, formatWeightChange } from '../../lib/format';
+import { axisProps, niceTicks, shortDateLabel, toTime } from './chartUtils';
+import { PerfComparisonSection } from './PerfComparisonSection';
+import { BandTile, ChartEmpty, StatsTabs, TooltipBox } from './shared';
 
-const CHART_HEIGHT = 220;
+const RECORD_DAYS = 30;
+const VOLUME_WEEKS = 8;
+const CHART_HEIGHT = 180;
 
-/** /stats/progress?exercise=id — progression chart and records of one exercise. */
+/** "14,6 t", or kg under a tonne. */
+const formatTonnes = (kg: number) =>
+  kg >= 1000 ? `${formatWeight(Math.round(kg / 100) / 10)} t` : `${formatInteger(kg)} kg`;
+
+/** /stats/progress — are you progressing: recent records, perfs against before, weekly volume. */
 export function ProgressionScreen() {
+  const [params] = useSearchParams();
   const exercises = useLiveQuery(listExercises);
   const history = useLiveQuery(listExerciseHistory);
+  const today = useToday();
+
+  // Former links to one exercise's chart: it lives in Records now.
+  const exercise = params.get('exercise');
+  if (exercise !== null) return <Navigate to={recordsLink(exercise, exercises)} replace />;
 
   return (
     <Screen title="Stats">
       <StatsTabs />
       {exercises === undefined || history === undefined ? (
         <Loading />
+      ) : ![...history.values()].some((sets) => sets.length > 0) ? (
+        <EmptyState
+          title="Pas encore de données"
+          description="Termine une séance avec des charges pour suivre ta progression ici."
+          action={
+            <Link
+              to="/gym"
+              className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
+            >
+              Aller à la salle
+            </Link>
+          }
+        />
       ) : (
-        <ProgressionContent exercises={exercises} history={history} />
+        <>
+          <RecentRecords exercises={exercises} history={history} today={today} />
+          <VolumeChart history={history} today={today} />
+          <PerfComparisonSection today={today} />
+        </>
       )}
     </Screen>
   );
 }
 
-function ProgressionContent({
+/** A tracked lift opens its own tab (badges, goal); any other exercise opens `?exercise=`. */
+function recordsLink(id: string | number, exercises: readonly Exercise[] | undefined): string {
+  const seedId = exercises?.find((e) => String(e.id) === String(id))?.seedId;
+  const lift = LIFT_IDS.find((l) => TRACKED_LIFTS[l].seedId === seedId);
+  if (lift) return lift === 'bench' ? '/stats/records' : `/stats/records?lift=${lift}`;
+  return `/stats/records?exercise=${id}`;
+}
+
+function RecentRecords({
   exercises,
   history,
+  today,
 }: {
   exercises: Exercise[];
   history: Map<number, HistorySet[]>;
+  today: LocalDate;
 }) {
-  const [params, setParams] = useSearchParams();
-  const [metric, setMetric] = useState<ProgressMetric>('maxWeight');
-
-  // Only exercises with loaded history, most recently trained first.
-  const options = useMemo(
-    () =>
-      exercises
-        .filter((e) => (history.get(e.id) ?? []).some((s) => s.weightKg > 0))
-        .map((e) => ({ exercise: e, last: history.get(e.id)?.at(-1)?.startedAt ?? 0 }))
-        .sort((a, b) => b.last - a.last)
-        .map((o) => o.exercise),
-    [exercises, history],
-  );
-
-  if (options.length === 0) {
-    return (
-      <EmptyState
-        title="Pas encore de données"
-        description="Termine une séance avec des charges pour suivre ta progression ici."
-        action={
-          <Link
-            to="/gym"
-            className="flex min-h-12 items-center bg-accent-fill px-5 font-black text-accent-fg"
-          >
-            Aller à la salle
-          </Link>
-        }
-      />
-    );
-  }
-
-  const requested = Number(params.get('exercise'));
-  // Default: the bench (the lift the app follows), else the most recently trained exercise.
-  const selected =
-    options.find((e) => e.id === requested) ??
-    options.find((e) => e.seedId === BENCH_SEED_ID) ??
-    (options[0] as Exercise);
-  const sets = history.get(selected.id) ?? [];
-  // Best reached so far: a lighter training day never shows as a drop.
-  const points = bestSoFar(sessionProgression(sets, metric)).map((p) => ({
-    t: toTime(p.date),
-    value: p.value,
-    isNewBest: p.isNewBest,
-  }));
-  const records = personalRecords(sets);
-  const headlineKind: RecordKind = metric === 'e1rm' ? 'e1rm' : 'weight';
-  const headline = records[headlineKind];
-  const tMin = points[0]?.t ?? 0;
-  const tMax = points.at(-1)?.t ?? 0;
-  const values = points.map((p) => p.value);
-  const yTicks = values.length
-    ? niceTicks(Math.max(0, Math.min(...values) * 0.97), Math.max(...values) * 1.03)
-    : [0, 1];
+  const records = recentRecords(history, addDays(today, -(RECORD_DAYS - 1)));
+  const names = new Map(exercises.map((e) => [e.id, e.name]));
+  const beaten = new Set(records.map((r) => r.exerciseId)).size;
 
   return (
-    <>
-      <label className="block">
-        <span className="mb-1 block text-xs font-extrabold text-muted">Exercice</span>
-        <select
-          value={selected.id}
-          onChange={(e) => setParams({ exercise: e.target.value }, { replace: true })}
-          className="h-14 w-full border-2 border-fg bg-bg px-3 text-lg font-extrabold outline-none focus:border-accent"
-        >
-          {options.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="mt-3">
-        <SegmentedControl
-          label="Mesure"
-          options={[
-            { value: 'maxWeight', label: 'Charge max' },
-            { value: 'e1rm', label: '1RM estimé' },
-          ]}
-          value={metric}
-          onChange={setMetric}
-        />
-      </div>
-
-      {/* The best value of the chosen measure, as a cobalt (Salle) band. */}
-      <section aria-label="Record" className="@container mt-4 bleed bg-gym py-4 text-on-gym">
-        <p className="text-sm font-extrabold">Record · {RECORD_LABELS[headlineKind]}</p>
-        <BigNumber
-          value={headline ? formatWeight(Math.round(headline.value * 10) / 10) : '—'}
-          unit={headline ? 'kg' : undefined}
-          maxRem={7}
-          className="mt-1.5 leading-[0.82]"
-        />
-        <p className="mt-2.5 text-sm font-semibold tabular-nums">
-          {headline
-            ? `${recordDetail(headline)}, ${shortDateLabel(toTime(headline.date))}`
-            : 'Pas encore de record pour cette mesure.'}
+    <section aria-labelledby="recent-records">
+      <dl className="edge grid grid-cols-2 gap-0.5">
+        <BandTile tone="gym" label="Records, 30 jours" value={String(records.length)} maxRem={3} />
+        <BandTile tone="paper" label="Exercices en hausse" value={String(beaten)} maxRem={3} />
+      </dl>
+      <h2 id="recent-records" className="mt-5 text-[1.375rem] leading-tight headline">
+        Derniers records
+      </h2>
+      {records.length === 0 ? (
+        <p className="mt-3 border-2 border-dashed border-line px-6 py-8 text-center text-sm font-semibold text-muted">
+          Pas de nouveau record ces 30 derniers jours. Tente un PR en séance !
         </p>
-      </section>
+      ) : (
+        <ul className="mt-2 divide-y divide-line border-y border-line">
+          {records.slice(0, 8).map((r) => (
+            <li key={`${r.exerciseId}-${r.startedAt}`}>
+              <Link
+                to={recordsLink(r.exerciseId, exercises)}
+                className="grid min-h-15 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 py-2 active:bg-surface"
+              >
+                <span className="min-w-0">
+                  <span className="block truncate text-[15px] font-extrabold">
+                    {names.get(r.exerciseId) ?? 'Exercice supprimé'}
+                  </span>
+                  <span className="block text-xs font-bold text-muted">{shortDateLabel(toTime(r.date))}</span>
+                </span>
+                <span className="text-right">
+                  <span className="block text-xl leading-tight headline tabular-nums">
+                    {formatWeight(r.weightKg)} kg
+                  </span>
+                  <span className="block text-xs font-black text-accent tabular-nums">
+                    {formatWeightChange(r.weightKg - r.previousKg)} kg
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
 
-      <section className="mt-4" aria-label="Progression par séance">
-        {points.length === 0 ? (
-          <ChartEmpty height={CHART_HEIGHT}>
-            {metric === 'e1rm'
-              ? `Pas encore de données : aucune série de ${MAX_REPS_FOR_1RM} répétitions ou moins.`
-              : 'Pas encore de données'}
-          </ChartEmpty>
+/** Training volume (load × reps) of the last weeks, the current one highlighted. */
+function VolumeChart({ history, today }: { history: Map<number, HistorySet[]>; today: LocalDate }) {
+  const weeks = weeklyVolumes(history, today, VOLUME_WEEKS).map((w) => ({
+    ...w,
+    label: shortDateLabel(toTime(w.weekOf)),
+  }));
+  const max = Math.max(...weeks.map((w) => w.volumeKg));
+  const yTicks = niceTicks(0, max * 1.05, 3);
+  const average = weeks.slice(0, -1).reduce((sum, w) => sum + w.volumeKg, 0) / Math.max(1, weeks.length - 1);
+
+  return (
+    <section aria-labelledby="volume-weeks" className="mt-8">
+      <h2 id="volume-weeks" className="flex items-baseline justify-between gap-3">
+        <span className="text-[1.375rem] leading-tight headline">Volume hebdo</span>
+        <span className="shrink-0 text-xs font-bold text-muted tabular-nums">
+          moy. {formatTonnes(average)}
+        </span>
+      </h2>
+      <div className="mt-2">
+        {max === 0 ? (
+          <ChartEmpty height={CHART_HEIGHT} />
         ) : (
           <ResponsiveContainer width="100%" height={CHART_HEIGHT}>
-            <LineChart data={points} margin={{ top: 8, right: 4, bottom: 0, left: 0 }}>
-              <CartesianGrid stroke="var(--color-line)" vertical={false} />
-              <XAxis
-                {...axisProps}
-                dataKey="t"
-                type="number"
-                scale="time"
-                domain={[tMin, tMax]}
-                ticks={timeTicks(tMin, tMax)}
-                tickFormatter={shortDateLabel}
-                padding={{ left: 12, right: 12 }}
-              />
+            <BarChart data={weeks} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
+              <XAxis {...axisProps} dataKey="label" interval={1} />
               <YAxis
                 {...axisProps}
-                domain={[yTicks[0] ?? 0, yTicks.at(-1) ?? 1]}
+                width={40}
+                domain={[0, yTicks.at(-1) ?? 1]}
                 ticks={yTicks}
-                width={36}
-                allowDecimals={false}
-                tickFormatter={(v: number) => formatWeight(v)}
+                tickFormatter={(v: number) => (v >= 1000 ? `${formatWeight(v / 1000)} t` : String(v))}
               />
               <Tooltip
-                cursor={{ stroke: 'var(--color-line)' }}
+                cursor={{ fill: 'var(--color-line)', fillOpacity: 0.4 }}
                 content={({ active, payload }) => {
-                  const p = payload?.[0]?.payload as (typeof points)[number] | undefined;
-                  if (!active || !p) return null;
+                  const w = payload?.[0]?.payload as (typeof weeks)[number] | undefined;
+                  if (!active || !w) return null;
                   return (
-                    <TooltipBox title={shortDateLabel(p.t)}>
-                      <p className="font-semibold tabular-nums">
-                        {formatWeight(Math.round(p.value * 10) / 10)} kg
-                        {p.isNewBest ? ' · nouveau record' : ''}
-                      </p>
+                    <TooltipBox title={`Semaine du ${w.label}`}>
+                      <p className="font-semibold tabular-nums">{formatInteger(w.volumeKg)} kg</p>
                     </TooltipBox>
                   );
                 }}
               />
-              <Line
-                dataKey="value"
-                type="stepAfter"
-                stroke="var(--color-gym-strong)"
-                strokeWidth={2.5}
-                dot={(props: {
-                  cx?: number;
-                  cy?: number;
-                  index?: number;
-                  payload?: (typeof points)[number];
-                }) =>
-                  props.payload?.isNewBest === true && props.cx !== undefined && props.cy !== undefined ? (
-                    <circle
-                      key={props.index}
-                      cx={props.cx}
-                      cy={props.cy}
-                      r={3.5}
-                      fill="var(--color-gym-strong)"
-                    />
-                  ) : (
-                    <g key={props.index} />
-                  )
-                }
-                activeDot={{ r: 5, fill: 'var(--color-fg)', stroke: 'none' }}
-                isAnimationActive={false}
-              />
-            </LineChart>
+              <Bar dataKey="volumeKg" isAnimationActive={false} maxBarSize={28}>
+                {weeks.map((w, i) => (
+                  <Cell
+                    key={w.weekOf}
+                    fill="var(--color-gym-strong)"
+                    fillOpacity={i === weeks.length - 1 ? 1 : 0.5}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
           </ResponsiveContainer>
         )}
-        <p className="px-4 pb-3 text-xs text-muted">
-          {metric === 'e1rm'
-            ? `Meilleur 1RM estimé atteint à chaque séance, par la formule d’Epley (charge × (1 + reps / 30)). Les séries de plus de ${MAX_REPS_FOR_1RM} répétitions sont ignorées : l’estimation y devient peu fiable.`
-            : 'Charge la plus lourde atteinte à chaque séance : une séance plus légère ne fait pas baisser la courbe. Un point marque chaque nouveau record.'}
-        </p>
-      </section>
-
-      <h2 className="mt-6 mb-1 text-[1.375rem] leading-tight headline">Records</h2>
-      <dl className="divide-y divide-line border-y border-line">
-        {RECORD_KINDS.map((kind) => (
-          <RecordRow key={kind} label={RECORD_LABELS[kind]} record={records[kind]} />
-        ))}
-      </dl>
-    </>
+      </div>
+      <div className="mt-8" />
+    </section>
   );
 }

@@ -23,7 +23,6 @@ import {
 } from '../../domain/weeklySummary';
 import { formatInteger, formatMacro, formatWeightChange } from '../../lib/format';
 import { axisProps, niceTicks } from './chartUtils';
-import { PerfComparisonSection } from './PerfComparisonSection';
 import { BandTile, ChartEmpty, StatsTabs } from './shared';
 
 const DAY_LETTERS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -37,7 +36,7 @@ function weekLabel(start: LocalDate): string {
   return `${format(s, sameMonth ? 'd' : 'd MMM', { locale: fr })} – ${format(e, 'd MMM yyyy', { locale: fr })}`;
 }
 
-/** /stats/week?week=YYYY-MM-DD — Monday-based weekly summary. */
+/** /stats/week?week=YYYY-MM-DD — Monday-based weekly summary (« Bilan »). */
 export function WeekScreen() {
   const [params, setParams] = useSearchParams();
   const today = useToday();
@@ -181,13 +180,6 @@ export function WeekScreen() {
                 goal={goals.protein}
                 met={(d) => goals.protein !== undefined && proteinGoalMet(d.protein, goals.protein)}
               />
-              <p className="mt-3 text-xs font-semibold text-muted">
-                Moyennes calculées sur les jours renseignés seulement, sans la journée en cours ni les jours
-                pas comptés (barre pleine : rouge si dépassé, pâle si sous l’objectif). Calories : objectif
-                atteint juste en dessous (90 à 100 %), raté au-dessus. Protéines : atteint dès 95 %.
-              </p>
-
-              <PerfComparisonSection weekOf={start} today={today} />
             </>
           );
         })()
