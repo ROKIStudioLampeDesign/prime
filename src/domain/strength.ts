@@ -67,6 +67,16 @@ export function bestSoFar(points: readonly SessionPoint[]): BestSoFarPoint[] {
   });
 }
 
+/** Only the sessions that set a new best: the record line moves on a heavier session alone. */
+export function newBests(points: readonly SessionPoint[]): SessionPoint[] {
+  let best = -Infinity;
+  return points.filter((p) => {
+    if (p.value <= best) return false;
+    best = p.value;
+    return true;
+  });
+}
+
 export type RecordKind = 'weight' | 'e1rm' | 'volume';
 
 export const RECORD_KINDS: readonly RecordKind[] = ['weight', 'e1rm', 'volume'];

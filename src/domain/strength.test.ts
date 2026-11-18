@@ -7,6 +7,7 @@ import {
   personalRecords,
   recordsBeaten,
   bestSoFar,
+  newBests,
   sessionProgression,
   sessionRecordHolders,
   type HistorySet,
@@ -219,5 +220,23 @@ describe('bestSoFar', () => {
 
   it('handles no session', () => {
     expect(bestSoFar([])).toEqual([]);
+  });
+});
+
+describe('newBests', () => {
+  const p = (workoutId: number, value: number) => ({
+    workoutId,
+    date: '2026-11-02' as LocalDate,
+    startedAt: workoutId,
+    value,
+  });
+
+  it('keeps only the sessions heavier than every earlier one', () => {
+    const out = newBests([p(1, 70), p(2, 60), p(3, 72.5), p(4, 72.5), p(5, 65), p(6, 75)]);
+    expect(out.map((s) => s.workoutId)).toEqual([1, 3, 6]);
+  });
+
+  it('handles no session', () => {
+    expect(newBests([])).toEqual([]);
   });
 });

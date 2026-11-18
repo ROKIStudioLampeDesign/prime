@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { SegmentedControl } from '../../components/SegmentedControl';
 import {
-  bestSoFar,
   MAX_REPS_FOR_1RM,
+  newBests,
   personalRecords,
   RECORD_KINDS,
   RECORD_LABELS,
@@ -18,15 +18,14 @@ import { ChartEmpty, RecordRow, TooltipBox } from './shared';
 const CHART_HEIGHT = 220;
 
 /**
- * One exercise's record over time (best reached so far: a lighter session never reads as a drop),
- * by heaviest load or estimated 1RM, then its records.
+ * One exercise's record over time, by heaviest load or estimated 1RM, then its records. Only new
+ * bests are plotted: a lighter session neither drops the line nor moves it on.
  */
 export function RecordChart({ sets }: { sets: readonly HistorySet[] }) {
   const [metric, setMetric] = useState<ProgressMetric>('maxWeight');
-  const points = bestSoFar(sessionProgression(sets, metric)).map((p) => ({
+  const points = newBests(sessionProgression(sets, metric)).map((p) => ({
     t: toTime(p.date),
     value: p.value,
-    isNewBest: p.isNewBest,
   }));
   const records = personalRecords(sets);
   const tMin = points[0]?.t ?? 0;
@@ -90,7 +89,6 @@ export function RecordChart({ sets }: { sets: readonly HistorySet[] }) {
                     <TooltipBox title={shortDateLabel(p.t)}>
                       <p className="font-semibold tabular-nums">
                         {formatWeight(Math.round(p.value * 10) / 10)} kg
-                        {p.isNewBest ? ' · nouveau record' : ''}
                       </p>
                     </TooltipBox>
                   );
@@ -101,24 +99,7 @@ export function RecordChart({ sets }: { sets: readonly HistorySet[] }) {
                 type="stepAfter"
                 stroke="var(--color-gym-strong)"
                 strokeWidth={2.5}
-                dot={(props: {
-                  cx?: number;
-                  cy?: number;
-                  index?: number;
-                  payload?: (typeof points)[number];
-                }) =>
-                  props.payload?.isNewBest === true && props.cx !== undefined && props.cy !== undefined ? (
-                    <circle
-                      key={props.index}
-                      cx={props.cx}
-                      cy={props.cy}
-                      r={3.5}
-                      fill="var(--color-gym-strong)"
-                    />
-                  ) : (
-                    <g key={props.index} />
-                  )
-                }
+                dot={{ r: 3.5, fill: 'var(--color-gym-strong)', stroke: 'none' }}
                 activeDot={{ r: 5, fill: 'var(--color-fg)', stroke: 'none' }}
                 isAnimationActive={false}
               />
