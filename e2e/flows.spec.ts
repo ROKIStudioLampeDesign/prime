@@ -224,6 +224,16 @@ test('a bench PR session warms up, then a new record unlocks its badge', async (
   await expect(page.getByRole('img', { name: 'Badge bench 60 kg, Bronze I, débloqué' })).toBeVisible();
   await expect(page.getByRole('img', { name: 'Badge bench 70 kg, Bronze II, à débloquer' })).toBeVisible();
 
+  // The other lifts have their own records, kept in the URL.
+  await page
+    .getByRole('navigation', { name: 'Mouvement suivi' })
+    .getByRole('link', { name: 'Squat' })
+    .click();
+  await expect(page).toHaveURL(/\/stats\/records\?lift=squat$/);
+  await expect(page.getByText('Pas encore de record au squat')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('link', { name: 'Squat' })).toHaveAttribute('aria-current', 'page');
+
   await page.goto('/');
   const streaks = page.getByRole('region', { name: 'Séries' });
   await expect(streaks.getByText('Semaines à 5 séances')).toBeVisible();

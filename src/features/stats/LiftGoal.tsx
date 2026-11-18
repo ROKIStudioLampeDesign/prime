@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { BottomSheet } from '../../components/BottomSheet';
 import { Button } from '../../components/Button';
 import { TextField } from '../../components/TextField';
-import { setBenchGoalKg } from '../../db/liftGoals';
+import { setLiftGoalKg } from '../../db/liftGoals';
+import { TRACKED_LIFTS, type LiftId } from '../../domain/lifts';
 import { parseDecimal } from '../../domain/number';
 import { liftGoalProgress, type PersonalRecords } from '../../domain/strength';
 import { formatWeight } from '../../lib/format';
@@ -10,22 +11,24 @@ import { BarbellGauge, PlateFaces } from './BarbellGauge';
 
 const MAX_GOAL_KG = 500;
 
-interface BenchGoalProps {
+interface LiftGoalProps {
+  lift: LiftId;
   records: PersonalRecords;
   goalKg: number | undefined;
 }
 
-/** The one-rep bench goal: how far the heaviest real lift is from it, and a sheet to set it. */
-export function BenchGoal({ records, goalKg }: BenchGoalProps) {
+/** A lift's one-rep goal: how far the heaviest real lift is from it, and a sheet to set it. */
+export function LiftGoal({ lift, records, goalKg }: LiftGoalProps) {
+  const name = TRACKED_LIFTS[lift].label.toLowerCase();
   const [editing, setEditing] = useState(false);
   const progress = liftGoalProgress(records, goalKg);
 
   return (
-    <section aria-labelledby="bench-goal-title" className="border-b border-line py-4">
+    <section aria-labelledby="lift-goal-title" className="border-b border-line py-4">
       {progress ? (
         <>
           <div className="flex items-baseline justify-between gap-3">
-            <h3 id="bench-goal-title" className="text-xs font-extrabold text-muted">
+            <h3 id="lift-goal-title" className="text-xs font-extrabold text-muted">
               Objectif · 1 rep
             </h3>
             <p className="text-xl leading-tight headline tabular-nums">{formatWeight(progress.goalKg)} kg</p>
@@ -38,7 +41,7 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
                 ? `Atteint : ${formatWeight(progress.bestKg)} kg soulevés`
                 : progress.bestKg > 0
                   ? ''
-                  : 'Pas encore de charge au bench'}
+                  : `Pas encore de charge au ${name}`}
             </p>
             <button
               type="button"
@@ -51,7 +54,7 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
         </>
       ) : (
         <>
-          <h3 id="bench-goal-title" className="sr-only">
+          <h3 id="lift-goal-title" className="sr-only">
             Objectif
           </h3>
           <Button variant="secondary" className="w-full" onClick={() => setEditing(true)}>
@@ -60,8 +63,8 @@ export function BenchGoal({ records, goalKg }: BenchGoalProps) {
         </>
       )}
 
-      <BottomSheet open={editing} onClose={() => setEditing(false)} title="Objectif au bench">
-        {editing && <GoalForm goalKg={goalKg} onClose={() => setEditing(false)} />}
+      <BottomSheet open={editing} onClose={() => setEditing(false)} title={`Objectif au ${name}`}>
+        {editing && <GoalForm lift={lift} goalKg={goalKg} onClose={() => setEditing(false)} />}
       </BottomSheet>
     </section>
   );
@@ -85,7 +88,15 @@ function LoadedBar({ label, totalKg }: { label: string; totalKg: number }) {
   );
 }
 
-function GoalForm({ goalKg, onClose }: { goalKg: number | undefined; onClose: () => void }) {
+function GoalForm({
+  lift,
+  goalKg,
+  onClose,
+}: {
+  lift: LiftId;
+  goalKg: number | undefined;
+  onClose: () => void;
+}) {
   const [text, setText] = useState(goalKg !== undefined ? formatWeight(goalKg) : '');
   const parsed = parseDecimal(text);
   const value = parsed !== undefined && parsed >= 1 && parsed <= MAX_GOAL_KG ? parsed : undefined;
@@ -94,7 +105,7 @@ function GoalForm({ goalKg, onClose }: { goalKg: number | undefined; onClose: ()
       onSubmit={async (e) => {
         e.preventDefault();
         if (value === undefined) return;
-        await setBenchGoalKg(value);
+        await setLiftGoalKg(lift, value);
         onClose();
       }}
     >
@@ -116,7 +127,7 @@ function GoalForm({ goalKg, onClose }: { goalKg: number | undefined; onClose: ()
           variant="danger"
           className="mt-2 w-full"
           onClick={async () => {
-            await setBenchGoalKg(undefined);
+            await setLiftGoalKg(lift, undefined);
             onClose();
           }}
         >

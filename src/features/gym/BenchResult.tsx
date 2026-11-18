@@ -1,10 +1,10 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import type { ReactNode } from 'react';
-import { BenchBadge } from '../../components/BenchBadge';
+import { LiftBadge } from '../../components/LiftBadge';
 import type { Exercise, Workout, WorkoutSet } from '../../db/db';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
 import { getRecordsBefore } from '../../db/stats';
-import { benchBadgesCrossed, benchRankLabel } from '../../domain/streaks';
+import { liftBadgesCrossed, liftRankLabel, TRACKED_LIFTS } from '../../domain/lifts';
 import { formatWeight } from '../../lib/format';
 
 interface BenchResultProps {
@@ -28,7 +28,7 @@ export function BenchResult({ workout, sets, exercises }: BenchResultProps) {
   if (!bench || bestKg === 0 || before === undefined) return null;
 
   const record = bestKg > before;
-  const badges = benchBadgesCrossed(before, bestKg);
+  const badges = liftBadgesCrossed(TRACKED_LIFTS.bench, before, bestKg);
   const isPrSession = workout.name === 'PR bench';
   if (!record && badges.length === 0 && !isPrSession) return null;
 
@@ -52,13 +52,13 @@ export function BenchResult({ workout, sets, exercises }: BenchResultProps) {
             {badges.map((kg, i) => (
               <li key={kg} className="flex flex-col items-center">
                 <RankReveal delayMs={i * RANK_STAGGER_MS}>
-                  <BenchBadge kg={kg} unlocked size={88} />
+                  <LiftBadge lift="bench" kg={kg} unlocked size={88} />
                 </RankReveal>
                 <span
                   className="text-sm font-black motion-safe:animate-rank-label"
                   style={{ animationDelay: `${i * RANK_STAGGER_MS + 600}ms` }}
                 >
-                  {benchRankLabel(kg)}
+                  {liftRankLabel(TRACKED_LIFTS.bench, kg)}
                 </span>
               </li>
             ))}

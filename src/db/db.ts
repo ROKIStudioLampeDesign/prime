@@ -544,6 +544,28 @@ export class PrimeDB extends Dexie {
       shoppingPrices: 'key',
     });
 
+    // v13: new built-in exercises (power clean, snatch), followed in Stats › Records.
+    this.version(13)
+      .stores({
+        settings: 'key',
+        foods: '++id, nameNormalized, barcode, createdAt',
+        meals: '++id, nameNormalized, createdAt',
+        goals: 'id',
+        logEntries: '++id, date, foodId, mealId, createdAt',
+        exercises: '++id, &seedId, nameNormalized, isCustom',
+        workouts: '++id, date, status, startedAt, templateId',
+        workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+        gymDays: 'date',
+        templates: '++id, name',
+        bodyWeights: '++id, &date',
+        nutritionDays: 'date',
+        partners: '++id, name',
+        partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+        shoppingItems: '++id, createdAt',
+        shoppingPrices: 'key',
+      })
+      .upgrade((tx) => seedExercises(tx.table('exercises')));
+
     this.on('populate', (tx) => seedExercises(tx.table('exercises')));
   }
 }

@@ -1,17 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LocalDate } from './date';
-import {
-  benchBadgeDates,
-  benchRank,
-  benchRankLabel,
-  benchBadges,
-  benchBadgesCrossed,
-  calorieStreak,
-  defaultPrTarget,
-  prBenchPlan,
-  weekStreak,
-  type DayKcal,
-} from './streaks';
+import { calorieStreak, defaultPrTarget, prBenchPlan, weekStreak, type DayKcal } from './streaks';
 
 const d = (s: string) => s as LocalDate;
 const days = (rows: Record<string, number>) =>
@@ -101,29 +90,6 @@ describe('weekStreak', () => {
   });
 });
 
-describe('bench badges', () => {
-  it('lists milestones every 10 kg from 60 to 140 (one past the 130 kg goal), unlocked by the best lift', () => {
-    const badges = benchBadges(80);
-    expect(badges.map((b) => b.kg)).toEqual([60, 70, 80, 90, 100, 110, 120, 130, 140]);
-    expect(badges.filter((b) => b.unlocked).map((b) => b.kg)).toEqual([60, 70, 80]);
-    expect(benchBadges(0).every((b) => !b.unlocked)).toBe(true);
-  });
-
-  it('keeps going two steps past the best lift beyond the goal', () => {
-    expect(
-      benchBadges(135)
-        .map((b) => b.kg)
-        .at(-1),
-    ).toBe(150);
-  });
-
-  it('reports the milestones a session crossed', () => {
-    expect(benchBadgesCrossed(78, 92.5)).toEqual([80, 90]);
-    expect(benchBadgesCrossed(80, 82.5)).toEqual([]);
-    expect(benchBadgesCrossed(0, 60)).toEqual([60]);
-  });
-});
-
 describe('PR bench plan', () => {
   it('ramps from the empty bar to a single at the target, loads rounded to 2.5 kg', () => {
     expect(prBenchPlan(82.5)).toEqual([
@@ -148,43 +114,5 @@ describe('PR bench plan', () => {
   it('defaults the target to the best lift + 2.5 kg', () => {
     expect(defaultPrTarget(80)).toBe(82.5);
     expect(defaultPrTarget(0)).toBe(20);
-  });
-});
-
-describe('benchBadgeDates', () => {
-  it('dates each milestone by the first set that reached it, ignoring 0-rep sets', () => {
-    const history = [
-      { weightKg: 75, reps: 3, date: d('2026-09-01'), startedAt: 1 },
-      { weightKg: 90, reps: 0, date: d('2026-09-15'), startedAt: 2 },
-      { weightKg: 82.5, reps: 1, date: d('2026-10-20'), startedAt: 3 },
-    ];
-    const dates = benchBadgeDates(history, [60, 70, 80, 90]);
-    expect(Object.fromEntries(dates)).toEqual({ 60: '2026-09-01', 70: '2026-09-01', 80: '2026-10-20' });
-  });
-});
-
-describe('benchRank', () => {
-  it('names each 10 kg milestone: two divisions per metal, Rubis, Diamant at the goal, then Obsidienne', () => {
-    const labels = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 200].map(benchRankLabel);
-    expect(labels).toEqual([
-      'Bronze I',
-      'Bronze II',
-      'Argent I',
-      'Argent II',
-      'Or I',
-      'Or II',
-      'Rubis',
-      'Diamant',
-      'Obsidienne I',
-      'Obsidienne II',
-      'Obsidienne III',
-      'Obsidienne III',
-    ]);
-  });
-
-  it('gives each tier its level of ornaments', () => {
-    expect([60, 80, 100, 120, 130, 140].map((kg) => benchRank(kg).tier)).toEqual([0, 1, 2, 3, 4, 5]);
-    expect(benchRank(120).division).toBe(0);
-    expect(benchRank(130).division).toBe(0);
   });
 });

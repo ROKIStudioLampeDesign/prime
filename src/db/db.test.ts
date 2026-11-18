@@ -32,7 +32,50 @@ afterEach(async () => {
 describe('schema', () => {
   it('opens at the latest version', async () => {
     await db.open();
-    expect(db.verno).toBe(12);
+    expect(db.verno).toBe(13);
+  });
+
+  it('migrates v12 → v13: the power clean and the snatch are added, existing exercises are kept', async () => {
+    const dbName = `prime-migration-v12-${name}`;
+    const v12 = new Dexie(dbName);
+    v12.version(12).stores({
+      settings: 'key',
+      foods: '++id, nameNormalized, barcode, createdAt',
+      meals: '++id, nameNormalized, createdAt',
+      goals: 'id',
+      logEntries: '++id, date, foodId, mealId, createdAt',
+      exercises: '++id, &seedId, nameNormalized, isCustom',
+      workouts: '++id, date, status, startedAt, templateId',
+      workoutSets: '++id, workoutId, exerciseId, [exerciseId+workoutId]',
+      gymDays: 'date',
+      templates: '++id, name',
+      bodyWeights: '++id, &date',
+      nutritionDays: 'date',
+      partners: '++id, name',
+      partnerSets: '++id, workoutId, partnerId, [partnerId+exerciseId]',
+      shoppingItems: '++id, createdAt',
+      shoppingPrices: 'key',
+    });
+    const benchId = await v12.table('exercises').add({
+      seedId: 'bench-press',
+      name: 'Bench',
+      nameNormalized: 'bench',
+      primaryMuscles: ['chest'],
+      secondaryMuscles: [],
+      equipment: 'barbell',
+      isCustom: 0,
+    });
+    v12.close();
+
+    const migrated = new PrimeDB(dbName);
+    try {
+      const bySeed = (seedId: string) => migrated.exercises.where('seedId').equals(seedId).first();
+      expect((await bySeed('bench-press'))?.id).toBe(benchId);
+      expect((await bySeed('power-clean'))?.name).toBe('Power clean');
+      expect((await bySeed('snatch'))?.name).toBe('Snatch');
+    } finally {
+      await migrated.delete();
+    }
   });
 
   it('migrates v11 → v12: data is kept, the shopping list starts empty', async () => {

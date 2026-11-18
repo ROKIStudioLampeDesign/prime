@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { db } from '../../db/db';
 import { BENCH_SEED_ID } from '../../db/exerciseSeed';
+import { getLiftGoalKg, setLiftGoalKg } from '../../db/liftGoals';
 import type { LocalDate } from '../../domain/date';
 import { axeViolations, renderWithRouter } from '../../test/utils';
 import { RecordsScreen } from './RecordsScreen';
@@ -24,7 +25,7 @@ describe('RecordsScreen', () => {
     expect(await screen.findByText('Pas encore de record au bench')).toBeTruthy();
   });
 
-  it('follows the bench only, under its short name', async () => {
+  it('follows the bench by default, under its short name', async () => {
     const bench = await seededId(BENCH_SEED_ID);
     const squat = await seededId('back-squat');
     const workoutId = await db.workouts.add({
@@ -43,10 +44,55 @@ describe('RecordsScreen', () => {
     expect(await screen.findByRole('heading', { name: 'Bench' })).toBeTruthy();
     expect(screen.getByText('Charge max · 60 kg × 8')).toBeTruthy();
     expect(screen.queryByText(/1RM/)).toBeNull();
-    expect(screen.queryByText(/Squat/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Squat' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Bench' }).getAttribute('aria-current')).toBe('page');
     expect(screen.getByRole('link', { name: 'Voir la progression' }).getAttribute('href')).toBe(
       `/stats/progress?exercise=${bench}`,
     );
+    expect(await axeViolations()).toEqual([]);
+  });
+
+  it('reads the lift from the URL and says what to do before its first set', async () => {
+    renderWithRouter(<RecordsScreen />, { route: '/stats/records?lift=snatch' });
+    expect(await screen.findByText('Pas encore de record au snatch')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Snatch' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Me fixer un objectif' })).toBeTruthy();
+  });
+
+  it('switches lift with its own record, badges and goal', async () => {
+    const user = userEvent.setup();
+    const bench = await seededId(BENCH_SEED_ID);
+    const squat = await seededId('back-squat');
+    const workoutId = await db.workouts.add({
+      date: '2026-11-02' as LocalDate,
+      status: 'done',
+      startedAt: 1,
+      endedAt: 2,
+    });
+    const set = { workoutId, setNumber: 1, completed: true };
+    await db.workoutSets.bulkAdd([
+      { ...set, exerciseId: bench, order: 0, weightKg: 60, reps: 8 },
+      { ...set, exerciseId: squat, order: 1, weightKg: 105, reps: 5 },
+    ]);
+    await setLiftGoalKg('bench', 100);
+
+    renderWithRouter(<RecordsScreen />, { route: '/stats/records' });
+    expect(await screen.findByRole('region', { name: 'Objectif · 1 rep' })).toBeTruthy();
+    await user.click(screen.getByRole('link', { name: 'Squat' }));
+
+    expect(await screen.findByRole('heading', { name: 'Squat' })).toBeTruthy();
+    expect(screen.getByText('Charge max · 105 kg × 5')).toBeTruthy();
+    // Squat milestones start at 75 kg, every 15 kg: 75, 90 and 105 are unlocked.
+    expect(screen.getByRole('img', { name: 'Badge squat 105 kg, Argent I, débloqué' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: 'Badge squat 120 kg, Argent II, à débloquer' })).toBeTruthy();
+    // The bench goal stays with the bench.
+    expect(screen.getByRole('button', { name: 'Me fixer un objectif' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Me fixer un objectif' }));
+    expect(screen.getByRole('dialog', { name: 'Objectif au squat' })).toBeTruthy();
+    await user.type(screen.getByLabelText('Charge visée'), '140');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect((await screen.findByRole('region', { name: 'Objectif · 1 rep' })).textContent).toContain('140 kg');
+    expect(await getLiftGoalKg('bench')).toBe(100);
     expect(await axeViolations()).toEqual([]);
   });
 

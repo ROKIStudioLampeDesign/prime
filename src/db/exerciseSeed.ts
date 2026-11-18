@@ -6,7 +6,7 @@ export interface SeedExercise extends ExerciseDefinition {
   seedId: string;
 }
 
-/** The barbell bench press: the only lift Stats › Records follows. */
+/** The barbell bench press: the lift a workout's PR verdict follows (Records follows TRACKED_LIFTS). */
 export const BENCH_SEED_ID = 'bench-press';
 
 function ex(
@@ -203,6 +203,21 @@ export const EXERCISE_SEED: readonly SeedExercise[] = [
     'kettlebell',
     ['glutes', 'hamstrings'],
     ['lower_back', 'forearms'],
+  ),
+  // Olympic lifts, added in schema v13 (followed in Stats › Records).
+  ex(
+    'power-clean',
+    'Power clean',
+    'barbell',
+    ['glutes', 'hamstrings', 'quads', 'traps'],
+    ['lower_back', 'upper_back', 'shoulders_front', 'calves'],
+  ),
+  ex(
+    'snatch',
+    'Snatch',
+    'barbell',
+    ['glutes', 'hamstrings', 'quads', 'traps'],
+    ['shoulders_front', 'shoulders_side', 'upper_back', 'lower_back', 'triceps'],
   ),
   ex('standing-calf-raise', 'Mollets debout', 'machine', ['calves']),
   ex('seated-calf-raise', 'Mollets assis', 'machine', ['calves']),

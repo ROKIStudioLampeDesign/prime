@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { EQUIPMENT } from '../domain/exercise';
 import { isMuscleId, MUSCLE_IDS, validateMuscleSelection } from '../domain/muscles';
-import { EXERCISE_SEED } from './exerciseSeed';
+import { LIFT_IDS, TRACKED_LIFTS } from '../domain/lifts';
+import { BENCH_SEED_ID, EXERCISE_SEED } from './exerciseSeed';
 
 describe('exercise seed', () => {
   it('has around 60+ exercises with unique ids and names', () => {
@@ -21,6 +22,12 @@ describe('exercise seed', () => {
   it('trains every muscle as a primary mover at least once', () => {
     const primaries = new Set(EXERCISE_SEED.flatMap((e) => e.primaryMuscles));
     expect([...MUSCLE_IDS].filter((m) => !primaries.has(m))).toEqual([]);
+  });
+
+  it('holds every lift Stats › Records follows, as a barbell exercise', () => {
+    const byId = new Map(EXERCISE_SEED.map((e) => [e.seedId, e]));
+    for (const id of LIFT_IDS) expect(byId.get(TRACKED_LIFTS[id].seedId)?.equipment, id).toBe('barbell');
+    expect(TRACKED_LIFTS.bench.seedId).toBe(BENCH_SEED_ID);
   });
 
   it('maps key exercises correctly', () => {

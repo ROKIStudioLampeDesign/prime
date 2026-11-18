@@ -1,11 +1,11 @@
 import { useId, type ReactNode } from 'react';
-import { benchRank, benchRankLabel } from '../domain/streaks';
+import { liftRank, liftRankLabel, TRACKED_LIFTS, type LiftId } from '../domain/lifts';
 
 /**
- * A bench milestone drawn as an original ranked-game emblem, the "orbe couronné": a glossy orb
- * with an engraved barbell, set in a spiked ring, over a banner with the load. Each rank adds
+ * A lift milestone drawn as an original ranked-game emblem, the "orbe couronné": a glossy orb
+ * with the lift engraved (see LiftGlyph), set in a spiked ring, over a banner with the load. Each rank adds
  * ornaments: Bronze plain, Argent side blades, Or wings and a golden aura (rays on Or II), Rubis a
- * crown, Diamant (the 130 kg goal) a jewelled crown, facets and an icy halo, Obsidienne dark wings
+ * crown, Diamant a jewelled crown, facets and an icy halo, Obsidienne dark wings
  * and violet flames. The spikes grow with the rank; diamonds under the banner mark divisions.
  * Locked: a grey emblem with a padlock.
  */
@@ -311,6 +311,223 @@ function Pips({ count, fill, outline }: { count: number; fill: string; outline: 
   );
 }
 
+type Pt = readonly [number, number];
+
+interface Figure {
+  head: Pt;
+  shoulder: Pt;
+  hip: Pt;
+  /** Shoulder → elbow → hand. */
+  arm: readonly [Pt, Pt];
+  /** Hip → knee → ankle → toe, near leg then far leg (drawn fainter, for depth). */
+  leg: readonly [Pt, Pt, Pt];
+  farLeg: readonly [Pt, Pt, Pt];
+  /** Bar end seen from the side, and its plate's radius. */
+  disc: Pt;
+  discR: number;
+  /** Bench pad and legs (bench press only). */
+  bench?: boolean;
+}
+
+/**
+ * Side-view pictograms facing right, in each lift's telling position, drawn in the orb (centre
+ * 50,45, radius 18.5) above a floor line at y 58.6.
+ */
+const FIGURES: Record<LiftId, Figure> = {
+  // Lying on the bench, arms locked, bar over the shoulders, feet planted.
+  bench: {
+    head: [37.4, 46.6],
+    shoulder: [42.4, 48.2],
+    hip: [52.4, 48.4],
+    arm: [
+      [42.9, 43.2],
+      [43.3, 38.6],
+    ],
+    leg: [
+      [58.2, 45.8],
+      [59.8, 56.6],
+      [62.6, 57.2],
+    ],
+    farLeg: [
+      [57, 46.4],
+      [56.8, 56.6],
+      [59.4, 57.2],
+    ],
+    disc: [43.4, 35],
+    discR: 5,
+    bench: true,
+  },
+  // Bottom of a back squat: hips below the knees, bar on the traps, chest up.
+  squat: {
+    head: [55.4, 33.2],
+    shoulder: [51.4, 37.6],
+    hip: [44.2, 47.6],
+    arm: [
+      [56, 40.8],
+      [52.8, 36],
+    ],
+    leg: [
+      [56.6, 46.2],
+      [53.2, 56.6],
+      [57.8, 57.2],
+    ],
+    farLeg: [
+      [55.2, 47.2],
+      [51.6, 56.6],
+      [56.2, 57.2],
+    ],
+    disc: [50, 35],
+    discR: 5,
+  },
+  // Off the floor: back flat, shoulders over the bar, arms long, plates on the floor.
+  deadlift: {
+    head: [58.8, 34.2],
+    shoulder: [54.4, 37.8],
+    hip: [42.4, 42.2],
+    arm: [
+      [54.6, 44],
+      [54.8, 49.6],
+    ],
+    leg: [
+      [51.4, 47],
+      [47.8, 56.6],
+      [52.2, 57.2],
+    ],
+    farLeg: [
+      [50, 48],
+      [46.2, 56.6],
+      [50.6, 57.2],
+    ],
+    disc: [54.8, 53.2],
+    discR: 5.3,
+  },
+  // The catch: bar racked on the shoulders, elbows high, knees soft.
+  'power-clean': {
+    head: [52, 31.2],
+    shoulder: [50.4, 36.6],
+    hip: [47.2, 47],
+    arm: [
+      [57.8, 39.6],
+      [55, 37.4],
+    ],
+    leg: [
+      [54.6, 50.4],
+      [51.4, 56.6],
+      [55.8, 57.2],
+    ],
+    farLeg: [
+      [53.2, 51.2],
+      [49.8, 56.6],
+      [54.2, 57.2],
+    ],
+    disc: [55.8, 35.8],
+    discR: 4.7,
+  },
+  // Receiving the snatch: overhead squat, arms locked over the heels.
+  snatch: {
+    head: [52.4, 38.6],
+    shoulder: [48.6, 41.4],
+    hip: [44.6, 49.8],
+    arm: [
+      [48.3, 37.6],
+      [48.1, 34.6],
+    ],
+    leg: [
+      [55.6, 49.6],
+      [52.4, 56.6],
+      [56.8, 57.2],
+    ],
+    farLeg: [
+      [54.2, 50.4],
+      [50.8, 56.6],
+      [55, 57.2],
+    ],
+    disc: [48, 30.8],
+    discR: 4.4,
+  },
+};
+
+/** A tapered segment from a (width wa) to b (width wb), with round ends. */
+function Bone({ a, b, wa, wb, color }: { a: Pt; b: Pt; wa: number; wb: number; color: string }) {
+  const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+  const nx = -(b[1] - a[1]) / len;
+  const ny = (b[0] - a[0]) / len;
+  const d = [
+    [a[0] + (nx * wa) / 2, a[1] + (ny * wa) / 2],
+    [b[0] + (nx * wb) / 2, b[1] + (ny * wb) / 2],
+    [b[0] - (nx * wb) / 2, b[1] - (ny * wb) / 2],
+    [a[0] - (nx * wa) / 2, a[1] - (ny * wa) / 2],
+  ]
+    .map(([x, y], k) => `${k ? 'L' : 'M'}${f(x ?? 0)} ${f(y ?? 0)}`)
+    .join('');
+  return (
+    <>
+      <path d={`${d}Z`} fill={color} />
+      <circle cx={a[0]} cy={a[1]} r={wa / 2} fill={color} />
+      <circle cx={b[0]} cy={b[1]} r={wb / 2} fill={color} />
+    </>
+  );
+}
+
+function Leg({ hip, leg, color }: { hip: Pt; leg: readonly [Pt, Pt, Pt]; color: string }) {
+  const [knee, ankle, toe] = leg;
+  return (
+    <>
+      <Bone a={hip} b={knee} wa={3.6} wb={2.6} color={color} />
+      <Bone a={knee} b={ankle} wa={2.5} wb={1.7} color={color} />
+      <Bone a={ankle} b={toe} wa={1.8} wb={1.3} color={color} />
+    </>
+  );
+}
+
+/** One pass of the pictogram in a single colour; `hole` cuts the plate's ring and hub. */
+function FigureShape({ fig, color, hole }: { fig: Figure; color: string; hole: string }) {
+  const [elbow, hand] = fig.arm;
+  const [dx, dy] = fig.disc;
+  return (
+    <g>
+      <line x1={38.8} y1={58.6} x2={61.2} y2={58.6} stroke={color} strokeWidth={1.2} strokeLinecap="round" />
+      {fig.bench && (
+        <>
+          <rect x={36.6} y={51} width={20} height={2.6} rx={0.6} fill={color} />
+          <rect x={39.6} y={53} width={1.5} height={5.6} fill={color} />
+          <rect x={52.6} y={53} width={1.5} height={5.6} fill={color} />
+        </>
+      )}
+      <g opacity={0.55}>
+        <Leg hip={fig.hip} leg={fig.farLeg} color={color} />
+      </g>
+      <Leg hip={fig.hip} leg={fig.leg} color={color} />
+      <Bone a={fig.hip} b={fig.shoulder} wa={4} wb={4.8} color={color} />
+      <Bone a={fig.shoulder} b={elbow} wa={2.6} wb={2.1} color={color} />
+      <Bone a={elbow} b={hand} wa={2} wb={1.7} color={color} />
+      <circle cx={fig.head[0]} cy={fig.head[1]} r={2.9} fill={color} />
+      {/* Plate seen end on: face, a raised ring, the bar's end. */}
+      <circle cx={dx} cy={dy} r={fig.discR} fill={color} />
+      <circle cx={dx} cy={dy} r={fig.discR * 0.68} fill="none" stroke={hole} strokeWidth={0.6} />
+      <circle cx={dx} cy={dy} r={fig.discR * 0.24} fill={hole} />
+    </g>
+  );
+}
+
+/**
+ * The lift engraved in the orb: a dark pictogram cut into the gem, with a light lower edge so it
+ * reads as carved on every rank's colour.
+ */
+function LiftGlyph({ lift, ink, dark }: { lift: LiftId; ink: string; dark: string }) {
+  const fig = FIGURES[lift];
+  return (
+    <g>
+      <g transform="translate(0.45 0.65)" opacity={0.75}>
+        <FigureShape fig={fig} color={ink} hole={ink} />
+      </g>
+      <g opacity={0.9}>
+        <FigureShape fig={fig} color={dark} hole={ink} />
+      </g>
+    </g>
+  );
+}
+
 /** Spiked ring: more and longer spikes at each rank. */
 function spikes(tier: number, division: number): { d: string; dark: boolean }[] {
   const n = 8 + tier * 2 + (division === 2 ? 2 : 0);
@@ -325,16 +542,18 @@ function spikes(tier: number, division: number): { d: string; dark: boolean }[] 
   });
 }
 
-interface BenchBadgeProps {
+interface LiftBadgeProps {
+  lift: LiftId;
   kg: number;
   unlocked: boolean;
   size?: number;
 }
 
-export function BenchBadge({ kg, unlocked, size = 96 }: BenchBadgeProps) {
+export function LiftBadge({ lift, kg, unlocked, size = 96 }: LiftBadgeProps) {
+  const scale = TRACKED_LIFTS[lift];
   const uid = useId();
-  const label = `Badge bench ${kg} kg, ${benchRankLabel(kg)}, ${unlocked ? 'débloqué' : 'à débloquer'}`;
-  const { tier, division } = benchRank(kg);
+  const label = `Badge ${scale.label.toLowerCase()} ${kg} kg, ${liftRankLabel(scale, kg)}, ${unlocked ? 'débloqué' : 'à débloquer'}`;
+  const { tier, division } = liftRank(scale, kg);
 
   if (!unlocked) {
     return (
@@ -491,18 +710,13 @@ export function BenchBadge({ kg, unlocked, size = 96 }: BenchBadgeProps) {
         opacity={0.42}
         transform={`rotate(-25 ${CX - 5} ${CY - 8})`}
       />
-      {/* Engraved barbell. */}
-      <g fill={p.ink} opacity={0.9}>
-        <rect x="41" y={CY + 3.4} width="18" height="1.5" />
-        <rect x="42.4" y={CY + 0.8} width="2" height="6.7" />
-        <rect x="55.6" y={CY + 0.8} width="2" height="6.7" />
-      </g>
+      <LiftGlyph lift={lift} ink={p.ink} dark={p.gem[2]} />
 
       <Crown tier={tier} p={p} light={light} dark={dark} />
       <Banner kg={kg} light={light} mid={outline} dark={lo} outline={outline} ink={p.ink} />
       <Pips count={division} fill={light} outline={outline} />
 
-      <Sparkle x={39} y={32} s={tier >= 2 ? 3 : 2.2} color="#fff" opacity={0.95} />
+      <Sparkle x={35.6} y={34.4} s={tier >= 2 ? 2.8 : 2.2} color="#fff" opacity={0.95} />
       {tier >= 3 && p.glow && (
         <>
           <Sparkle x={66} y={60} s={2.4} color="#fff" opacity={0.9} />

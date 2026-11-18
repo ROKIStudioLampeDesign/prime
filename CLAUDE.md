@@ -144,8 +144,10 @@ Rules:
   (`toTime`) so gaps are to scale, `niceTicks` for Y ticks, theme colours via `var(--color-…)`,
   `isAnimationActive={false}`, and a `ChartEmpty` placeholder ("Pas encore de données") of the same
   height. Records only count finished workouts; live PR badges compare against records from
-  _before_ the current workout (`getRecordsBefore`). The Records tab follows the bench only
-  (`BENCH_SEED_ID`); Progression still covers every exercise. Body weight: one entry per day (upsert).
+  _before_ the current workout (`getRecordsBefore`). The Records tab follows one lift picked in
+  `?lift=` (Bench, Squat, Deadlift, Power clean, Snatch: `TRACKED_LIFTS`, `src/domain/lifts.ts`), each
+  with its own badge scale, pictogram (`LiftBadge`) and goal (`liftGoals.ts`, a setting per lift);
+  Progression still covers every exercise. Body weight: one entry per day (upsert).
 - **Live data in inputs:** don't bind a text input directly to `useLiveQuery` data (keystrokes are
   lost during the async round-trip). Use `NumericInput` (local draft while focused) or local state
   saved on blur. Key edit forms by the loaded record's id, not the URL id: `useLiveQuery` briefly
