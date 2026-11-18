@@ -94,7 +94,8 @@ export const MIN_GAP_DAYS = 21;
 /**
  * Every exercise done up to `until`: its best set in its last session against its best set in
  * the session closest to a month before that one (at least `MIN_GAP_DAYS` older; the older one
- * wins a tie). Without such a session, the exercise is new.
+ * wins a tie). While the exercise's history is younger than that, its first session stands in
+ * for it; with a single session, the exercise is new.
  */
 export function compareWithMonthBefore(
   history: ReadonlyMap<number, readonly HistorySet[]>,
@@ -123,6 +124,7 @@ export function compareWithMonthBefore(
         before = session;
       }
     }
+    if (!before && sessions.length > 1) before = sessions[0];
     out.push(compare(exerciseId, before && bestSet(before), after));
   }
   return out;

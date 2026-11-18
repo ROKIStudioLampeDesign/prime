@@ -116,13 +116,21 @@ describe('compareWithMonthBefore', () => {
         ],
       ],
       [2, session('2026-11-05', [[50, 5]])], // a single session: new
-      [3, [...session('2026-11-01', [[40, 10]]), ...session('2026-11-15', [[45, 10]])]], // 14 days apart: new
+      // Under a month of history: the first session stands in for the one a month before.
+      [
+        3,
+        [
+          ...session('2026-11-01', [[40, 10]]),
+          ...session('2026-11-08', [[42, 10]]),
+          ...session('2026-11-15', [[45, 10]]),
+        ],
+      ],
     ]);
     const rows = compareWithMonthBefore(history, d('2026-11-22'));
     const byId = new Map(rows.map((r) => [r.exerciseId, r]));
     expect(byId.get(1)).toMatchObject({ trend: 'up', before: { weightKg: 70 }, after: { weightKg: 72.5 } });
     expect(byId.get(2)?.trend).toBe('new');
-    expect(byId.get(3)?.trend).toBe('new');
+    expect(byId.get(3)).toMatchObject({ trend: 'up', before: { weightKg: 40 }, after: { weightKg: 45 } });
   });
 
   it('works across a year boundary and leaves out exercises not done yet', () => {

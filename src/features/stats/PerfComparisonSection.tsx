@@ -70,7 +70,7 @@ export function PerfComparisonSection({ weekOf, today }: { weekOf: LocalDate; to
   const period =
     mode === 'week'
       ? `${format(fromLocalDate(weekOf), 'd MMM', { locale: fr })} – ${format(fromLocalDate(end), 'd MMM', { locale: fr })} contre la semaine d’avant`
-      : 'Ta dernière séance de chaque exercice contre celle d’il y a un mois';
+      : 'Ta dernière séance de chaque exercice contre celle d’il y a un mois (ou ta première, si plus récente)';
 
   return (
     <section className="mt-8" aria-labelledby="perfs">
