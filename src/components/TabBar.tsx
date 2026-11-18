@@ -38,9 +38,6 @@ export function TabBar() {
             >
               {({ isActive }) => (
                 <>
-                  {isActive && (
-                    <span className="absolute inset-x-[18%] -top-px h-1 bg-indicator" aria-hidden="true" />
-                  )}
                   <TabIcon
                     className={`size-7.5 ${isActive ? 'drop-shadow-[0_0_6px_var(--color-accent)]' : ''}`}
                     strokeWidth={isActive ? 2.4 : 1.8}
