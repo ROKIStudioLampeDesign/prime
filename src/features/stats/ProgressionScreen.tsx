@@ -16,6 +16,7 @@ import {
   personalRecords,
   RECORD_KINDS,
   RECORD_LABELS,
+  bestSoFar,
   sessionProgression,
   type HistorySet,
   type ProgressMetric,
@@ -90,7 +91,12 @@ function ProgressionContent({
     options.find((e) => e.seedId === BENCH_SEED_ID) ??
     (options[0] as Exercise);
   const sets = history.get(selected.id) ?? [];
-  const points = sessionProgression(sets, metric).map((p) => ({ t: toTime(p.date), value: p.value }));
+  // Best reached so far: a lighter training day never shows as a drop.
+  const points = bestSoFar(sessionProgression(sets, metric)).map((p) => ({
+    t: toTime(p.date),
+    value: p.value,
+    isNewBest: p.isNewBest,
+  }));
   const records = personalRecords(sets);
   const headlineKind: RecordKind = metric === 'e1rm' ? 'e1rm' : 'weight';
   const headline = records[headlineKind];
@@ -184,6 +190,7 @@ function ProgressionContent({
                     <TooltipBox title={shortDateLabel(p.t)}>
                       <p className="font-semibold tabular-nums">
                         {formatWeight(Math.round(p.value * 10) / 10)} kg
+                        {p.isNewBest ? ' · nouveau record' : ''}
                       </p>
                     </TooltipBox>
                   );
@@ -191,9 +198,27 @@ function ProgressionContent({
               />
               <Line
                 dataKey="value"
+                type="stepAfter"
                 stroke="var(--color-gym-strong)"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--color-gym-strong)', stroke: 'none' }}
+                dot={(props: {
+                  cx?: number;
+                  cy?: number;
+                  index?: number;
+                  payload?: (typeof points)[number];
+                }) =>
+                  props.payload?.isNewBest === true && props.cx !== undefined && props.cy !== undefined ? (
+                    <circle
+                      key={props.index}
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={3.5}
+                      fill="var(--color-gym-strong)"
+                    />
+                  ) : (
+                    <g key={props.index} />
+                  )
+                }
                 activeDot={{ r: 5, fill: 'var(--color-fg)', stroke: 'none' }}
                 isAnimationActive={false}
               />
@@ -202,8 +227,8 @@ function ProgressionContent({
         )}
         <p className="px-4 pb-3 text-xs text-muted">
           {metric === 'e1rm'
-            ? `1RM estimé par la formule d’Epley (charge × (1 + reps / 30)). Les séries de plus de ${MAX_REPS_FOR_1RM} répétitions sont ignorées : l’estimation y devient peu fiable.`
-            : 'Charge la plus lourde soulevée à chaque séance.'}
+            ? `Meilleur 1RM estimé atteint à chaque séance, par la formule d’Epley (charge × (1 + reps / 30)). Les séries de plus de ${MAX_REPS_FOR_1RM} répétitions sont ignorées : l’estimation y devient peu fiable.`
+            : 'Charge la plus lourde atteinte à chaque séance : une séance plus légère ne fait pas baisser la courbe. Un point marque chaque nouveau record.'}
         </p>
       </section>
 

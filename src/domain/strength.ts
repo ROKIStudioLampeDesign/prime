@@ -49,6 +49,24 @@ export function sessionProgression(sets: readonly HistorySet[], metric: Progress
   return [...best.values()].sort((a, b) => a.startedAt - b.startedAt);
 }
 
+export interface BestSoFarPoint extends SessionPoint {
+  /** This session beat every earlier one (a tie doesn't count). */
+  isNewBest: boolean;
+}
+
+/**
+ * Best value reached up to each session: a lighter session (a lighter training day) keeps the
+ * previous best, so the line only climbs or stays flat.
+ */
+export function bestSoFar(points: readonly SessionPoint[]): BestSoFarPoint[] {
+  let best = -Infinity;
+  return points.map((p) => {
+    const isNewBest = p.value > best;
+    if (isNewBest) best = p.value;
+    return { ...p, value: best, isNewBest };
+  });
+}
+
 export type RecordKind = 'weight' | 'e1rm' | 'volume';
 
 export const RECORD_KINDS: readonly RecordKind[] = ['weight', 'e1rm', 'volume'];

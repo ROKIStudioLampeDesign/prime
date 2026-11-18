@@ -6,6 +6,7 @@ import {
   liftGoalProgress,
   personalRecords,
   recordsBeaten,
+  bestSoFar,
   sessionProgression,
   sessionRecordHolders,
   type HistorySet,
@@ -195,5 +196,28 @@ describe('sessionRecordHolders', () => {
     expect(sessionRecordHolders([live(1, 72.5, 6, 10)], previous).size).toBe(0);
     expect(sessionRecordHolders([live(1, 200, 1, 10)], {}).size).toBe(0);
     expect(sessionRecordHolders([], previous).size).toBe(0);
+  });
+});
+
+describe('bestSoFar', () => {
+  const p = (workoutId: number, value: number) => ({
+    workoutId,
+    date: '2026-11-02' as LocalDate,
+    startedAt: workoutId,
+    value,
+  });
+
+  it('never goes down: a lighter session keeps the previous best', () => {
+    const out = bestSoFar([p(1, 70), p(2, 60), p(3, 72.5), p(4, 72.5), p(5, 65)]);
+    expect(out.map((s) => s.value)).toEqual([70, 70, 72.5, 72.5, 72.5]);
+  });
+
+  it('flags only the sessions that set a new best (a tie is not one)', () => {
+    const out = bestSoFar([p(1, 70), p(2, 60), p(3, 72.5), p(4, 72.5)]);
+    expect(out.map((s) => s.isNewBest)).toEqual([true, false, true, false]);
+  });
+
+  it('handles no session', () => {
+    expect(bestSoFar([])).toEqual([]);
   });
 });
