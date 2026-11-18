@@ -71,6 +71,16 @@ test('log a workout set, see the rest timer and finish with a summary', async ({
   // …and the home screen lists today's finished workout.
   await page.goto('/');
   await expect(page.getByRole('region', { name: 'Salle' }).getByText(/1 série · 480 kg/)).toBeVisible();
+
+  // Tapping the day in the calendar shows the session set by set, and can add another one.
+  await page.goto('/gym');
+  await page.getByRole('button', { name: /, séance/ }).click();
+  const day = page.getByRole('dialog');
+  await expect(day.getByText('Bench')).toBeVisible();
+  await expect(day.getByText('60 kg × 8')).toBeVisible();
+  await expect(day.getByRole('switch')).toHaveCount(0);
+  await day.getByRole('button', { name: 'Ajouter une séance' }).click();
+  await expect(day.getByRole('button', { name: 'Séance libre' })).toBeVisible();
 });
 
 test('a template plans each set and learns from the session done with it', async ({ page }) => {
@@ -190,6 +200,7 @@ test('log a day from a template: its exercises and sets, loads and reps left emp
 
   await page.goto('/gym');
   await page.locator('[aria-current="date"]').click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Ajouter une séance' }).click();
   await page.getByRole('dialog').getByRole('button', { name: /^Push/ }).click();
   await expect(page).toHaveURL(/\/gym\/workout\/\d+$/);
 

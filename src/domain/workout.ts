@@ -336,3 +336,16 @@ export function prefillPartnerSets(
     return { setNumber, weightKg: p?.weightKg ?? 0, reps: p?.reps ?? 0 };
   });
 }
+
+/** Sets grouped by exercise, in the order the exercises first appear (sets keep their order). */
+export function groupByExercise<T extends { exerciseId: number }>(
+  sets: readonly T[],
+): { exerciseId: number; sets: T[] }[] {
+  const groups = new Map<number, T[]>();
+  for (const s of sets) {
+    const group = groups.get(s.exerciseId);
+    if (group) group.push(s);
+    else groups.set(s.exerciseId, [s]);
+  }
+  return [...groups.entries()].map(([exerciseId, grouped]) => ({ exerciseId, sets: grouped }));
+}

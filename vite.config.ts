@@ -28,7 +28,9 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         theme_color: '#020106',
-        background_color: '#020106',
+        // The logo's red field: iOS and Android build their launch screen from this colour and the
+        // icon (a full-bleed red square), so it matches the red splash of index.html, never black.
+        background_color: '#c4101f',
       },
       workbox: {
         // The manifest is added by the plugin itself; globbing it too creates a conflicting precache entry.

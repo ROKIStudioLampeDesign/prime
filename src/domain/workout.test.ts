@@ -8,6 +8,7 @@ import {
   prefillForTemplate,
   prefillFromPlan,
   prefillSets,
+  groupByExercise,
   previousForSet,
   restRemaining,
   stepWeight,
@@ -508,5 +509,23 @@ describe('prefillPartnerSets', () => {
       { setNumber: 2, weightKg: 0, reps: 0 },
       { setNumber: 3, weightKg: 0, reps: 0 },
     ]);
+  });
+});
+
+describe('groupByExercise', () => {
+  it('groups sets by exercise in first-appearance order, keeping set order', () => {
+    const sets = [
+      { exerciseId: 2, n: 1 },
+      { exerciseId: 1, n: 1 },
+      { exerciseId: 2, n: 2 },
+    ];
+    expect(groupByExercise(sets)).toEqual([
+      { exerciseId: 2, sets: [sets[0], sets[2]] },
+      { exerciseId: 1, sets: [sets[1]] },
+    ]);
+  });
+
+  it('returns nothing for no sets', () => {
+    expect(groupByExercise([])).toEqual([]);
   });
 });
