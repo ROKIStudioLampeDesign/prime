@@ -114,9 +114,9 @@ function BodyContent({ settings, sets, exercises }: BodyContentProps) {
         onPointerUp={onPointerUp}
         onPointerCancel={() => (swipeStart.current = null)}
       >
-        {/* Behind the figure: rings in the colour of the moment, and a burst under each touch. */}
+        {/* Behind the figure: a gym corner in the colour of the moment, and a burst under each touch. */}
         <div
-          className="pointer-events-none body-rings absolute inset-0 -z-10 overflow-hidden"
+          className="pointer-events-none body-gym absolute inset-0 -z-10 overflow-hidden"
           aria-hidden="true"
         >
           {bursts.map((burst) => (

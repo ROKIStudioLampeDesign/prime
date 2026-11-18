@@ -509,50 +509,19 @@ html.accent-wave::view-transition-new(root) {
 }
 
 /*
- * Body map backdrop: rings in the accent spreading from behind the figure and fading out, over a
- * faint halo. Two sets half a cycle apart, so one is always on its way. The rings fade to nothing
- * before the layer's edges (the mask), so the layer can be clipped without a visible cut.
+ * Body map backdrop: a bench press corner drawn in the accent over a faint halo. The drawing is a
+ * mask (its opacities are the shading), so it follows the colour rotation; it keeps its proportions
+ * and stands on the bottom edge, under the figure's feet.
  */
-@keyframes body-ring {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  25% {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.03);
-  }
-}
-@utility body-rings {
-  background: radial-gradient(42% 30% at 50% 42%, rgb(var(--a) / 0.22), transparent 75%);
-  &::before,
-  &::after {
+@utility body-gym {
+  background: radial-gradient(50% 36% at 50% 44%, rgb(var(--a) / 0.14), transparent 75%);
+  &::before {
     content: '';
     position: absolute;
-    top: 42%;
-    left: 50%;
-    width: 32.5rem;
-    height: 32.5rem;
-    margin: -16.25rem;
-    border-radius: 9999px;
-    background: repeating-radial-gradient(circle, transparent 0 2.25rem, rgb(var(--a) / 0.9) 2.25rem 2.44rem);
-    mask-image: radial-gradient(circle, #000 24%, transparent 68%);
-    filter: drop-shadow(0 0 5px rgb(var(--a) / 0.8));
-    animation: body-ring 4s linear infinite;
-  }
-  &::after {
-    animation-delay: 2s;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    &::before {
-      animation: none;
-    }
-    &::after {
-      display: none;
-    }
+    inset: 0;
+    background: rgb(var(--a) / 0.6);
+    mask: url('./features/body/gymBackdrop.svg') center bottom / 100% auto no-repeat;
+    filter: drop-shadow(0 0 4px rgb(var(--a) / 0.7));
   }
 }
 
