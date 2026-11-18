@@ -91,7 +91,7 @@ function mix(hex: string, other: string, share: number): string {
  * A two-colour palette from three colours: the bright accent, the deep Salle band and that
  * band's light. Every other shade is derived.
  */
-function harmony(
+export function harmony(
   id: string,
   label: string,
   color: string,
@@ -270,7 +270,7 @@ export function accentForSlot(slot: number): AccentPalette {
 }
 
 /** Every variable a palette may set, so switching clears what the previous one left. */
-const VAR_NAMES = [...new Set(ACCENT_PALETTES.flatMap((p) => Object.keys(p.vars)))];
+export const VAR_NAMES = [...new Set(ACCENT_PALETTES.flatMap((p) => Object.keys(p.vars)))];
 
 function applyAccent(root: HTMLElement, accent: AccentPalette) {
   for (const name of VAR_NAMES) root.style.removeProperty(`--${name}`);
